@@ -11,7 +11,7 @@ export const statDefinitions = {
       name: "par",
       type: "text",
       inputMode: "numeric",
-      pattern: "[0-9]*",
+      pattern: "[2-7]",
       tooltip: "The standard number of strokes for a given hole.",
     },
     {
@@ -19,7 +19,7 @@ export const statDefinitions = {
       name: "Distance",
       type: "text",
       inputMode: "numeric",
-      pattern: "[0-9]*",
+      pattern: "([1-9][0-9]{0,2})",
       tooltip:
         "The total distance of the hole in yards or meters. Yards and meters are configured in section 1 Course Details.",
     },
@@ -28,7 +28,7 @@ export const statDefinitions = {
       name: "hole_score",
       type: "text",
       inputMode: "numeric",
-      pattern: "[0-9]*",
+      pattern: "([1-9]|1[0-9]|20)",
       tooltip: "The number of strokes taken on the hole.",
     },
   ],
@@ -54,7 +54,7 @@ export const statDefinitions = {
       name: "putts",
       type: "text",
       inputMode: "numeric",
-      pattern: "[0-9]*",
+      pattern: "(0|[1-9]|1[0-9]|20)",
       tooltip: "The total number of putts on the green.",
     },
     {
@@ -62,7 +62,7 @@ export const statDefinitions = {
       name: "putts_within4ft",
       type: "text",
       inputMode: "numeric",
-      pattern: "[0-9]*",
+      pattern: "(0|[1-9]|1[0-9]|20)",
       tooltip: "The number of putts made from within 4 feet of the hole.",
     },
     {
@@ -172,5 +172,25 @@ export const switchStyles = {
   },
   '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
     backgroundColor: theme.palette.custom.pastelGreen,
+  },
+};
+
+// Styles for the red switch component when a relevant stat is not checked.
+export const redSwitchStyles = {
+  '& .MuiSwitch-track': {
+    backgroundColor: '#ffb3ba !important',
+    opacity: '1 !important',
+  },
+  '& .MuiSwitch-thumb': {
+    backgroundColor: 'rgba(255, 255, 255, 0.8) !important',
+  },
+};
+
+export const invalidInputPulseStyles = {
+  animation: 'pulse 0.5s ease-in-out',
+  '@keyframes pulse': {
+    '0%': { boxShadow: '0 0 0 0 rgba(255, 0, 0, 0.7)' },
+    '70%': { boxShadow: '0 0 0 10px rgba(255, 0, 0, 0)' },
+    '100%': { boxShadow: '0 0 0 0 rgba(255, 0, 0, 0)' },
   },
 };

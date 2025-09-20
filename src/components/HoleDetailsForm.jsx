@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   TextField,
   FormControlLabel,
@@ -28,6 +28,8 @@ import {
   boldTextStyles,
   cellDividerStyles,
   switchStyles,
+  redSwitchStyles,
+  invalidInputPulseStyles,
 } from "./holeDetailsTableHelper";
 
 const StatRow = ({
@@ -41,121 +43,183 @@ const StatRow = ({
   handleCellHover,
   openTooltip,
   handleTooltipClick,
-}) => (
-  <TableRow>
-    <Tooltip
-      title={stat.tooltip}
-      open={
-        openTooltip.stat === stat.name && openTooltip.tableIndex === startIndex
-      }
-      onClose={() => handleTooltipClick("", null)}
-      arrow
-    >
-      <TableCell
-        component="th"
-        scope="row"
-        sx={statLabelCellStyles}
-        onClick={() => handleTooltipClick(stat.name, startIndex)}
-      >
-        <Box display="flex" alignItems="center">
-          {stat.label}
-        </Box>
-      </TableCell>
-    </Tooltip>
-    {holesArray.map((hole, holeIndex) => (
-      <TableCell
-        key={holeIndex}
-        align="center"
-        sx={{
-          ...cellDividerStyles,
-          p: tableStyles.cellPadding,
-          backgroundColor:
-            (focusedCell?.statName === stat.name &&
-            focusedCell?.holeIndex === holeIndex &&
-            focusedCell?.tableIndex === startIndex / 9) ||
-            (hoveredCell?.statName === stat.name &&
-            hoveredCell?.holeIndex === holeIndex &&
-            hoveredCell?.tableIndex === startIndex / 9)
-              ? tableStyles.focusedCellBg
-              : "inherit",
-          ...statCellBaseStyles,
-        }}
-        onFocus={() =>
-          handleCellFocus({
-            statName: stat.name,
-            holeIndex,
-            tableIndex: startIndex / 9,
-          })
+}) => {
+  const [invalidValue, setInvalidValue] = useState('');
+  const [isTooltipOpen, setIsTooltipOpen] = useState(false);
+  const [pulseAnimation, setPulseAnimation] = useState(false);
+
+  useEffect(() => {
+    let tooltipTimeout;
+    if (isTooltipOpen) {
+      tooltipTimeout = setTimeout(() => {
+        setIsTooltipOpen(false);
+        setInvalidValue('');
+      }, 3000); // Tooltip disappears after 3 seconds
+    }
+    return () => clearTimeout(tooltipTimeout);
+  }, [isTooltipOpen]);
+
+  const getPatternDescription = (statName) => {
+    switch (statName) {
+        case 'par':
+            return 'Valid range: 2-7';
+        case 'Distance':
+            return 'Valid range: 1-999';
+        case 'hole_score':
+        case 'putts':
+        case 'putts_within4ft':
+            return 'Valid range: 0-20';
+        default:
+            return 'Invalid input';
+    }
+  };
+
+  return (
+    <TableRow>
+      <Tooltip
+        title={stat.tooltip}
+        open={
+          openTooltip.stat === stat.name && openTooltip.tableIndex === startIndex
         }
-        onBlur={() => handleCellFocus(null)}
-        onMouseEnter={() =>
-          handleCellHover({
-            statName: stat.name,
-            holeIndex,
-            tableIndex: startIndex / 9,
-          })
-        }
-        onMouseLeave={() => handleCellHover(null)}
+        onClose={() => handleTooltipClick("", null)}
+        arrow
       >
-        <Box
-          sx={{
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            width: "100%",
-            height: "100%",
-          }}
+        <TableCell
+          component="th"
+          scope="row"
+          sx={statLabelCellStyles}
+          onClick={() => handleTooltipClick(stat.name, startIndex)}
         >
-          {stat.type === "checkbox" ? (
-            <Checkbox
-              name={stat.name}
-              checked={!!hole[stat.name]}
-              onChange={(e) => handleHoleChange(startIndex + holeIndex, e)}
-            />
-          ) : stat.type === "switch" ? (
-            <Switch
-              name={stat.name}
-              checked={!!hole[stat.name]}
-              onChange={(e) => handleHoleChange(startIndex + holeIndex, e)}
-              sx={switchStyles}
-            />
-          ) : (
-            <TextField
-              size="small"
-              type={stat.type}
-              inputMode={stat.inputMode}
-              pattern={stat.pattern}
-              name={stat.name}
-              value={hole[stat.name]}
-              onChange={(e) => handleHoleChange(startIndex + holeIndex, e)}
-              required={stat.name === "par" || stat.name === "hole_score"}
-              sx={{ ...textFieldStyles, width: 60 }}
-              inputProps={{ style: { textAlign: 'center' } }}
-            />
-          )}
-        </Box>
+          <Box display="flex" alignItems="center">
+            {stat.label}
+          </Box>
+        </TableCell>
+      </Tooltip>
+      {holesArray.map((hole, holeIndex) => {
+        const isHolePlayed = hole.hole_score > 0;
+        const isRelevantStat = stat.name === 'scoring_zone_in_regulation' || stat.name === 'holeout_within_3_shots_scoring_zone';
+        const isUnchecked = !hole[stat.name];
+        const shouldBeRed = isHolePlayed && isRelevantStat && isUnchecked;
+
+        return (
+          <TableCell
+            key={holeIndex}
+            align="center"
+            sx={{
+              ...cellDividerStyles,
+              p: tableStyles.cellPadding,
+              backgroundColor:
+                (focusedCell?.statName === stat.name &&
+                focusedCell?.holeIndex === holeIndex &&
+                focusedCell?.tableIndex === startIndex / 9) ||
+                (hoveredCell?.statName === stat.name &&
+                hoveredCell?.holeIndex === holeIndex &&
+                hoveredCell?.tableIndex === startIndex / 9)
+                  ? tableStyles.focusedCellBg
+                  : "inherit",
+              ...statCellBaseStyles,
+              ...(pulseAnimation && pulseAnimation.holeIndex === holeIndex && pulseAnimation.statName === stat.name && invalidInputPulseStyles)
+            }}
+            onFocus={() =>
+              handleCellFocus({
+                statName: stat.name,
+                holeIndex,
+                tableIndex: startIndex / 9,
+              })
+            }
+            onBlur={() => handleCellFocus(null)}
+            onMouseEnter={() =>
+              handleCellHover({
+                statName: stat.name,
+                holeIndex,
+                tableIndex: startIndex / 9,
+              })
+            }
+            onMouseLeave={() => handleCellHover(null)}
+          >
+            <Box
+              sx={{
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                width: "100%",
+                height: "100%",
+              }}
+            >
+              {stat.type === "checkbox" ? (
+                <Checkbox
+                  name={stat.name}
+                  checked={!!hole[stat.name]}
+                  onChange={(e) => handleHoleChange(startIndex + holeIndex, e)}
+                />
+              ) : stat.type === "switch" ? (
+                <Switch
+                  name={stat.name}
+                  checked={!!hole[stat.name]}
+                  onChange={(e) => handleHoleChange(startIndex + holeIndex, e)}
+                  sx={{
+                    ...switchStyles,
+                    ...(shouldBeRed && redSwitchStyles)
+                  }}
+                />
+              ) : (
+                <Tooltip
+                  title={getPatternDescription(stat.name)}
+                  open={isTooltipOpen && invalidValue !== '' && focusedCell?.statName === stat.name && focusedCell?.holeIndex === holeIndex}
+                  arrow
+                >
+                  <TextField
+                    size="small"
+                    type={stat.type}
+                    inputMode={stat.inputMode}
+                    pattern={stat.pattern}
+                    name={stat.name}
+                    value={hole[stat.name]}
+                    onChange={(e) => {
+                      const newValue = e.target.value;
+                      const regex = new RegExp(`^${stat.pattern}$`);
+                      if (newValue === '' || regex.test(newValue)) {
+                        handleHoleChange(startIndex + holeIndex, e);
+                        setIsTooltipOpen(false);
+                        setInvalidValue('');
+                      } else {
+                        setInvalidValue(newValue);
+                        setIsTooltipOpen(true);
+                        setPulseAnimation({ holeIndex, statName: stat.name });
+                        setTimeout(() => setPulseAnimation(false), 500); // Animation duration
+                      }
+                    }}
+                    required={stat.name === "par" || stat.name === "hole_score"}
+                    sx={{ ...textFieldStyles, width: 60 }}
+                    inputProps={{ style: { textAlign: 'center' } }}
+                  />
+                </Tooltip>
+              )}
+            </Box>
+          </TableCell>
+        );
+      })}
+      <TableCell
+        align="center"
+        sx={{ ...boldTextStyles, backgroundColor: tableStyles.totalColumnBg }}
+      >
+        {holesArray.reduce(
+          (sum, hole) => {
+            const value = hole[stat.name];
+            let increment = 0;
+            if (stat.type === 'checkbox' || stat.type === 'switch') {
+              increment = value ? 1 : 0;
+            } else {
+              increment = Number(value) || 0;
+            }
+            return sum + increment;
+          },
+          0
+        ) || "-"}
       </TableCell>
-    ))}
-    <TableCell
-      align="center"
-      sx={{ ...boldTextStyles, backgroundColor: tableStyles.totalColumnBg }}
-    >
-      {holesArray.reduce(
-        (sum, hole) => {
-          const value = hole[stat.name];
-          let increment = 0;
-          if (stat.type === 'checkbox' || stat.type === 'switch') {
-            increment = value ? 1 : 0;
-          } else {
-            increment = Number(value) || 0;
-          }
-          return sum + increment;
-        },
-        0
-      ) || "-"}
-    </TableCell>
-  </TableRow>
-);
+    </TableRow>
+  );
+};
 
 const HoleTable = ({ holes, startIndex, handleHoleChange }) => {
   const [focusedCell, setFocusedCell] = useState(null);
