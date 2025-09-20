@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   TextField,
   FormControlLabel,
@@ -13,15 +13,42 @@ import {
   Paper,
   Box,
   Tooltip,
-} from '@mui/material';
-import { statDefinitions, tableStyles, textFieldStyles, statCellBaseStyles, statLabelCellStyles, tableHeaderCellStyles, gameTypeHeaderStyles, boldTextStyles } from './holeDetailsTableHelper';
+  Switch,
+} from "@mui/material";
+import CheckIcon from "@mui/icons-material/Check";
+import ClearIcon from "@mui/icons-material/Clear";
+import {
+  statDefinitions,
+  tableStyles,
+  textFieldStyles,
+  statCellBaseStyles,
+  statLabelCellStyles,
+  tableHeaderCellStyles,
+  gameTypeHeaderStyles,
+  boldTextStyles,
+  cellDividerStyles,
+  switchStyles,
+} from "./holeDetailsTableHelper";
 
-const StatRow = ({ stat, holesArray, startIndex, handleHoleChange, focusedCell, hoveredCell, handleCellFocus, handleCellHover, openTooltip, handleTooltipClick }) => (
+const StatRow = ({
+  stat,
+  holesArray,
+  startIndex,
+  handleHoleChange,
+  focusedCell,
+  hoveredCell,
+  handleCellFocus,
+  handleCellHover,
+  openTooltip,
+  handleTooltipClick,
+}) => (
   <TableRow>
     <Tooltip
       title={stat.tooltip}
-      open={openTooltip.stat === stat.name && openTooltip.tableIndex === startIndex}
-      onClose={() => handleTooltipClick('', null)}
+      open={
+        openTooltip.stat === stat.name && openTooltip.tableIndex === startIndex
+      }
+      onClose={() => handleTooltipClick("", null)}
       arrow
     >
       <TableCell
@@ -40,43 +67,92 @@ const StatRow = ({ stat, holesArray, startIndex, handleHoleChange, focusedCell, 
         key={holeIndex}
         align="center"
         sx={{
+          ...cellDividerStyles,
           p: tableStyles.cellPadding,
           backgroundColor:
-            (focusedCell?.statName === stat.name && focusedCell?.holeIndex === holeIndex && focusedCell?.tableIndex === (startIndex / 9)) ||
-            (hoveredCell?.statName === stat.name && hoveredCell?.holeIndex === holeIndex && hoveredCell?.tableIndex === (startIndex / 9))
+            (focusedCell?.statName === stat.name &&
+            focusedCell?.holeIndex === holeIndex &&
+            focusedCell?.tableIndex === startIndex / 9) ||
+            (hoveredCell?.statName === stat.name &&
+            hoveredCell?.holeIndex === holeIndex &&
+            hoveredCell?.tableIndex === startIndex / 9)
               ? tableStyles.focusedCellBg
-              : 'inherit',
+              : "inherit",
+          ...statCellBaseStyles,
         }}
-        onFocus={() => handleCellFocus({ statName: stat.name, holeIndex, tableIndex: startIndex / 9 })}
+        onFocus={() =>
+          handleCellFocus({
+            statName: stat.name,
+            holeIndex,
+            tableIndex: startIndex / 9,
+          })
+        }
         onBlur={() => handleCellFocus(null)}
-        onMouseEnter={() => handleCellHover({ statName: stat.name, holeIndex, tableIndex: startIndex / 9 })}
+        onMouseEnter={() =>
+          handleCellHover({
+            statName: stat.name,
+            holeIndex,
+            tableIndex: startIndex / 9,
+          })
+        }
         onMouseLeave={() => handleCellHover(null)}
       >
-        {stat.type === 'checkbox' ? (
-          <FormControlLabel
-            control={
-              <Checkbox
-                name={stat.name}
-                checked={hole[stat.name]}
-                onChange={(e) => handleHoleChange(startIndex + holeIndex, e)}
-              />
-            }
-          />
-        ) : (
-          <TextField
-            size="small"
-            type={stat.type}
-            name={stat.name}
-            value={hole[stat.name]}
-            onChange={(e) => handleHoleChange(startIndex + holeIndex, e)}
-            required={stat.name === 'par' || stat.name === 'hole_score'}
-            sx={{ ...textFieldStyles, width: 60 }}
-          />
-        )}
+        <Box
+          sx={{
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            width: "100%",
+            height: "100%",
+          }}
+        >
+          {stat.type === "checkbox" ? (
+            <Checkbox
+              name={stat.name}
+              checked={!!hole[stat.name]}
+              onChange={(e) => handleHoleChange(startIndex + holeIndex, e)}
+            />
+          ) : stat.type === "switch" ? (
+            <Switch
+              name={stat.name}
+              checked={!!hole[stat.name]}
+              onChange={(e) => handleHoleChange(startIndex + holeIndex, e)}
+              sx={switchStyles}
+            />
+          ) : (
+            <TextField
+              size="small"
+              type={stat.type}
+              inputMode={stat.inputMode}
+              pattern={stat.pattern}
+              name={stat.name}
+              value={hole[stat.name]}
+              onChange={(e) => handleHoleChange(startIndex + holeIndex, e)}
+              required={stat.name === "par" || stat.name === "hole_score"}
+              sx={{ ...textFieldStyles, width: 60 }}
+              inputProps={{ style: { textAlign: 'center' } }}
+            />
+          )}
+        </Box>
       </TableCell>
     ))}
-    <TableCell align="center" sx={{ ...boldTextStyles, backgroundColor: tableStyles.totalColumnBg }}>
-      {holesArray.reduce((sum, hole) => sum + (stat.type === 'checkbox' ? (hole[stat.name] ? 1 : 0) : (Number(hole[stat.name]) || 0)), 0) || '-'}
+    <TableCell
+      align="center"
+      sx={{ ...boldTextStyles, backgroundColor: tableStyles.totalColumnBg }}
+    >
+      {holesArray.reduce(
+        (sum, hole) => {
+          const value = hole[stat.name];
+          let increment = 0;
+          if (stat.type === 'checkbox' || stat.type === 'switch') {
+            increment = value ? 1 : 0;
+          } else {
+            increment = Number(value) || 0;
+          }
+          return sum + increment;
+        },
+        0
+      ) || "-"}
     </TableCell>
   </TableRow>
 );
@@ -84,40 +160,77 @@ const StatRow = ({ stat, holesArray, startIndex, handleHoleChange, focusedCell, 
 const HoleTable = ({ holes, startIndex, handleHoleChange }) => {
   const [focusedCell, setFocusedCell] = useState(null);
   const [hoveredCell, setHoveredCell] = useState(null);
-  const [openTooltip, setOpenTooltip] = useState({ stat: '', tableIndex: null });
+  const [openTooltip, setOpenTooltip] = useState({
+    stat: "",
+    tableIndex: null,
+  });
 
   const handleTooltipClick = (statName, tableIndex) => {
-    setOpenTooltip(prev => ({
-      stat: prev.stat === statName && prev.tableIndex === tableIndex ? '' : statName,
-      tableIndex: prev.stat === statName && prev.tableIndex === tableIndex ? null : tableIndex,
+    setOpenTooltip((prev) => ({
+      stat:
+        prev.stat === statName && prev.tableIndex === tableIndex
+          ? ""
+          : statName,
+      tableIndex:
+        prev.stat === statName && prev.tableIndex === tableIndex
+          ? null
+          : tableIndex,
     }));
   };
+
+  const handleCellFocus = (cell) => setFocusedCell(cell);
+  const handleCellHover = (cell) => setHoveredCell(cell);
 
   const holeNumbers = Array.from({ length: 9 }, (_, i) => startIndex + i + 1);
 
   return (
-    <TableContainer component={Paper} style={{ overflowX: 'auto', marginBottom: '16px' }}>
+    <TableContainer
+      component={Paper}
+      style={{ overflowX: "auto", marginBottom: "16px" }}
+    >
       <Table size="small">
         <TableHead>
           <TableRow sx={gameTypeHeaderStyles}>
             <TableCell colSpan={11}>
               <Typography variant="caption" sx={boldTextStyles}>
-                {startIndex === 0 ? 'Front 9 - Score Card' : 'Back 9 - Score Card'}
+                {startIndex === 0
+                  ? "Front 9 - Score Card"
+                  : "Back 9 - Score Card"}
               </Typography>
             </TableCell>
           </TableRow>
           <TableRow>
             <TableCell
-              sx={{ ...statCellBaseStyles, ...tableHeaderCellStyles, minWidth: tableStyles.rowHeaderMinWidth }}
+              sx={{
+                ...statCellBaseStyles,
+                ...tableHeaderCellStyles,
+                minWidth: tableStyles.rowHeaderMinWidth,
+              }}
             >
               Stat / Hole
             </TableCell>
             {holeNumbers.map((holeNumber) => (
-              <TableCell key={holeNumber} align="center" sx={{ ...tableHeaderCellStyles, minWidth: tableStyles.cellMinWidth, p: tableStyles.cellPadding }}>
+              <TableCell
+                key={holeNumber}
+                align="center"
+                sx={{
+                  ...tableHeaderCellStyles,
+                  minWidth: tableStyles.cellMinWidth,
+                  p: tableStyles.cellPadding,
+                }}
+              >
                 {holeNumber}
               </TableCell>
             ))}
-            <TableCell align="center" sx={{ ...tableHeaderCellStyles, minWidth: tableStyles.cellMinWidth }}>Total</TableCell>
+            <TableCell
+              align="center"
+              sx={{
+                ...tableHeaderCellStyles,
+                minWidth: tableStyles.cellMinWidth,
+              }}
+            >
+              Total
+            </TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
@@ -126,7 +239,11 @@ const HoleTable = ({ holes, startIndex, handleHoleChange }) => {
               <TableRow sx={gameTypeHeaderStyles}>
                 <TableCell colSpan={11}>
                   <Typography variant="caption" sx={boldTextStyles}>
-                    {gameType === 'traditional' ? 'Traditional' : gameType === 'longGame' ? 'Long Game' : 'Short Game'}
+                    {gameType === "traditional"
+                      ? "Traditional"
+                      : gameType === "longGame"
+                      ? "Long Game"
+                      : "Short Game"}
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -139,8 +256,8 @@ const HoleTable = ({ holes, startIndex, handleHoleChange }) => {
                   handleHoleChange={handleHoleChange}
                   focusedCell={focusedCell}
                   hoveredCell={hoveredCell}
-                  handleCellFocus={setFocusedCell}
-                  handleCellHover={setHoveredCell}
+                  handleCellFocus={handleCellFocus}
+                  handleCellHover={handleCellHover}
                   openTooltip={openTooltip}
                   handleTooltipClick={handleTooltipClick}
                 />
@@ -158,14 +275,21 @@ const HoleDetailsForm = ({ holes, handleHoleChange }) => {
   const back9Holes = holes.slice(9, 18);
 
   return (
-    <Paper elevation={2} style={{ padding: '16px', marginBottom: '24px' }}>
+    <Paper elevation={2} style={{ padding: "16px", marginBottom: "24px" }}>
       <Typography variant="h6" gutterBottom>
         2. Hole-by-Hole Details
       </Typography>
-      
-      <HoleTable holes={front9Holes} startIndex={0} handleHoleChange={handleHoleChange} />
-      <HoleTable holes={back9Holes} startIndex={9} handleHoleChange={handleHoleChange} />
 
+      <HoleTable
+        holes={front9Holes}
+        startIndex={0}
+        handleHoleChange={handleHoleChange}
+      />
+      <HoleTable
+        holes={back9Holes}
+        startIndex={9}
+        handleHoleChange={handleHoleChange}
+      />
     </Paper>
   );
 };

@@ -15,6 +15,7 @@ const customColors = {
   // Other colors as needed
   white: '#FFFFFF',
   black: '#000000',
+  pastelGreen: '#7CDD6D'
 };
 
 const theme = createTheme({
