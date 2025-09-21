@@ -1,9 +1,17 @@
-// src/RoundForm.jsx
 import { useState, useMemo } from 'react';
 import { supabase } from './supabaseClient';
-import { Button, Grid, Paper, Typography } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  Container,
+  Paper,
+  CircularProgress,
+  Snackbar,
+  Alert
+} from '@mui/material';
 
-// Import the new child components
+// Import the child components
 import CourseDetailsForm from './components/CourseDetailsForm';
 import HoleDetailsForm from './components/HoleDetailsForm';
 import RoundInsights from './components/RoundInsights';
@@ -14,22 +22,24 @@ const initialHoleState = {
   within3shots: false,
   putts: '',
   putts_within4ft: '',
-  penalties: '',
+  penalty_shots: '',
   hole_score: '',
   bad_habits: '',
   hole_outside_scoring_zone: false,
   scoring_zone_in_regulation: false,
   holeout_from_outside_4ft: false,
+  holeout_within_3_shots_scoring_zone: false,
 };
 
 const RoundForm = ({ user, closeForm }) => {
   const [loading, setLoading] = useState(false);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [courseDetails, setCourseDetails] = useState({
     course_name: '',
     tee_box: '',
     yards_or_meters_unit: 'yards',
     scoring_zone_level: '',
-    date: new Date().toISOString().split('T')[0],
+    round_date: new Date().toISOString().split('T')[0],
   });
   const [holes, setHoles] = useState(
     Array.from({ length: 18 }, (_, i) => ({
@@ -76,24 +86,29 @@ const RoundForm = ({ user, closeForm }) => {
         throw error;
       }
 
-      alert('Round data added successfully!');
+      setSnackbar({ open: true, message: 'Round data added successfully!', severity: 'success' });
       closeForm();
     } catch (error) {
-      alert(error.message);
+      setSnackbar({ open: true, message: `Failed to save round: ${error.message}`, severity: 'error' });
     } finally {
       setLoading(false);
     }
   };
 
+  const handleCloseSnackbar = () => {
+    setSnackbar({ ...snackbar, open: false });
+  };
+
   // Calculate insights in the parent component
   const totalPutts = useMemo(() => holes.reduce((sum, hole) => sum + (Number(hole.putts) || 0), 0), [holes]);
   const totalScore = useMemo(() => holes.reduce((sum, hole) => sum + (Number(hole.hole_score) || 0), 0), [holes]);
-  const totalPenalties = useMemo(() => holes.reduce((sum, hole) => sum + (Number(hole.penalties) || 0), 0), [holes]);
+  const totalPenalties = useMemo(() => holes.reduce((sum, hole) => sum + (Number(hole.penalty_shots) || 0), 0), [holes]);
   const totalSZIR = useMemo(() => holes.filter(hole => hole.scoring_zone_in_regulation).length, [holes]);
   const totalHoleoutFromOutside4ft = useMemo(() => holes.filter(hole => hole.holeout_from_outside_4ft).length, [holes]);
   const totalPuttsWithin4ft = useMemo(() => holes.reduce((sum, hole) => sum + (Number(hole.putts_within4ft) || 0), 0), [holes]);
+  const totalHoleoutWithin3Shots = useMemo(() => holes.filter(hole => hole.holeout_within_3_shots_scoring_zone).length, [holes]);
   const totalHolesPlayed = useMemo(() => holes.filter(
-    (hole) => hole.hole_score && hole.putts && hole.scoring_zone_in_regulation
+    (hole) => hole.hole_score && hole.putts
   ).length, [holes]);
   const holesWithMoreThanOnePuttWithin4ft = useMemo(() => holes.filter(hole => Number(hole.putts_within4ft) > 1).length, [holes]);
 
@@ -106,31 +121,48 @@ const RoundForm = ({ user, closeForm }) => {
     totalPuttsWithin4ft,
     holesWithMoreThanOnePuttWithin4ft,
     totalHoleoutFromOutside4ft,
+    totalHoleoutWithin3Shots,
   };
 
   return (
-    <div style={{ padding: '16px' }}>
-      <Typography variant="h4" gutterBottom>
-        Add a New Round
-      </Typography>
-      <form onSubmit={handleSubmit}>
-        <CourseDetailsForm courseDetails={courseDetails} handleCourseChange={handleCourseChange} />
-        <HoleDetailsForm holes={holes} handleHoleChange={handleHoleChange} />
-        <RoundInsights insightsData={insightsData} />
-        <Grid container justifyContent="flex-end" spacing={2}>
-          <Grid item>
-            <Button variant="outlined" onClick={closeForm}>
-              Cancel
+    <Container maxWidth="lg" sx={{ my: 4 }}>
+      <Paper elevation={3} sx={{ p: { xs: 2, md: 4 } }}>
+        <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
+          Add a New Round
+        </Typography>
+        <Typography variant="body1" align="center" color="text.secondary" sx={{ mb: 4 }}>
+          Log your round, including course details and hole-by-hole stats.
+        </Typography>
+        <form onSubmit={handleSubmit}>
+          <CourseDetailsForm roundData={courseDetails} handleCourseChange={handleCourseChange} />
+          <HoleDetailsForm holes={holes} handleHoleChange={handleHoleChange} />
+          <RoundInsights insightsData={insightsData} />
+          
+          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+            <Button
+              type="submit"
+              variant="contained"
+              color="secondary"
+              disabled={loading}
+              sx={{ py: 1.5, px: 6, fontSize: '1.1rem' }}
+            >
+              {loading ? <CircularProgress size={24} color="inherit" /> : 'Save Round'}
             </Button>
-          </Grid>
-          <Grid item>
-            <Button type="submit" variant="contained" color="success" disabled={loading}>
-              {loading ? 'Saving Round...' : 'Save Round'}
-            </Button>
-          </Grid>
-        </Grid>
-      </form>
-    </div>
+          </Box>
+        </form>
+      </Paper>
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={handleCloseSnackbar}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
+    </Container>
   );
 };
 

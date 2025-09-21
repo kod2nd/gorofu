@@ -36,6 +36,8 @@ const RoundInsights = ({ insightsData }) => {
 
   const avgPuttsPerHole =
     totalHolesPlayed > 0 ? (totalPutts / totalHolesPlayed).toFixed(1) : 0;
+  const avgPenaltiesPerHole = 
+    totalHolesPlayed > 0 ? (totalPenalties / totalHolesPlayed).toFixed(1) : 0;
   const SZIRPercentage =
     totalHolesPlayed > 0 ? (totalSZIR / totalHolesPlayed) * 100 : null;
   const holeoutFromOutside4ftPercentage =
@@ -63,6 +65,7 @@ const RoundInsights = ({ insightsData }) => {
           <StatItem label="Holes Played" value={totalHolesPlayed} />
           <StatItem label="Total Strokes" value={totalScore} />
           <StatItem label="Total Penalties" value={totalPenalties} />
+          <StatItem label="Avg Penalties per Hole" value={avgPenaltiesPerHole} />
         </Box>
         <Box sx={{ mt: 3 }}>
           <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>

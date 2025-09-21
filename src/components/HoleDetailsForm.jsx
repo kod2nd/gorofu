@@ -59,21 +59,6 @@ const StatRow = ({
     return () => clearTimeout(tooltipTimeout);
   }, [isTooltipOpen]);
 
-  const getPatternDescription = (statName) => {
-    switch (statName) {
-        case 'par':
-            return 'Valid range: 2-7';
-        case 'Distance':
-            return 'Valid range: 1-999';
-        case 'hole_score':
-        case 'putts':
-        case 'putts_within4ft':
-            return 'Valid range: 0-20';
-        default:
-            return 'Invalid input';
-    }
-  };
-
   return (
     <TableRow>
       <Tooltip
@@ -97,7 +82,7 @@ const StatRow = ({
       </Tooltip>
       {holesArray.map((hole, holeIndex) => {
         const isHolePlayed = hole.hole_score > 0;
-        const isRelevantStat = stat.name === 'scoring_zone_in_regulation' || stat.name === 'holeout_within_3_shots_scoring_zone';
+        const isRelevantStat = stat.isRelevantForRed;
         const isUnchecked = !hole[stat.name];
         const shouldBeRed = isHolePlayed && isRelevantStat && isUnchecked;
 
@@ -164,7 +149,7 @@ const StatRow = ({
                 />
               ) : (
                 <Tooltip
-                  title={getPatternDescription(stat.name)}
+                  title={stat.patternDescription || 'Invalid input'}
                   open={isTooltipOpen && invalidValue !== '' && focusedCell?.statName === stat.name && focusedCell?.holeIndex === holeIndex}
                   arrow
                 >

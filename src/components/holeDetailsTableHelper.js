@@ -1,6 +1,4 @@
-// This file centralizes all data definitions and styling objects for the HoleDetailsForm component,
-// making the main component cleaner and more focused on its logic.
-import theme from '../theme';
+import theme from "../theme";
 
 // statDefinitions: Defines the structure and properties of each golf statistic.
 // This data is used to dynamically render the rows and form inputs in the scorecard tables.
@@ -12,6 +10,7 @@ export const statDefinitions = {
       type: "text",
       inputMode: "numeric",
       pattern: "[2-7]",
+      patternDescription: "Valid range: 2-7",
       tooltip: "The standard number of strokes for a given hole.",
     },
     {
@@ -20,6 +19,7 @@ export const statDefinitions = {
       type: "text",
       inputMode: "numeric",
       pattern: "([1-9][0-9]{0,2})",
+      patternDescription: "Valid range: 1-999",
       tooltip:
         "The total distance of the hole in yards or meters. Yards and meters are configured in section 1 Course Details.",
     },
@@ -29,25 +29,36 @@ export const statDefinitions = {
       type: "text",
       inputMode: "numeric",
       pattern: "([1-9]|1[0-9]|20)",
+      patternDescription: "Valid range: 1-20",
       tooltip: "The number of strokes taken on the hole.",
+    },
+    {
+      label: "Penalties",
+      name: "penalty_shots",
+      type: "text",
+      inputMode: "numeric",
+      pattern: "(0|[1-20])",
+      patternDescription: "Valid range: 0-20",
+      tooltip: "The number of penalty shots taken on the hole.",
     },
   ],
   longGame: [
     {
-      label: "S.Z. Reg",
+      label: "SZIR",
       name: "scoring_zone_in_regulation",
       type: "switch",
+      isRelevantForRed: true,
       tooltip:
-        'Did the player hit the green or within a designated "scoring zone" in regulation? Tap the tick for yes, cross for no.',
+        "Scoring Zone in regulation. For a Par 4: finished within X yards/meters in 2 shots. For a Par 5: in 3 shots. The specific distance (X) is set in the course settings.",
     },
   ],
   shortGame: [
     {
-      label: "Hole Out < 3 Shots S.Z.",
+      label: "SZ Par",
       name: "holeout_within_3_shots_scoring_zone",
       type: "switch",
-      tooltip:
-        "Did the player hole out within 3 shots while inside the scoring zone?",
+      isRelevantForRed: true,
+      tooltip: "Holed out within 3 shots from the Scoring Zone.",
     },
     {
       label: "Putts",
@@ -55,22 +66,24 @@ export const statDefinitions = {
       type: "text",
       inputMode: "numeric",
       pattern: "(0|[1-9]|1[0-9]|20)",
+      patternDescription: "Valid range: 0-20",
       tooltip: "The total number of putts on the green.",
     },
     {
-      label: "Putts < 4ft",
+      label: "4ft Putts",
       name: "putts_within4ft",
       type: "text",
       inputMode: "numeric",
       pattern: "(0|[1-9]|1[0-9]|20)",
+      patternDescription: "Valid range: 0-20",
       tooltip: "The number of putts made from within 4 feet of the hole.",
     },
     {
-      label: "Hole Out > 4ft",
+      label: "Bonus",
       name: "holeout_from_outside_4ft",
       type: "checkbox",
       tooltip:
-        "Did the player successfully hole out from a distance greater than 4 feet?",
+        "Holed out from a distance greater than 4 feet. A great result that involves both skill and a bit of luck.",
     },
   ],
 };
@@ -162,35 +175,35 @@ export const gameTypeHeaderStyles = {
 };
 // Styles for the faint vertical lines between cells.
 export const cellDividerStyles = {
-  borderRight: '1px solid rgba(0, 0, 0, 0.12)',
+  borderRight: "1px solid rgba(0, 0, 0, 0.12)",
 };
 
 // Styles for the switch component
 export const switchStyles = {
-  '& .MuiSwitch-switchBase.Mui-checked': {
+  "& .MuiSwitch-switchBase.Mui-checked": {
     color: theme.palette.custom.pastelGreen,
   },
-  '& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track': {
+  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
     backgroundColor: theme.palette.custom.pastelGreen,
   },
 };
 
 // Styles for the red switch component when a relevant stat is not checked.
 export const redSwitchStyles = {
-  '& .MuiSwitch-track': {
-    backgroundColor: '#ffb3ba !important',
-    opacity: '1 !important',
+  "& .MuiSwitch-track": {
+    backgroundColor: "#ffb3ba !important",
+    opacity: "1 !important",
   },
-  '& .MuiSwitch-thumb': {
-    backgroundColor: 'rgba(255, 255, 255, 0.8) !important',
+  "& .MuiSwitch-thumb": {
+    backgroundColor: "rgba(255, 255, 255, 0.8) !important",
   },
 };
 
 export const invalidInputPulseStyles = {
-  animation: 'pulse 0.5s ease-in-out',
-  '@keyframes pulse': {
-    '0%': { boxShadow: '0 0 0 0 rgba(255, 0, 0, 0.7)' },
-    '70%': { boxShadow: '0 0 0 10px rgba(255, 0, 0, 0)' },
-    '100%': { boxShadow: '0 0 0 0 rgba(255, 0, 0, 0)' },
+  animation: "pulse 0.5s ease-in-out",
+  "@keyframes pulse": {
+    "0%": { boxShadow: "0 0 0 0 rgba(255, 0, 0, 0.7)" },
+    "70%": { boxShadow: "0 0 0 10px rgba(255, 0, 0, 0)" },
+    "100%": { boxShadow: "0 0 0 0 rgba(255, 0, 0, 0)" },
   },
 };
