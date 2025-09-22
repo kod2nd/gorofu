@@ -39,7 +39,7 @@ const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, active
           <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1, ml: 1 }}>
             <SportsGolfIcon sx={{ fontSize: 40, color: 'white', mr: 1 }} />
             <Typography variant="h5" fontWeight="bold">
-              GolfStat
+              Gorufu
             </Typography>
           </Box>
         )}
