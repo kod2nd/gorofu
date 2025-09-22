@@ -37,8 +37,8 @@ const RoundForm = ({ user, closeForm }) => {
   const [courseDetails, setCourseDetails] = useState({
     course_name: '',
     tee_box: '',
-    yards_or_meters_unit: 'yards',
-    scoring_zone_level: '',
+    yards_or_meters_unit: 'meters',
+    scoring_zone_level: '100m - Novice',
     round_date: new Date().toISOString().split('T')[0],
   });
   const [holes, setHoles] = useState(

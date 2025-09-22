@@ -1,23 +1,29 @@
-import { Typography, Paper, Box } from "@mui/material";
+import { Typography, Paper, Box, Grid } from "@mui/material";
 
-const StatItem = ({ label, value, percentage }) => (
-  <Box sx={{ mb: 2, p: 2, borderLeft: "3px solid #1976d2" }}>
-    <Typography variant="body1" color="text.secondary" sx={{ mb: 0.5 }}>
+const StatCard = ({ label, value, percentage, tooltip }) => (
+  <Box sx={{ 
+    p: 2, 
+    height: '100%',
+    border: '1px solid #e0e0e0', 
+    borderRadius: 2,
+    backgroundColor: 'background.paper',
+    transition: 'all 0.2s',
+    '&:hover': {
+      boxShadow: 1,
+      borderColor: 'primary.light',
+    }
+  }}>
+    <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
       {label}
     </Typography>
-    <Typography variant="h5" sx={{ fontWeight: "bold" }}>
-      {value === 0 || value === "0.0" || value === "NaN" ? "-" : value}
-      {percentage !== null && !isNaN(percentage) && (
-        <Typography
-          component="span"
-          variant="body1"
-          color="text.secondary"
-          sx={{ ml: 1 }}
-        >
-          ({percentage.toFixed(0)}%)
-        </Typography>
-      )}
+    <Typography variant="h6" sx={{ fontWeight: "bold", mb: 0.5 }}>
+      {value === 0 || value === "0.0" || value === "NaN" || value === null ? "-" : value}
     </Typography>
+    {percentage !== null && !isNaN(percentage) && percentage > 0 && (
+      <Typography variant="caption" color="text.secondary">
+        {percentage.toFixed(0)}%
+      </Typography>
+    )}
   </Box>
 );
 
@@ -34,71 +40,88 @@ const RoundInsights = ({ insightsData }) => {
     totalHoleoutWithin3Shots,
   } = insightsData;
 
-  const avgPuttsPerHole =
-    totalHolesPlayed > 0 ? (totalPutts / totalHolesPlayed).toFixed(1) : 0;
-  const avgPenaltiesPerHole = 
-    totalHolesPlayed > 0 ? (totalPenalties / totalHolesPlayed).toFixed(1) : 0;
-  const SZIRPercentage =
-    totalHolesPlayed > 0 ? (totalSZIR / totalHolesPlayed) * 100 : null;
-  const holeoutFromOutside4ftPercentage =
-    totalHolesPlayed > 0
-      ? (totalHoleoutFromOutside4ft / totalHolesPlayed) * 100
-      : null;
-  const holeoutWithin3ShotsPercentage =
-    totalHolesPlayed > 0
-      ? (totalHoleoutWithin3Shots / totalHolesPlayed) * 100
-      : null;
+  const avgPuttsPerHole = totalHolesPlayed > 0 ? (totalPutts / totalHolesPlayed).toFixed(1) : 0;
+  const avgPenaltiesPerHole = totalHolesPlayed > 0 ? (totalPenalties / totalHolesPlayed).toFixed(1) : 0;
+  const SZIRPercentage = totalHolesPlayed > 0 ? (totalSZIR / totalHolesPlayed) * 100 : null;
+  const holeoutFromOutside4ftPercentage = totalHolesPlayed > 0 ? (totalHoleoutFromOutside4ft / totalHolesPlayed) * 100 : null;
+  const holeoutWithin3ShotsPercentage = totalHolesPlayed > 0 ? (totalHoleoutWithin3Shots / totalHolesPlayed) * 100 : null;
 
   return (
-    <Paper elevation={2} style={{ padding: "16px", marginBottom: "24px" }}>
-      <Typography variant="h6" gutterBottom>
+    <Paper elevation={2} sx={{ padding: 3, marginBottom: 3 }}>
+      <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
         3. Round Insights
       </Typography>
-      <Box sx={{ p: 2, border: "1px solid #e0e0e0", borderRadius: "4px" }}>
-        <Typography variant="h6" gutterBottom sx={{ mb: 2 }}>
-          Round Report Card
+      
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 2, color: 'primary.main' }}>
+          📊 Traditional Stats
         </Typography>
-        <Box>
-          <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-            Traditional Stats
-          </Typography>
-          <StatItem label="Holes Played" value={totalHolesPlayed} />
-          <StatItem label="Total Strokes" value={totalScore} />
-          <StatItem label="Total Penalties" value={totalPenalties} />
-          <StatItem label="Avg Penalties per Hole" value={avgPenaltiesPerHole} />
-        </Box>
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-            Long Game
-          </Typography>
-          <StatItem
-            label="Scoring Zone in Regulation"
-            value={totalSZIR}
-            percentage={SZIRPercentage}
-          />
-        </Box>
-        <Box sx={{ mt: 3 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 1 }}>
-            Short Game
-          </Typography>
-          <StatItem
-            label="Holeouts within 3 Shots of S.Z."
-            value={totalHoleoutWithin3Shots}
-            percentage={holeoutWithin3ShotsPercentage}
-          />
-          <StatItem label="Total Putts on Green" value={totalPutts} />
-          <StatItem label="Average Putts per Hole" value={avgPuttsPerHole} />
-          <StatItem label="Putts within 4 ft" value={totalPuttsWithin4ft} />
-          <StatItem
-            label="Holes with multiple putts inside 4 ft"
-            value={holesWithMoreThanOnePuttWithin4ft}
-          />
-          <StatItem
-            label="Holeouts outside 4 ft (The Luck Stat)"
-            value={totalHoleoutFromOutside4ft}
-            percentage={holeoutFromOutside4ftPercentage}
-          />
-        </Box>
+        <Grid container spacing={2}>
+          <Grid item xs={6} sm={3}>
+            <StatCard label="Holes Played" value={totalHolesPlayed} />
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <StatCard label="Total Strokes" value={totalScore} />
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <StatCard label="Total Penalties" value={totalPenalties} />
+          </Grid>
+          <Grid item xs={6} sm={3}>
+            <StatCard label="Avg Penalties/Hole" value={avgPenaltiesPerHole} />
+          </Grid>
+        </Grid>
+      </Box>
+
+      <Box sx={{ mb: 4 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 2, color: 'primary.main' }}>
+          ⛳ Long Game
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={12} sm={6}>
+            <StatCard 
+              label="Scoring Zone in Regulation" 
+              value={totalSZIR} 
+              percentage={SZIRPercentage} 
+            />
+          </Grid>
+        </Grid>
+      </Box>
+
+      <Box sx={{ mb: 2 }}>
+        <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 2, color: 'primary.main' }}>
+          🏌️ Short Game
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid item xs={6} sm={4}>
+            <StatCard label="Total Putts" value={totalPutts} />
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <StatCard label="Avg Putts/Hole" value={avgPuttsPerHole} />
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <StatCard label="Putts within 4ft" value={totalPuttsWithin4ft} />
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <StatCard 
+              label="Holeouts within 3 Shots" 
+              value={totalHoleoutWithin3Shots} 
+              percentage={holeoutWithin3ShotsPercentage} 
+            />
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <StatCard 
+              label="Multiple Putts inside 4ft" 
+              value={holesWithMoreThanOnePuttWithin4ft} 
+            />
+          </Grid>
+          <Grid item xs={6} sm={4}>
+            <StatCard 
+              label="Holeouts outside 4ft (Luck)" 
+              value={totalHoleoutFromOutside4ft} 
+              percentage={holeoutFromOutside4ftPercentage} 
+            />
+          </Grid>
+        </Grid>
       </Box>
     </Paper>
   );
