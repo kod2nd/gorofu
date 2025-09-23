@@ -90,7 +90,7 @@ export const statDefinitions = {
 
 // tableStyles: Contains a unified color palette and sizing for the scorecard tables.
 export const tableStyles = {
-  headerBg: "rgba(38, 70, 83, 1)",
+  headerBg: "rgba(73, 80, 87, 1)",
   headerColor: "rgba(255, 255, 255, 1)",
   statLabelBg: "rgba(253, 251, 231, 1)",
   statLabelHoverBg: "rgba(230, 228, 217, 1)",

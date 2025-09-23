@@ -1,7 +1,6 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect } from 'react';
 import {
   TextField,
-  FormControlLabel,
   Checkbox,
   Typography,
   Table,
@@ -14,9 +13,11 @@ import {
   Box,
   Tooltip,
   Switch,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
 } from "@mui/material";
-import CheckIcon from "@mui/icons-material/Check";
-import ClearIcon from "@mui/icons-material/Clear";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
   statDefinitions,
   tableStyles,
@@ -157,6 +158,7 @@ const StatRow = ({
                     size="small"
                     type={stat.type}
                     inputMode={stat.inputMode}
+                    autoComplete='off'
                     pattern={stat.pattern}
                     name={stat.name}
                     value={hole[stat.name]}
@@ -234,20 +236,10 @@ const HoleTable = ({ holes, startIndex, handleHoleChange }) => {
 
   return (
     <TableContainer
-      component={Paper}
-      style={{ overflowX: "auto", marginBottom: "16px" }}
+      // component={Paper} and styles are removed as AccordionDetails will handle scrolling and spacing
     >
       <Table size="small">
         <TableHead>
-          <TableRow sx={gameTypeHeaderStyles}>
-            <TableCell colSpan={11}>
-              <Typography variant="caption" sx={boldTextStyles}>
-                {startIndex === 0
-                  ? "Front 9 - Score Card"
-                  : "Back 9 - Score Card"}
-              </Typography>
-            </TableCell>
-          </TableRow>
           <TableRow>
             <TableCell
               sx={{
@@ -320,26 +312,70 @@ const HoleTable = ({ holes, startIndex, handleHoleChange }) => {
 };
 
 const HoleDetailsForm = ({ holes, handleHoleChange }) => {
-  const front9Holes = holes.slice(0, 9);
-  const back9Holes = holes.slice(9, 18);
+  const [expanded, setExpanded] = useState(["panel0"]); // Use array to manage multiple accordions
+
+  const handleAccordionChange = (panel) => (event, isExpanded) => {
+    setExpanded((currentExpanded) => {
+      if (isExpanded) {
+        return [...currentExpanded, panel]; // Add panel to the array
+      } else {
+        return currentExpanded.filter((p) => p !== panel); // Remove panel from the array
+      }
+    });
+  };
+
+  const tablesData = [
+    { holes: holes.slice(0, 9), startIndex: 0 },
+    { holes: holes.slice(9, 18), startIndex: 9 },
+  ];
 
   return (
-    <Paper elevation={2} style={{ padding: "16px", marginBottom: "24px" }}>
+    <Box sx={{ mb: 3 }}>
       <Typography variant="h6" gutterBottom>
         2. Hole-by-Hole Details
       </Typography>
-
-      <HoleTable
-        holes={front9Holes}
-        startIndex={0}
-        handleHoleChange={handleHoleChange}
-      />
-      <HoleTable
-        holes={back9Holes}
-        startIndex={9}
-        handleHoleChange={handleHoleChange}
-      />
-    </Paper>
+      {tablesData.map(({ holes: tableHoles, startIndex }, index) => (
+        <Accordion
+          key={startIndex}
+          elevation={3}
+          disableGutters
+          expanded={expanded.includes(`panel${index}`)}
+          onChange={handleAccordionChange(`panel${index}`)}
+          sx={{
+            '&:not(:last-child)': {
+              mb: 2,
+            },
+          }}
+        >
+          <AccordionSummary
+            expandIcon={<ExpandMoreIcon />}
+            aria-controls={`panel${index}bh-content`}
+            id={`panel${index}bh-header`}
+            sx={{
+              backgroundColor: 'grey.300',
+              color: 'text.primary',
+              minHeight: { xs: 48, sm: 48 },
+              '&.Mui-expanded': { minHeight: { xs: 48, sm: 48 } },
+              transition: 'filter 0.2s ease-in-out',
+              '&:hover': {
+                filter: 'brightness(0.95)',
+              },
+              '&.Mui-focused': {
+                outline: 'none',
+                boxShadow: 'none',
+              },
+            }}
+          >
+            <Typography sx={{ width: '33%', flexShrink: 0, fontWeight: 'bold' }}>
+              {startIndex === 0 ? "Front 9 - Score Card" : "Back 9 - Score Card"}
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails sx={{ p: 0, overflowX: 'auto' }}>
+            <HoleTable holes={tableHoles} startIndex={startIndex} handleHoleChange={handleHoleChange} />
+          </AccordionDetails>
+        </Accordion>
+      ))}
+    </Box>
   );
 };
 
