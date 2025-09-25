@@ -45,11 +45,21 @@ export const courseService = {
   },
 
   // Get course with tee box data
-  async getCourseWithTeeBoxes(courseId, teeBox) {
+  async getCourseWithTeeBoxes(roundId, userEmail) {
+    // First, get the round to find out the course_id and tee_box
+    const { data: round, error: roundError } = await supabase
+      .from('rounds')
+      .select('course_id, tee_box')
+      .eq('id', roundId)
+      .eq('user_email', userEmail)
+      .single();
+
+    if (roundError) throw roundError;
+
     const { data: course, error: courseError } = await supabase
       .from('courses')
       .select('*')
-      .eq('id', courseId)
+      .eq('id', round.course_id)
       .single();
     
     if (courseError) throw courseError;
@@ -57,8 +67,8 @@ export const courseService = {
     const { data: teeBoxData, error: teeBoxError } = await supabase
       .from('course_tee_boxes')
       .select('*')
-      .eq('course_id', courseId)
-      .eq('tee_box', teeBox)
+      .eq('course_id', round.course_id)
+      .eq('tee_box', round.tee_box)
       .order('hole_number');
     
     if (teeBoxError) throw teeBoxError;
@@ -67,6 +77,21 @@ export const courseService = {
       ...course,
       holes: teeBoxData
     };
+  },
+
+  // Get only the tee box hole data for a course
+  async getTeeBoxData(courseId, teeBox) {
+    if (!courseId || !teeBox) return [];
+
+    const { data, error } = await supabase
+      .from('course_tee_boxes')
+      .select('hole_number, par, distance')
+      .eq('course_id', courseId)
+      .eq('tee_box', teeBox)
+      .order('hole_number');
+
+    if (error) throw error;
+    return data;
   },
 
   // Get available tee boxes for a course
@@ -89,32 +114,19 @@ export const courseService = {
       course_id: courseId,
       tee_box: teeBox,
       hole_number: hole.hole_number,
-      par: hole.par,
-      distance: hole.distance,
+      par: hole.par === '' ? null : parseInt(hole.par, 10),
+      distance: hole.distance === '' ? null : parseInt(hole.distance, 10),
       yards_or_meters_unit: yardsOrMeters,
       last_updated_by: userEmail
     }));
 
     const { data, error } = await supabase
       .from('course_tee_boxes')
-      .insert(teeBoxInserts)
+      .upsert(teeBoxInserts, { onConflict: 'course_id, tee_box, hole_number' })
       .select();
     
     if (error) throw error;
     return data;
-  },
-
-  // Check if course and tee box combination exists
-  async courseAndTeeBoxExists(courseId, teeBox) {
-    const { data, error } = await supabase
-      .from('course_tee_boxes')
-      .select('hole_number')
-      .eq('course_id', courseId)
-      .eq('tee_box', teeBox)
-      .limit(1);
-    
-    if (error) throw error;
-    return data.length > 0;
   },
 
   // Create change request for course data

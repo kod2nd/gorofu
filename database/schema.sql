@@ -120,6 +120,8 @@ CREATE TABLE round_holes (
   round_id UUID NOT NULL REFERENCES rounds(id) ON DELETE CASCADE,
   hole_number INTEGER NOT NULL CHECK (hole_number >= 1 AND hole_number <= 18),
   hole_score INTEGER CHECK (hole_score > 0),
+  par INTEGER CHECK (par >= 2 AND par <= 7),
+  distance INTEGER CHECK (distance > 0),
   putts INTEGER CHECK (putts >= 0),
   putts_within4ft INTEGER DEFAULT 0 CHECK (putts_within4ft >= 0),
   penalty_shots INTEGER DEFAULT 0 CHECK (penalty_shots >= 0),
@@ -151,6 +153,99 @@ BEGIN
   RETURN (SELECT role FROM user_profiles WHERE user_id = auth.uid());
 END;
 $$;
+
+-- Function to calculate the current SZIR streak for a user
+CREATE OR REPLACE FUNCTION calculate_user_szir_streak(user_email_param TEXT)
+RETURNS INTEGER
+LANGUAGE plpgsql
+AS $$
+DECLARE
+    streak_count INTEGER := 0;
+    hole_record RECORD;
+BEGIN
+    FOR hole_record IN
+        SELECT rh.scoring_zone_in_regulation
+        FROM round_holes rh
+        JOIN rounds r ON rh.round_id = r.id
+        WHERE r.user_email = user_email_param
+        ORDER BY r.round_date DESC, rh.hole_number DESC
+    LOOP
+        IF hole_record.scoring_zone_in_regulation THEN
+            streak_count := streak_count + 1;
+        ELSE
+            -- The streak is broken, so we can stop counting.
+            EXIT;
+        END IF;
+    END LOOP;
+
+    RETURN streak_count;
+END;
+$$;
+
+-- Drop the function first to allow changing the return signature
+DROP FUNCTION IF EXISTS public.get_user_cumulative_stats(TEXT);
+
+-- Function to get cumulative (all-time) stats for a user
+CREATE OR REPLACE FUNCTION get_user_cumulative_stats(user_email_param TEXT)
+RETURNS TABLE(total_rounds_played BIGINT, total_holes_played BIGINT, avg_score NUMERIC, avg_putts NUMERIC, total_szir BIGINT)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    SELECT
+        COUNT(DISTINCT r.id)::BIGINT as total_rounds_played,
+        COALESCE(SUM(CASE WHEN rh.hole_score IS NOT NULL AND rh.putts IS NOT NULL THEN 1 ELSE 0 END), 0)::BIGINT as total_holes_played,
+        COALESCE(AVG(rh.hole_score), 0)::NUMERIC as avg_score,
+        COALESCE(AVG(rh.putts), 0)::NUMERIC as avg_putts,
+        COALESCE(SUM(CASE WHEN rh.scoring_zone_in_regulation THEN 1 ELSE 0 END), 0)::BIGINT as total_szir
+    FROM
+        rounds r
+    LEFT JOIN
+        round_holes rh ON r.id = rh.round_id
+    WHERE
+        r.user_email = user_email_param;
+END;
+$$;
+
+-- Drop the function first to allow changing the return signature
+DROP FUNCTION IF EXISTS public.get_recent_rounds_stats(TEXT, INT);
+
+-- Function to get stats for a specific number of recent rounds
+CREATE OR REPLACE FUNCTION get_recent_rounds_stats(user_email_param TEXT, round_limit INT)
+RETURNS TABLE(total_holes_played BIGINT, avg_par3_score NUMERIC, avg_par4_score NUMERIC, avg_par5_score NUMERIC, avg_putts_per_hole NUMERIC, szir_percentage NUMERIC, multi_putt_4ft_holes BIGINT, holeout_within_3_shots_count BIGINT, holeout_from_outside_4ft_count BIGINT)
+LANGUAGE plpgsql
+AS $$
+BEGIN
+    RETURN QUERY
+    WITH recent_rounds AS (
+        SELECT id FROM rounds WHERE user_email = user_email_param ORDER BY round_date DESC, created_at DESC LIMIT round_limit
+    )
+    SELECT
+        COUNT(rh.id)::BIGINT,
+        (AVG(rh.hole_score) FILTER (WHERE ctb.par = 3))::NUMERIC,
+        (AVG(rh.hole_score) FILTER (WHERE ctb.par = 4))::NUMERIC,
+        (AVG(rh.hole_score) FILTER (WHERE ctb.par = 5))::NUMERIC,
+        COALESCE(AVG(rh.putts), 0)::NUMERIC,
+        (CASE WHEN COUNT(rh.id) > 0 THEN (SUM(CASE WHEN rh.scoring_zone_in_regulation THEN 1 ELSE 0 END)::NUMERIC / COUNT(rh.id) * 100) ELSE 0 END)::NUMERIC,
+        COALESCE(SUM(CASE WHEN rh.putts_within4ft > 1 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN rh.holeout_within_3_shots_scoring_zone THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN rh.holeout_from_outside_4ft THEN 1 ELSE 0 END), 0)::BIGINT
+    FROM
+        rounds r
+    LEFT JOIN
+        round_holes rh ON r.id = rh.round_id
+    LEFT JOIN
+        course_tee_boxes ctb ON r.course_id = ctb.course_id AND r.tee_box = ctb.tee_box AND rh.hole_number = ctb.hole_number
+    WHERE
+        r.id IN (SELECT id FROM recent_rounds);
+END;
+$$;
+
+-- Grant execute permissions to the authenticated role for the new functions
+-- This allows the functions to be called from the client-side library
+GRANT EXECUTE ON FUNCTION public.calculate_user_szir_streak(TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_user_cumulative_stats(TEXT) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_recent_rounds_stats(TEXT, INT) TO authenticated;
 
 
 -- Row Level Security (RLS) Policies

@@ -20,11 +20,11 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
-import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
+import { Visibility as VisibilityIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { roundService } from '../services/roundService';
 import { elevatedCardStyles } from '../styles/commonStyles';
 
-const RoundsHistoryPage = ({ user, onEditRound, onAddRound }) => {
+const RoundsHistoryPage = ({ user, onViewRound, onAddRound }) => {
   const [rounds, setRounds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -40,7 +40,8 @@ const RoundsHistoryPage = ({ user, onEditRound, onAddRound }) => {
     try {
       setLoading(true);
       setError('');
-      const roundsData = await roundService.getUserRounds(user.email);
+      // Fetch all rounds for the history page
+      const roundsData = await roundService.getUserRounds(user.email, 999);
       setRounds(roundsData);
     } catch (err) {
       setError('Failed to load rounds history. ' + err.message);
@@ -110,9 +111,9 @@ const RoundsHistoryPage = ({ user, onEditRound, onAddRound }) => {
                   <TableCell align="right">{round.total_score}</TableCell>
                   <TableCell align="right">{round.total_putts}</TableCell>
                   <TableCell align="center">
-                    <Tooltip title="Edit Round">
-                      <IconButton onClick={() => onEditRound(round.id)} size="small">
-                        <EditIcon />
+                    <Tooltip title="View Details">
+                      <IconButton onClick={() => onViewRound(round.id)} size="small">
+                        <VisibilityIcon />
                       </IconButton>
                     </Tooltip>
                     <Tooltip title="Delete Round">

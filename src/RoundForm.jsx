@@ -22,8 +22,8 @@ import { elevatedCardStyles } from './styles/commonStyles';
 const initialHoleState = {
   played: true,
   par: '',
-  yards_or_meters: '',
   within3shots: false,
+  distance: '',
   putts: '',
   putts_within4ft: '',
   penalty_shots: '',
@@ -69,6 +69,7 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
         setLoading(true);
         try {
           const roundData = await roundService.getRoundWithHoles(roundIdToEdit, user.email);
+
           setCourseDetails({
             course_id: roundData.course_id,
             course_name: roundData.courses.name,
@@ -82,8 +83,14 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
 
           // Create a full 18-hole array and fill it with data
           const newHoles = Array.from({ length: 18 }, (_, i) => {
-            const existingHole = roundData.holes.find(h => h.hole_number === i + 1);
-            return existingHole ? { ...existingHole } : { ...initialHoleState, hole_number: i + 1 };
+            const holeNumber = i + 1;
+            const userPlayedHole = roundData.holes.find(h => h.hole_number === holeNumber) || {};
+
+            return {
+              ...initialHoleState,
+              ...userPlayedHole,
+              distance: userPlayedHole.distance || '',
+            };
           });
           setHoles(newHoles);
 
@@ -95,7 +102,7 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
       };
       fetchRoundData();
     }
-  }, [roundIdToEdit]);
+  }, [roundIdToEdit, user.email]); // Add user.email dependency
 
   useEffect(() => {
     // Automatically toggle the 'played' status of holes based on the round type.
@@ -120,6 +127,36 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
     );
   }, [courseDetails.round_type, roundIdToEdit]);
 
+  useEffect(() => {
+    const fetchTeeBoxData = async () => {
+      // Only run for new rounds when both course and tee box are selected
+      if (roundIdToEdit || !courseDetails.course_id || !courseDetails.tee_box) {
+        return;
+      }
+
+      try {
+        const teeBoxHoles = await courseService.getTeeBoxData(courseDetails.course_id, courseDetails.tee_box);
+        
+        if (teeBoxHoles && teeBoxHoles.length > 0) {
+          setHoles(currentHoles => 
+            currentHoles.map((hole) => {
+              const matchingTeeBoxHole = teeBoxHoles.find(tbh => tbh.hole_number === hole.hole_number);
+              return matchingTeeBoxHole ? {
+                ...hole,
+                par: matchingTeeBoxHole.par || '',
+                distance: matchingTeeBoxHole.distance || '',
+              } : hole;
+            })
+          );
+        }
+      } catch (error) {
+        console.error("Failed to fetch tee box data for auto-population:", error);
+      }
+    };
+
+    fetchTeeBoxData();
+  }, [courseDetails.course_id, courseDetails.tee_box, roundIdToEdit]);
+
   const handleCourseChange = (e) => {
     const { name, value } = e.target;
     setCourseDetails((prevDetails) => ({
@@ -142,6 +179,32 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
       [name]: type === 'checkbox' ? checked : value,
     };
     setHoles(updatedHoles);
+  };
+
+  // Calculate insights in the parent component
+  const totalPutts = useMemo(() => holes.reduce((sum, hole) => sum + (Number(hole.putts) || 0), 0), [holes]);
+  const totalScore = useMemo(() => holes.reduce((sum, hole) => sum + (Number(hole.hole_score) || 0), 0), [holes]);
+  const totalPenalties = useMemo(() => holes.reduce((sum, hole) => sum + (Number(hole.penalty_shots) || 0), 0), [holes]);
+  const totalSZIR = useMemo(() => holes.filter(hole => hole.scoring_zone_in_regulation).length, [holes]);
+  const totalHoleoutFromOutside4ft = useMemo(() => holes.filter(hole => hole.holeout_from_outside_4ft).length, [holes]);
+  const totalPuttsWithin4ft = useMemo(() => holes.reduce((sum, hole) => sum + (Number(hole.putts_within4ft) || 0), 0), [holes]);
+  const totalHoleoutWithin3Shots = useMemo(() => holes.filter(hole => hole.played && hole.holeout_within_3_shots_scoring_zone).length, [holes]);
+  // Renamed for clarity: "Scoring Holes" are holes with enough data for stats.
+  const totalScoringHoles = useMemo(() => 
+    holes.filter(h => h.hole_score && (h.putts !== '' || h.holeout_from_outside_4ft)).length, 
+  [holes]);
+  const holesWithMoreThanOnePuttWithin4ft = useMemo(() => holes.filter(hole => Number(hole.putts_within4ft) > 1).length, [holes]);
+
+  const insightsData = {
+    totalScore,
+    totalPenalties,
+    totalHolesPlayed: totalScoringHoles, // Pass the new calculation to insights
+    totalSZIR,
+    totalPutts,
+    totalPuttsWithin4ft,
+    holesWithMoreThanOnePuttWithin4ft,
+    totalHoleoutFromOutside4ft,
+    totalHoleoutWithin3Shots,
   };
 
   const handleSubmit = async (e) => {
@@ -168,6 +231,34 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
       }
     }
 
+    // Check if tee box data exists, if not, create it.
+    // This should only happen for new rounds, not when editing.
+    if (!roundIdToEdit) {
+      try {
+        // Map form's 'yards_or_meters' to 'distance' and filter for holes with data.
+        const teeBoxHolesData = holes
+          .filter(h => h.par || h.distance)
+          .map(h => ({
+            hole_number: h.hole_number,
+            par: h.par,
+            distance: h.distance,
+            // We only need the properties relevant to course_tee_boxes
+          }));
+
+        await courseService.createTeeBoxData(
+          finalCourseId,
+          courseDetails.tee_box,
+          teeBoxHolesData,
+          user.email,
+          courseDetails.yards_or_meters_unit
+        );
+      } catch (error) {
+        setSnackbar({ open: true, message: `Error saving tee box data: ${error.message}`, severity: 'error' });
+        setLoading(false);
+        return;
+      }
+    }
+
     const roundData = {
       user_email: user.email,
       course_id: finalCourseId,
@@ -175,7 +266,7 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
       round_date: courseDetails.round_date,
       round_type: courseDetails.round_type,
       scoring_zone_level: courseDetails.scoring_zone_level,
-      total_holes_played: totalHolesPlayed,
+      total_holes_played: totalScoringHoles,
       total_score: totalScore,
       total_putts: totalPutts,
       total_penalties: totalPenalties,
@@ -213,29 +304,6 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
     setSnackbar({ ...snackbar, open: false });
   };
 
-  // Calculate insights in the parent component
-  const totalPutts = useMemo(() => holes.reduce((sum, hole) => sum + (Number(hole.putts) || 0), 0), [holes]);
-  const totalScore = useMemo(() => holes.reduce((sum, hole) => sum + (Number(hole.hole_score) || 0), 0), [holes]);
-  const totalPenalties = useMemo(() => holes.reduce((sum, hole) => sum + (Number(hole.penalty_shots) || 0), 0), [holes]);
-  const totalSZIR = useMemo(() => holes.filter(hole => hole.scoring_zone_in_regulation).length, [holes]);
-  const totalHoleoutFromOutside4ft = useMemo(() => holes.filter(hole => hole.holeout_from_outside_4ft).length, [holes]);
-  const totalPuttsWithin4ft = useMemo(() => holes.reduce((sum, hole) => sum + (Number(hole.putts_within4ft) || 0), 0), [holes]);
-  const totalHoleoutWithin3Shots = useMemo(() => holes.filter(hole => hole.played && hole.holeout_within_3_shots_scoring_zone).length, [holes]);
-  const totalHolesPlayed = useMemo(() => holes.filter(hole => hole.hole_score && hole.putts).length, [holes]);
-  const holesWithMoreThanOnePuttWithin4ft = useMemo(() => holes.filter(hole => Number(hole.putts_within4ft) > 1).length, [holes]);
-
-  const insightsData = {
-    totalScore,
-    totalPenalties,
-    totalHolesPlayed,
-    totalSZIR,
-    totalPutts,
-    totalPuttsWithin4ft,
-    holesWithMoreThanOnePuttWithin4ft,
-    totalHoleoutFromOutside4ft,
-    totalHoleoutWithin3Shots,
-  };
-
   return (
     <Container maxWidth="lg" sx={{ my: 4 }}>
       <Paper {...elevatedCardStyles}>
@@ -268,6 +336,7 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
             holes={holes} 
             handleHoleChange={handleHoleChange} 
             roundType={courseDetails.round_type}
+            isEditMode={!!roundIdToEdit}
           />
           
           <SectionHeader 

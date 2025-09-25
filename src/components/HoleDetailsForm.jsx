@@ -46,6 +46,7 @@ const StatRow = ({
   handleCellHover,
   openTooltip,
   handleTooltipClick,
+  isEditMode,
 }) => {
   const [invalidValue, setInvalidValue] = useState('');
   const [isTooltipOpen, setIsTooltipOpen] = useState(false);
@@ -167,7 +168,7 @@ const StatRow = ({
                     pattern={stat.pattern}
                     name={stat.name}
                     value={hole[stat.name]}
-                    disabled={isDNP}
+                    disabled={isDNP || (stat.name === 'par' || stat.name === 'yards_or_meters' ? isEditMode : false)}
                     onChange={(e) => {
                       const newValue = e.target.value;
                       const regex = new RegExp(`^${stat.pattern}$`);
@@ -214,7 +215,7 @@ const StatRow = ({
   );
 };
 
-const HoleTable = ({ holes, startIndex, handleHoleChange }) => {
+const HoleTable = ({ holes, startIndex, handleHoleChange, isEditMode }) => {
   const [focusedCell, setFocusedCell] = useState(null);
   const [hoveredCell, setHoveredCell] = useState(null);
   const [openTooltip, setOpenTooltip] = useState({
@@ -338,6 +339,7 @@ const HoleTable = ({ holes, startIndex, handleHoleChange }) => {
                   handleCellHover={handleCellHover}
                   openTooltip={openTooltip}
                   handleTooltipClick={handleTooltipClick}
+                  isEditMode={isEditMode}
                 />
               ))}
             </React.Fragment>
@@ -348,7 +350,7 @@ const HoleTable = ({ holes, startIndex, handleHoleChange }) => {
   );
 };
 
-const HoleDetailsForm = ({ holes, handleHoleChange, roundType = '18_holes' }) => {
+const HoleDetailsForm = ({ holes, handleHoleChange, roundType = '18_holes', isEditMode }) => {
   // Filter tables based on round type
   const getTablesData = () => {
     const allTables = [
@@ -428,7 +430,7 @@ const HoleDetailsForm = ({ holes, handleHoleChange, roundType = '18_holes' }) =>
             </Typography>
           </AccordionSummary>
           <AccordionDetails sx={{ p: 0, overflowX: 'auto' }}>
-            <HoleTable holes={tableHoles} startIndex={startIndex} handleHoleChange={handleHoleChange} />
+            <HoleTable holes={tableHoles} startIndex={startIndex} handleHoleChange={handleHoleChange} isEditMode={isEditMode} />
           </AccordionDetails>
         </Accordion>
       ))}

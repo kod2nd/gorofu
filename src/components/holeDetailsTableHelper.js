@@ -21,7 +21,7 @@ export const statDefinitions = {
     },
     {
       label: "Dist.",
-      name: "Distance",
+      name: "distance",
       type: "text",
       inputMode: "numeric",
       pattern: "([1-9][0-9]{0,2})",

@@ -21,6 +21,7 @@ import UserManagement from './components/UserManagement';
 import AdminRoute from './components/AdminRoute';
 import AccountPage from './components/AccountPage';
 import RoundsHistoryPage from './components/RoundsHistoryPage';
+import RoundDetailsPage from './components/RoundDetailsPage';
 import { userService } from './services/userService';
 
 const drawerWidth = 240;
@@ -33,6 +34,7 @@ function App() {
   const [userProfile, setUserProfile] = useState(null);
   const [profileLoading, setProfileLoading] = useState(true);
   const [editingRoundId, setEditingRoundId] = useState(null);
+  const [viewingRoundId, setViewingRoundId] = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -105,6 +107,11 @@ function App() {
     setActivePage('addRound'); // Navigate to the form for editing
   };
 
+  const handleViewRound = (roundId) => {
+    setViewingRoundId(roundId);
+    setActivePage('viewRound');
+  };
+
   const getPageTitle = (page) => {
     switch (page) {
       case 'dashboard':
@@ -117,6 +124,8 @@ function App() {
         return 'Rounds History';
       case 'userManagement':
         return 'User Management';
+      case 'viewRound':
+        return 'Round Details';
       default:
         return 'GolfStat';
     }
@@ -125,7 +134,7 @@ function App() {
   const renderContent = () => {
     switch (activePage) {
       case 'dashboard':
-        return <Dashboard user={session.user} />;
+        return <Dashboard user={session.user} onViewRound={handleViewRound} />;
       case 'addRound':
         return <RoundForm 
           user={session.user} 
@@ -147,8 +156,18 @@ function App() {
       case 'roundsHistory':
         return <RoundsHistoryPage 
           user={session.user}
-          onEditRound={handleEditRound} 
+          onViewRound={handleViewRound} 
           onAddRound={() => setActivePage('addRound')} 
+        />;
+      case 'viewRound':
+        return <RoundDetailsPage
+          roundId={viewingRoundId}
+          user={session.user}
+          onEdit={handleEditRound}
+          onBack={() => {
+            setViewingRoundId(null);
+            setActivePage('roundsHistory');
+          }}
         />;
       default:
         return <Dashboard user={session.user} />;
@@ -232,6 +251,7 @@ function App() {
             <Sidebar
               onNavClick={(page) => {
                 setEditingRoundId(null); // Clear any editing state when navigating
+                setViewingRoundId(null);
                 setActivePage(page);
               }}
               onSignOut={handleSignOut}

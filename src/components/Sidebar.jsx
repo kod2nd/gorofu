@@ -7,6 +7,7 @@ import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import LogoutIcon from '@mui/icons-material/Logout';
 import HistoryIcon from '@mui/icons-material/History';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import SportsGolfIcon from '@mui/icons-material/SportsGolf';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -19,6 +20,7 @@ const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, active
     { text: "Add Round", icon: <AddCircleIcon />, page: "addRound" },
     { text: "Rounds History", icon: <HistoryIcon />, page: "roundsHistory" },
     { text: "Account", icon: <AccountCircleIcon />, page: "account" },
+    { text: "View Round", icon: <VisibilityIcon />, page: "viewRound", hidden: true }, // Hidden from main menu
   ];
 
   // Add admin menu items for admin users
@@ -67,7 +69,7 @@ const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, active
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.5)', mb: 2 }} />
       <List sx={{ flexGrow: 1 }}>
         {menuItems.map((item) => (
-          <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
+          !item.hidden && <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
             <ListItemButton
               onClick={() => onNavClick(item.page)}
               sx={{

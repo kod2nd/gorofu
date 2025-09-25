@@ -42,7 +42,7 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
     const fetchCourses = async () => {
       try {
         const coursesData = await courseService.getCoursesByCountry(roundData.country);
-        setCourses(coursesData.map(c => c.name));
+        setCourses(coursesData); // Keep the whole course object
       } catch (error) {
         console.error("Failed to fetch courses:", error);
       }
@@ -77,7 +77,7 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
 
     // Suggest the creation of a new value
     const { inputValue } = params;
-    const isExisting = options.some((option) => inputValue === option);
+    const isExisting = options.some((option) => inputValue === option.name);
     if (inputValue !== '' && !isExisting) {
       filtered.push(`Add new course: "${inputValue}"`);
     }
@@ -87,14 +87,18 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
 
 
   const handleCourseSelect = (event, newValue) => {
-    if (newValue && newValue.startsWith('Add new course:')) {
+    if (typeof newValue === 'string' && newValue.startsWith('Add new course:')) {
       // Extract the course name from the "Add new..." string
       const newCourseName = newValue.substring(newValue.indexOf('"') + 1, newValue.lastIndexOf('"'));
       handleCourseChange({ target: { name: 'course_name', value: newCourseName } });
-    } else if (newValue === 'Add new course') {
-      setCourseDialogOpen(true);
+      handleCourseChange({ target: { name: 'course_id', value: null } }); // Clear ID for new course
+    } else if (newValue && newValue.inputValue) {
+      // Handle "Add new course" from free solo
+      handleCourseChange({ target: { name: 'course_name', value: newValue.inputValue } });
+      handleCourseChange({ target: { name: 'course_id', value: null } });
     } else {
-      handleCourseChange({ target: { name: 'course_name', value: newValue } });
+      handleCourseChange({ target: { name: 'course_name', value: newValue?.name || '' } });
+      handleCourseChange({ target: { name: 'course_id', value: newValue?.id || null } });
     }
   };
 
@@ -162,8 +166,8 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
               handleCourseChange({ target: { name: 'country', value: newValue ? newValue.label : '' } });
             }}
             disabled={isEditMode}
-            renderOption={(props, option) => (
-              <Box component="li" {...props}>
+            renderOption={({ key, ...props }, option) => (
+              <Box component="li" key={key} {...props}>
                 <img
                   loading="lazy"
                   width="20"
@@ -194,22 +198,23 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pl: 1 }}>
             {/* Course Name with Autocomplete */}
             <Autocomplete
+              value={courses.find(c => c.id === formData.course_id) || formData.course_name || null}
               options={courses}
-              value={formData.course_name || ''}
               onChange={handleCourseSelect}
+              getOptionLabel={(option) => option.name || option}
               filterOptions={handleFilterOptions}
               noOptionsText="No course found"
-              renderOption={(props, option) => {
-                if (option.startsWith('Add new course:')) {
+              renderOption={({ key, ...props }, option) => {
+                if (typeof option === 'string' && option.startsWith('Add new course:')) {
                   return (
-                    <li {...props} style={{ color: 'primary.main', fontWeight: 'bold' }}>
+                    <li key={key} {...props} style={{ color: 'primary.main', fontWeight: 'bold' }}>
                       <AddCircleOutlineIcon sx={{ mr: 1 }} />
                       {option}
                     </li>
                   );
                 }
                 return (
-                  <li {...props}>{option}</li>
+                  <li key={key} {...props}>{option.name || option}</li>
                 );
               }}
               renderInput={(params) => (

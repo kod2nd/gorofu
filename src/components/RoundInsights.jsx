@@ -41,6 +41,7 @@ const RoundInsights = ({ insightsData }) => {
   const avgPuttsPerHole = totalHolesPlayed > 0 ? (totalPutts / totalHolesPlayed).toFixed(1) : 0;
   const avgPenaltiesPerHole = totalHolesPlayed > 0 ? (totalPenalties / totalHolesPlayed).toFixed(1) : 0;
   const SZIRPercentage = totalHolesPlayed > 0 ? (totalSZIR / totalHolesPlayed) * 100 : null;
+  const multiPuttRatio = totalHolesPlayed > 0 ? (holesWithMoreThanOnePuttWithin4ft / totalHolesPlayed) * 100 : null;
   const holeoutFromOutside4ftPercentage = totalHolesPlayed > 0 ? (totalHoleoutFromOutside4ft / totalHolesPlayed) * 100 : null;
   const holeoutWithin3ShotsPercentage = totalHolesPlayed > 0 ? (totalHoleoutWithin3Shots / totalHolesPlayed) * 100 : null;
 
@@ -53,7 +54,7 @@ const RoundInsights = ({ insightsData }) => {
         </Typography>
         <Grid container spacing={2}>
           <Grid item xs={6} sm={3}>
-            <StatCard label="Holes Played" value={totalHolesPlayed} />
+            <StatCard label="Scoring Holes" value={totalHolesPlayed} />
           </Grid>
           <Grid item xs={6} sm={3}>
             <StatCard label="Total Strokes" value={totalScore} />
@@ -105,13 +106,14 @@ const RoundInsights = ({ insightsData }) => {
           </Grid>
           <Grid item xs={6} sm={4}>
             <StatCard 
-              label="Multiple Putts inside 4ft" 
+              label="Holes w/ >1 Putt <4ft" 
               value={holesWithMoreThanOnePuttWithin4ft} 
+              percentage={multiPuttRatio}
             />
           </Grid>
           <Grid item xs={6} sm={4}>
             <StatCard 
-              label="Holeouts outside 4ft (Luck)" 
+              label="Luck Stat (Holeout >4ft)" 
               value={totalHoleoutFromOutside4ft} 
               percentage={holeoutFromOutside4ftPercentage} 
             />
