@@ -330,10 +330,13 @@ const HoleDetailsForm = ({ holes, handleHoleChange }) => {
   ];
 
   return (
-    <Box sx={{ mb: 3 }}>
-      <Typography variant="h6" gutterBottom>
-        2. Hole-by-Hole Details
-      </Typography>
+    <Box sx={{         p: 3,
+        mb: 3,
+        width: '100%',
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'divider',
+        backgroundColor: 'background.paper',}}>
       {tablesData.map(({ holes: tableHoles, startIndex }, index) => (
         <Accordion
           key={startIndex}

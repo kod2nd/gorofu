@@ -15,6 +15,7 @@ import {
 import CourseDetailsForm from './components/CourseDetailsForm';
 import HoleDetailsForm from './components/HoleDetailsForm';
 import RoundInsights from './components/RoundInsights';
+import SectionHeader from './components/SectionHeader';
 
 const initialHoleState = {
   par: '',
@@ -134,8 +135,26 @@ const RoundForm = ({ user, closeForm }) => {
           Log your round, including course details and hole-by-hole stats.
         </Typography>
         <form onSubmit={handleSubmit}>
+          <SectionHeader 
+            title="Course Details" 
+            subtitle="Enter your round's course information"
+            step={1}
+            totalSteps={2}
+          />
           <CourseDetailsForm roundData={courseDetails} handleCourseChange={handleCourseChange} />
+          
+          <SectionHeader 
+            title="Round Details" 
+            subtitle="Log your round's hole by hole data"
+            step={2}
+            totalSteps={2}
+          />
           <HoleDetailsForm holes={holes} handleHoleChange={handleHoleChange} />
+          
+          <SectionHeader 
+            title="Round Insights" 
+            subtitle="View the insights from your round"
+          />
           <RoundInsights insightsData={insightsData} />
           
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>

@@ -47,10 +47,13 @@ const RoundInsights = ({ insightsData }) => {
   const holeoutWithin3ShotsPercentage = totalHolesPlayed > 0 ? (totalHoleoutWithin3Shots / totalHolesPlayed) * 100 : null;
 
   return (
-    <Paper elevation={2} sx={{ padding: 3, marginBottom: 3 }}>
-      <Typography variant="h6" gutterBottom sx={{ mb: 3 }}>
-        3. Round Insights
-      </Typography>
+    <Paper elevation={2} sx={{         p: 3,
+        mb: 3,
+        width: '100%',
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'divider',
+        backgroundColor: 'background.paper',}}>
       
       <Box sx={{ mb: 4 }}>
         <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 2, color: 'primary.main' }}>

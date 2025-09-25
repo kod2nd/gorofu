@@ -8,6 +8,8 @@ import {
   Typography,
   Paper,
   Box,
+  Avatar,
+  Divider,  
   Dialog,
   DialogTitle,
   DialogContent,
@@ -18,6 +20,7 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import Autocomplete from '@mui/material/Autocomplete';
+import SectionHeader from './SectionHeader';
 
 const CourseDetailsForm = ({ roundData = {}, handleCourseChange }) => {
   // State for dialogs and custom inputs
@@ -96,16 +99,17 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange }) => {
 
   return (
     <Paper
-      elevation={2}
+      elevation={0}
       sx={{
-        padding: '16px',
-        marginBottom: '24px',
+        p: 3,
+        mb: 3,
         width: '100%',
+        borderRadius: 3,
+        border: '1px solid',
+        borderColor: 'divider',
+        backgroundColor: 'background.paper',
       }}
     >
-      <Typography variant="h6" gutterBottom>
-        1. Course Details
-      </Typography>
       
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {/* Date Played Section */}
