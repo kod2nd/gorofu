@@ -54,6 +54,7 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange }) => {
     yards_or_meters_unit: 'yards',
     scoring_zone_level: '100m - Novice',
     round_date: new Date().toISOString().split('T')[0],
+    round_type: '18_holes',
   };
 
   // Merge provided data with defaults
@@ -170,6 +171,28 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange }) => {
               >
                 <MenuItem value="meters">Meters</MenuItem>
                 <MenuItem value="yards">Yards</MenuItem>
+              </Select>
+            </FormControl>
+          </Box>
+        </Box>
+
+        {/* Round Type Section */}
+        <Box>
+          <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
+            Round Type
+          </Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pl: 1 }}>
+            <FormControl fullWidth>
+              <InputLabel>Holes to Play</InputLabel>
+              <Select
+                name="round_type"
+                value={formData.round_type || '18_holes'}
+                label="Holes to Play"
+                onChange={handleCourseChange}
+              >
+                <MenuItem value="front_9">Front 9 Only</MenuItem>
+                <MenuItem value="back_9">Back 9 Only</MenuItem>
+                <MenuItem value="18_holes">18 Holes</MenuItem>
               </Select>
             </FormControl>
           </Box>

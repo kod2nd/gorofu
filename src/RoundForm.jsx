@@ -42,6 +42,7 @@ const RoundForm = ({ user, closeForm }) => {
     yards_or_meters_unit: 'meters',
     scoring_zone_level: '100m - Novice',
     round_date: new Date().toISOString().split('T')[0],
+    round_type: '18_holes',
   });
   const [holes, setHoles] = useState(
     Array.from({ length: 18 }, (_, i) => ({
@@ -150,7 +151,11 @@ const RoundForm = ({ user, closeForm }) => {
             step={2}
             totalSteps={2}
           />
-          <HoleDetailsForm holes={holes} handleHoleChange={handleHoleChange} />
+          <HoleDetailsForm 
+            holes={holes} 
+            handleHoleChange={handleHoleChange} 
+            roundType={courseDetails.round_type}
+          />
           
           <SectionHeader 
             title="Round Insights" 

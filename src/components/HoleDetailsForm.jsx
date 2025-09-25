@@ -312,8 +312,34 @@ const HoleTable = ({ holes, startIndex, handleHoleChange }) => {
   );
 };
 
-const HoleDetailsForm = ({ holes, handleHoleChange }) => {
-  const [expanded, setExpanded] = useState(["panel0"]); // Use array to manage multiple accordions
+const HoleDetailsForm = ({ holes, handleHoleChange, roundType = '18_holes' }) => {
+  // Filter tables based on round type
+  const getTablesData = () => {
+    const allTables = [
+      { holes: holes.slice(0, 9), startIndex: 0, title: "Front 9 - Score Card", panelId: "front9" },
+      { holes: holes.slice(9, 18), startIndex: 9, title: "Back 9 - Score Card", panelId: "back9" },
+    ];
+
+    switch (roundType) {
+      case 'front_9':
+        return [allTables[0]];
+      case 'back_9':
+        return [allTables[1]];
+      case '18_holes':
+      default:
+        return allTables;
+    }
+  };
+
+  const tablesData = getTablesData();
+
+  // Determine which panels should be expanded based on round type
+  const getInitialExpanded = () => {
+    const panelIds = tablesData.map(table => table.panelId);
+    return panelIds; // Expand all visible tables
+  };
+
+  const [expanded, setExpanded] = useState(getInitialExpanded());
 
   const handleAccordionChange = (panel) => (event, isExpanded) => {
     setExpanded((currentExpanded) => {
@@ -325,20 +351,20 @@ const HoleDetailsForm = ({ holes, handleHoleChange }) => {
     });
   };
 
-  const tablesData = [
-    { holes: holes.slice(0, 9), startIndex: 0 },
-    { holes: holes.slice(9, 18), startIndex: 9 },
-  ];
+  // Update expanded state when roundType changes
+  React.useEffect(() => {
+    setExpanded(getInitialExpanded());
+  }, [roundType]);
 
   return (
     <Box sx={cardStyles.sx}>
-      {tablesData.map(({ holes: tableHoles, startIndex }, index) => (
+      {tablesData.map(({ holes: tableHoles, startIndex, title, panelId }, index) => (
         <Accordion
           key={startIndex}
           elevation={3}
           disableGutters
-          expanded={expanded.includes(`panel${index}`)}
-          onChange={handleAccordionChange(`panel${index}`)}
+          expanded={expanded.includes(panelId)}
+          onChange={handleAccordionChange(panelId)}
           sx={{
             '&:not(:last-child)': {
               mb: 2,
@@ -362,7 +388,7 @@ const HoleDetailsForm = ({ holes, handleHoleChange }) => {
             }}
           >
             <Typography sx={{ width: '33%', flexShrink: 0, fontWeight: 'bold' }}>
-              {startIndex === 0 ? "Front 9 - Score Card" : "Back 9 - Score Card"}
+              {title}
             </Typography>
           </AccordionSummary>
           <AccordionDetails sx={{ p: 0, overflowX: 'auto' }}>
