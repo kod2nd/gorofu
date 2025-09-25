@@ -4,12 +4,13 @@ import { useTheme } from "@mui/material/styles";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import LogoutIcon from '@mui/icons-material/Logout';
 import SportsGolfIcon from '@mui/icons-material/SportsGolf';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 
-const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, activePage }) => {
+const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, activePage, userRole }) => {
   const theme = useTheme();
 
   const menuItems = [
@@ -17,6 +18,15 @@ const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, active
     { text: "Add Round", icon: <AddCircleIcon />, page: "addRound" },
     { text: "Account", icon: <AccountCircleIcon />, page: "account" },
   ];
+
+  // Add admin menu items for admin users
+  if (userRole && ['admin', 'super_admin'].includes(userRole)) {
+    menuItems.push({
+      text: "User Management",
+      icon: <AdminPanelSettingsIcon />,
+      page: "userManagement"
+    });
+  }
 
   return (
     <Box

@@ -17,6 +17,10 @@ import Auth from './Auth';
 import Dashboard from './components/Dashboard';
 import RoundForm from './RoundForm';
 import Sidebar from './components/Sidebar';
+import UserManagement from './components/UserManagement';
+import AdminRoute from './components/AdminRoute';
+import AccountPage from './components/AccountPage';
+import { userService } from './services/userService';
 
 const drawerWidth = 240;
 const collapsedWidth = 60;
@@ -25,20 +29,65 @@ function App() {
   const [session, setSession] = useState(null);
   const [activePage, setActivePage] = useState('dashboard');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [userProfile, setUserProfile] = useState(null);
+  const [profileLoading, setProfileLoading] = useState(true);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
+      if (session) {
+        loadUserProfile();
+      } else {
+        setProfileLoading(false);
+      }
     });
 
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
+      if (session) {
+        loadUserProfile();
+      } else {
+        setUserProfile(null);
+        setProfileLoading(false);
+      }
     });
 
     return () => subscription.unsubscribe();
   }, []);
+
+  const loadUserProfile = async () => {
+    try {
+      setProfileLoading(true);
+      const profile = await userService.getCurrentUserProfile();
+      setUserProfile(profile);
+    } catch (error) {
+      console.error('Failed to load user profile:', error);
+      // If no profile exists, create a basic one
+      if (session?.user) {
+        try {
+          // Create a profile with basic info from the auth user
+          await userService.upsertUserProfile({
+            full_name: session.user.user_metadata?.full_name || '',
+            status: 'active'
+          });
+          // Immediately re-fetch the newly created profile to get all DB defaults
+          const newlyCreatedProfile = await userService.getCurrentUserProfile();
+          setUserProfile(newlyCreatedProfile);
+        } catch (createError) {
+          console.error('Failed to create user profile:', createError);
+        }
+      }
+    } finally {
+      setProfileLoading(false);
+    }
+  };
+
+  const handleProfileUpdate = (updatedProfile) => {
+    // Update the userProfile state in the App component
+    setUserProfile(updatedProfile);
+  };
 
   const handleDrawerToggle = () => {
     setIsDrawerOpen(!isDrawerOpen);
@@ -57,6 +106,8 @@ function App() {
         return 'Add Round';
       case 'account':
         return 'Account';
+      case 'userManagement':
+        return 'User Management';
       default:
         return 'GolfStat';
     }
@@ -67,7 +118,15 @@ function App() {
       case 'dashboard':
         return <Dashboard user={session.user} />;
       case 'addRound':
-        return <RoundForm user={session.user} />;
+        return <RoundForm user={session.user} closeForm={() => setActivePage('dashboard')} />;
+      case 'account':
+        return <AccountPage userProfile={userProfile} onProfileUpdate={handleProfileUpdate} />;
+      case 'userManagement':
+        return (
+          <AdminRoute>
+            <UserManagement />
+          </AdminRoute>
+        );
       default:
         return <Dashboard user={session.user} />;
     }
@@ -77,6 +136,23 @@ function App() {
     return (
       <ThemeProvider theme={theme}>
         <Auth />
+      </ThemeProvider>
+    );
+  }
+
+  // Show loading while profile is being loaded
+  if (profileLoading) {
+    return (
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'center', 
+          alignItems: 'center', 
+          minHeight: '100vh' 
+        }}>
+          <Typography>Loading...</Typography>
+        </Box>
       </ThemeProvider>
     );
   }
@@ -136,6 +212,7 @@ function App() {
               isExpanded={isDrawerOpen}
               handleDrawerToggle={handleDrawerToggle}
               activePage={activePage}
+              userRole={userProfile?.role}
             />
           </Drawer>
         </Box>
