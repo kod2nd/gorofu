@@ -1,17 +1,15 @@
 import { Typography, Paper, Box, Grid } from "@mui/material";
+import { cardStyles, sectionHeaderStyles, hoverEffects } from "../styles/commonStyles";
 
 const StatCard = ({ label, value, percentage, tooltip }) => (
   <Box sx={{ 
     p: 2, 
     height: '100%',
-    border: '1px solid #e0e0e0', 
+    border: '1px solid',
+    borderColor: 'divider', 
     borderRadius: 2,
     backgroundColor: 'background.paper',
-    transition: 'all 0.2s',
-    '&:hover': {
-      boxShadow: 1,
-      borderColor: 'primary.light',
-    }
+    ...hoverEffects.card,
   }}>
     <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
       {label}
@@ -47,16 +45,10 @@ const RoundInsights = ({ insightsData }) => {
   const holeoutWithin3ShotsPercentage = totalHolesPlayed > 0 ? (totalHoleoutWithin3Shots / totalHolesPlayed) * 100 : null;
 
   return (
-    <Paper elevation={2} sx={{         p: 3,
-        mb: 3,
-        width: '100%',
-        borderRadius: 3,
-        border: '1px solid',
-        borderColor: 'divider',
-        backgroundColor: 'background.paper',}}>
+    <Paper {...cardStyles}>
       
       <Box sx={{ mb: 4 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 2, color: 'primary.main' }}>
+        <Typography {...sectionHeaderStyles}>
           📊 Traditional Stats
         </Typography>
         <Grid container spacing={2}>
@@ -76,7 +68,7 @@ const RoundInsights = ({ insightsData }) => {
       </Box>
 
       <Box sx={{ mb: 4 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 2, color: 'primary.main' }}>
+        <Typography {...sectionHeaderStyles}>
           ⛳ Long Game
         </Typography>
         <Grid container spacing={2}>
@@ -91,7 +83,7 @@ const RoundInsights = ({ insightsData }) => {
       </Box>
 
       <Box sx={{ mb: 2 }}>
-        <Typography variant="subtitle1" sx={{ fontWeight: "bold", mb: 2, color: 'primary.main' }}>
+        <Typography {...sectionHeaderStyles}>
           🏌️ Short Game
         </Typography>
         <Grid container spacing={2}>

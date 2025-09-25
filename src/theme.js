@@ -34,6 +34,21 @@ const theme = createTheme({
       primary: customColors.textPrimary,
       secondary: customColors.textSecondary,
     },
+    success: {
+      main: customColors.pastelGreen,
+    },
+    warning: {
+      50: '#FDF8E1',
+      100: '#F9F2C7',
+      main: '#F1C40F',
+    },
+    grey: {
+      50: '#FAFAFA',
+      100: customColors.lightGrey,
+      200: '#E0E0E0',
+      300: '#BDBDBD',
+      800: customColors.primaryDarkBlue,
+    },
     custom: customColors,
   },
   typography: {

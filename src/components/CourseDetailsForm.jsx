@@ -21,6 +21,7 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import Autocomplete from '@mui/material/Autocomplete';
 import SectionHeader from './SectionHeader';
+import { cardStyles } from '../styles/commonStyles';
 
 const CourseDetailsForm = ({ roundData = {}, handleCourseChange }) => {
   // State for dialogs and custom inputs
@@ -98,18 +99,7 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange }) => {
   };
 
   return (
-    <Paper
-      elevation={0}
-      sx={{
-        p: 3,
-        mb: 3,
-        width: '100%',
-        borderRadius: 3,
-        border: '1px solid',
-        borderColor: 'divider',
-        backgroundColor: 'background.paper',
-      }}
-    >
+    <Paper {...cardStyles}>
       
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {/* Date Played Section */}

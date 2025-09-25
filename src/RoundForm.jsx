@@ -16,6 +16,7 @@ import CourseDetailsForm from './components/CourseDetailsForm';
 import HoleDetailsForm from './components/HoleDetailsForm';
 import RoundInsights from './components/RoundInsights';
 import SectionHeader from './components/SectionHeader';
+import { elevatedCardStyles } from './styles/commonStyles';
 
 const initialHoleState = {
   par: '',
@@ -127,7 +128,7 @@ const RoundForm = ({ user, closeForm }) => {
 
   return (
     <Container maxWidth="lg" sx={{ my: 4 }}>
-      <Paper elevation={3} sx={{ p: { xs: 2, md: 4 } }}>
+      <Paper {...elevatedCardStyles}>
         <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
           Add a New Round
         </Typography>

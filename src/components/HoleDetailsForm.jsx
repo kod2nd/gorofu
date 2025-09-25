@@ -32,6 +32,7 @@ import {
   redSwitchStyles,
   invalidInputPulseStyles,
 } from "./holeDetailsTableHelper";
+import { cardStyles, hoverEffects } from "../styles/commonStyles";
 
 const StatRow = ({
   stat,
@@ -101,7 +102,7 @@ const StatRow = ({
                 (hoveredCell?.statName === stat.name &&
                 hoveredCell?.holeIndex === holeIndex &&
                 hoveredCell?.tableIndex === startIndex / 9)
-                  ? tableStyles.focusedCellBg
+                  ? tableStyles.focusedCell.backgroundColor
                   : "inherit",
               ...statCellBaseStyles,
               ...(pulseAnimation && pulseAnimation.holeIndex === holeIndex && pulseAnimation.statName === stat.name && invalidInputPulseStyles)
@@ -144,8 +145,8 @@ const StatRow = ({
                   checked={!!hole[stat.name]}
                   onChange={(e) => handleHoleChange(startIndex + holeIndex, e)}
                   sx={{
-                    ...switchStyles,
-                    ...(shouldBeRed && redSwitchStyles)
+                    ...switchStyles.default,
+                    ...(shouldBeRed && switchStyles.warning)
                   }}
                 />
               ) : (
@@ -188,7 +189,7 @@ const StatRow = ({
       })}
       <TableCell
         align="center"
-        sx={{ ...boldTextStyles, backgroundColor: tableStyles.totalColumnBg }}
+        sx={{ ...boldTextStyles, ...tableStyles.totalColumn }}
       >
         {holesArray.reduce(
           (sum, hole) => {
@@ -330,13 +331,7 @@ const HoleDetailsForm = ({ holes, handleHoleChange }) => {
   ];
 
   return (
-    <Box sx={{         p: 3,
-        mb: 3,
-        width: '100%',
-        borderRadius: 3,
-        border: '1px solid',
-        borderColor: 'divider',
-        backgroundColor: 'background.paper',}}>
+    <Box sx={cardStyles.sx}>
       {tablesData.map(({ holes: tableHoles, startIndex }, index) => (
         <Accordion
           key={startIndex}
@@ -359,10 +354,7 @@ const HoleDetailsForm = ({ holes, handleHoleChange }) => {
               color: 'text.primary',
               minHeight: { xs: 48, sm: 48 },
               '&.Mui-expanded': { minHeight: { xs: 48, sm: 48 } },
-              transition: 'filter 0.2s ease-in-out',
-              '&:hover': {
-                filter: 'brightness(0.95)',
-              },
+              ...hoverEffects.button,
               '&.Mui-focused': {
                 outline: 'none',
                 boxShadow: 'none',

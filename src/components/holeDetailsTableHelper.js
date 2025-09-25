@@ -1,4 +1,10 @@
-import theme from "../theme";
+import { 
+  tableStyles, 
+  switchStyles, 
+  textFieldStyles, 
+  animationStyles, 
+  cellStyles 
+} from "../styles/commonStyles";
 
 // statDefinitions: Defines the structure and properties of each golf statistic.
 // This data is used to dynamically render the rows and form inputs in the scorecard tables.
@@ -88,122 +94,33 @@ export const statDefinitions = {
   ],
 };
 
-// tableStyles: Contains a unified color palette and sizing for the scorecard tables.
-export const tableStyles = {
-  headerBg: "rgba(73, 80, 87, 1)",
-  headerColor: "rgba(255, 255, 255, 1)",
-  statLabelBg: "rgba(253, 251, 231, 1)",
-  statLabelHoverBg: "rgba(230, 228, 217, 1)",
-  totalColumnBg: "rgba(238, 241, 246, 1)",
-  focusedCellBg: "rgba(0, 0, 0, 0.05)",
-  rowHeaderMinWidth: 120,
-  cellMinWidth: 60,
-  cellPadding: 0.5,
-};
+// Re-export styles from centralized location with legacy names for compatibility
+export { tableStyles, textFieldStyles, animationStyles as invalidInputPulseStyles, cellStyles };
 
-// textFieldStyles: Defines the styles for the text input fields, including removing the default border
-// and adding visual feedback on hover and focus.
-export const textFieldStyles = {
-  textAlign: "center",
-  "& .MuiOutlinedInput-root": {
-    "& fieldset": {
-      border: "none",
-    },
-    "&:hover fieldset": {
-      borderColor: "rgba(0, 0, 0, 0.23)",
-    },
-    "&.Mui-focused fieldset": {
-      borderColor: "primary.main",
-    },
-    "& .MuiInputBase-input": {
-      fontSize: "0.75rem", // Corrected font size for text input
-    },
-  },
-};
+// Legacy style exports for backward compatibility
+export const statCellBaseStyles = cellStyles.base;
+export const boldTextStyles = cellStyles.bold;
+export const cellDividerStyles = cellStyles.divider;
 
-// statCellBaseStyles: Provides foundational styles for table cells that display statistics,
-// ensuring consistent padding and text alignment.
-export const statCellBaseStyles = {
-  position: "relative",
-  overflow: "hidden",
-  textAlign: "center",
-  padding: "8px",
-  "& .stat-label": {
-    display: "block",
-    fontWeight: "bold",
-    textAlign: "center",
-    fontSize: "0.75rem",
-  },
-  "& .hole-label": {
-    display: "block",
-    fontWeight: "bold",
-    textAlign: "right",
-    fontSize: "0.75rem",
-  },
-};
-
-// statLabelCellStyles: Combines base styles with specific styles for the row header cells that
-// contain the statistic labels, adding a pointer cursor and hover effects.
+// Table-specific styles using centralized system
 export const statLabelCellStyles = {
   minWidth: tableStyles.rowHeaderMinWidth,
-  backgroundColor: tableStyles.statLabelBg,
   fontSize: "0.75rem",
   marginLeft: "6px",
   cursor: "pointer",
-  "&:hover": {
-    backgroundColor: tableStyles.statLabelHoverBg,
-    fontWeight: "bold",
-  },
+  ...tableStyles.statLabel,
 };
 
-// Styles for bold text.
-export const boldTextStyles = {
-  fontWeight: "bold",
-};
-
-// New styles for the table header cells, making them consistent and easy to update.
 export const tableHeaderCellStyles = {
-  ...boldTextStyles,
-  backgroundColor: tableStyles.headerBg,
-  color: tableStyles.headerColor,
+  ...cellStyles.bold,
+  ...tableStyles.header,
 };
 
-// New styles for the game type stats (traditional stats, Long game, short game) header rows.
 export const gameTypeHeaderStyles = {
-  backgroundColor: "action.hover",
-  ...boldTextStyles,
-};
-// Styles for the faint vertical lines between cells.
-export const cellDividerStyles = {
-  borderRight: "1px solid rgba(0, 0, 0, 0.12)",
+  ...tableStyles.gameTypeHeader,
+  ...cellStyles.bold,
 };
 
-// Styles for the switch component
-export const switchStyles = {
-  "& .MuiSwitch-switchBase.Mui-checked": {
-    color: theme.palette.custom.pastelGreen,
-  },
-  "& .MuiSwitch-switchBase.Mui-checked + .MuiSwitch-track": {
-    backgroundColor: theme.palette.custom.pastelGreen,
-  },
-};
-
-// Styles for the red switch component when a relevant stat is not checked.
-export const redSwitchStyles = {
-  "& .MuiSwitch-track": {
-    backgroundColor: "#ffb3ba !important",
-    opacity: "1 !important",
-  },
-  "& .MuiSwitch-thumb": {
-    backgroundColor: "rgba(255, 255, 255, 0.8) !important",
-  },
-};
-
-export const invalidInputPulseStyles = {
-  animation: "pulse 0.5s ease-in-out",
-  "@keyframes pulse": {
-    "0%": { boxShadow: "0 0 0 0 rgba(255, 0, 0, 0.7)" },
-    "70%": { boxShadow: "0 0 0 10px rgba(255, 0, 0, 0)" },
-    "100%": { boxShadow: "0 0 0 0 rgba(255, 0, 0, 0)" },
-  },
-};
+// Switch styles using centralized system
+export { switchStyles };
+export const redSwitchStyles = switchStyles.warning;
