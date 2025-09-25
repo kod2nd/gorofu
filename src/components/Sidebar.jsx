@@ -6,6 +6,7 @@ import AddCircleIcon from "@mui/icons-material/AddCircle";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import LogoutIcon from '@mui/icons-material/Logout';
+import HistoryIcon from '@mui/icons-material/History';
 import SportsGolfIcon from '@mui/icons-material/SportsGolf';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -16,6 +17,7 @@ const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, active
   const menuItems = [
     { text: "Dashboard", icon: <DashboardIcon />, page: "dashboard" },
     { text: "Add Round", icon: <AddCircleIcon />, page: "addRound" },
+    { text: "Rounds History", icon: <HistoryIcon />, page: "roundsHistory" },
     { text: "Account", icon: <AccountCircleIcon />, page: "account" },
   ];
 

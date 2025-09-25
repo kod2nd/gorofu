@@ -23,7 +23,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import SectionHeader from './SectionHeader';
 import { cardStyles } from '../styles/commonStyles';
 
-const CourseDetailsForm = ({ roundData = {}, handleCourseChange }) => {
+const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = false }) => {
   // State for dialogs and custom inputs
   const [courseDialogOpen, setCourseDialogOpen] = useState(false);
   const [teeBoxDialogOpen, setTeeBoxDialogOpen] = useState(false);
@@ -138,6 +138,7 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange }) => {
                   label="Course Name"
                   required
                   fullWidth
+                  disabled={isEditMode}
                 />
               )}
             />
@@ -151,6 +152,7 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange }) => {
                 label="Tee Box Played"
                 onChange={handleTeeBoxSelect}
                 required
+                disabled={isEditMode}
               >
                 {teeBoxOptions.map((option) => (
                   <MenuItem key={option} value={option}>
