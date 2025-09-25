@@ -58,7 +58,7 @@ const RoundsHistoryPage = ({ user, onEditRound, onAddRound }) => {
     if (!roundId) return;
 
     try {
-      await roundService.deleteRound(roundId);
+      await roundService.deleteRound(roundId, user.email);
       setRounds(rounds.filter((round) => round.id !== roundId));
     } catch (err) {
       setError('Failed to delete round. ' + err.message);

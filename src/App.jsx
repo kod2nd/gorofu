@@ -129,6 +129,7 @@ function App() {
       case 'addRound':
         return <RoundForm 
           user={session.user} 
+          userProfile={userProfile}
           closeForm={() => {
             setEditingRoundId(null);
             setActivePage('roundsHistory');

@@ -16,6 +16,7 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
+  FormControlLabel,
 } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import {
@@ -84,6 +85,7 @@ const StatRow = ({
       </Tooltip>
       {holesArray.map((hole, holeIndex) => {
         const isHolePlayed = hole.hole_score > 0;
+        const isDNP = !hole.played;
         const isRelevantStat = stat.isRelevantForRed;
         const isUnchecked = !hole[stat.name];
         const shouldBeRed = isHolePlayed && isRelevantStat && isUnchecked;
@@ -137,12 +139,14 @@ const StatRow = ({
                 <Checkbox
                   name={stat.name}
                   checked={!!hole[stat.name]}
+                  disabled={isDNP}
                   onChange={(e) => handleHoleChange(startIndex + holeIndex, e)}
                 />
               ) : stat.type === "switch" ? (
                 <Switch
                   name={stat.name}
                   checked={!!hole[stat.name]}
+                  disabled={isDNP}
                   onChange={(e) => handleHoleChange(startIndex + holeIndex, e)}
                   sx={{
                     ...switchStyles.default,
@@ -163,6 +167,7 @@ const StatRow = ({
                     pattern={stat.pattern}
                     name={stat.name}
                     value={hole[stat.name]}
+                    disabled={isDNP}
                     onChange={(e) => {
                       const newValue = e.target.value;
                       const regex = new RegExp(`^${stat.pattern}$`);
@@ -276,6 +281,37 @@ const HoleTable = ({ holes, startIndex, handleHoleChange }) => {
           </TableRow>
         </TableHead>
         <TableBody>
+          {/* DNP Row */}
+          <TableRow>
+            <TableCell component="th" scope="row" sx={statLabelCellStyles}>
+              Hole Played
+            </TableCell>
+            {holes.map((hole, holeIndex) => (
+              <TableCell
+                key={holeIndex}
+                align="center"
+                sx={{
+                  ...cellDividerStyles,
+                  p: tableStyles.cellPadding,
+                  ...statCellBaseStyles,
+                }}
+              >
+                <Tooltip title="Toggle off if you did not play this hole">
+                  <Switch
+                    name="played"
+                    checked={hole.played}
+                    onChange={(e) => handleHoleChange(startIndex + holeIndex, e)}
+                    sx={{
+                      ...switchStyles.default,
+                    }}
+                  />
+                </Tooltip>
+              </TableCell>
+            ))}
+            <TableCell align="center" sx={{ ...boldTextStyles, ...tableStyles.totalColumn }}>
+              {holes.filter(h => h.played).length || "-"}
+            </TableCell>
+          </TableRow>
           {Object.entries(statDefinitions).map(([gameType, stats]) => (
             <React.Fragment key={gameType}>
               <TableRow sx={gameTypeHeaderStyles}>

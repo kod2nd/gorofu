@@ -12,6 +12,7 @@ import {
   Button,
   TextField,
   Snackbar,
+  Autocomplete,
   Alert,
 } from '@mui/material';
 import {
@@ -24,6 +25,7 @@ import {
   Edit as EditIcon,
 } from '@mui/icons-material';
 import { userService } from '../services/userService';
+import { countries } from './countries';
 
 const ProfileDetailItem = ({ icon, primary, secondary }) => (
   <ListItem>
@@ -131,7 +133,28 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
               <TextField label="Handicap" name="handicap" type="number" value={formData.handicap} onChange={handleInputChange} fullWidth inputProps={{ step: 0.1 }} />
             </Grid>
             <Grid item xs={12} sm={6}>
-              <TextField label="Country" name="country" value={formData.country} onChange={handleInputChange} fullWidth />
+              <Autocomplete
+                options={countries}
+                getOptionLabel={(option) => option.label}
+                value={countries.find(c => c.label === formData.country) || null}
+                onChange={(event, newValue) => {
+                  handleInputChange({ target: { name: 'country', value: newValue ? newValue.label : '' } });
+                }}
+                renderOption={(props, option) => (
+                  <Box component="li" sx={{ '& > img': { mr: 2, flexShrink: 0 } }} {...props}>
+                    <img
+                      loading="lazy"
+                      width="20"
+                      src={`https://flagcdn.com/w20/${option.code.toLowerCase()}.png`}
+                      srcSet={`https://flagcdn.com/w40/${option.code.toLowerCase()}.png 2x`}
+                      alt=""
+                    />
+                    {option.label} ({option.code})
+                  </Box>
+                )}
+                renderInput={(params) => <TextField {...params} label="Country" />}
+                fullWidth
+              />
             </Grid>
             <Grid item xs={12} sm={6}>
               <TextField label="Phone Number" name="phone" value={formData.phone} onChange={handleInputChange} fullWidth />
@@ -170,7 +193,7 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
             <Divider component="li" variant="inset" />
             <ProfileDetailItem icon={<PublicIcon />} primary="Country" secondary={userProfile.country} />
             <Divider component="li" variant="inset" />
-            <ProfileDetailItem icon={<SportsGolfIcon />} primary="Handicap" secondary={userProfile.handicap} />
+            <ProfileDetailItem icon={<SportsGolfIcon />} primary="Handicap" secondary={userProfile.handicap != null ? Number(userProfile.handicap).toFixed(1) : null} />
             <Divider component="li" variant="inset" />
             <ProfileDetailItem icon={<PhoneIcon />} primary="Phone" secondary={userProfile.phone} />
             <Divider component="li" variant="inset" />

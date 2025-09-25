@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   TextField,
   FormControl,
@@ -20,25 +20,35 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import Autocomplete from '@mui/material/Autocomplete';
+import { createFilterOptions } from '@mui/material/Autocomplete';
+import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import SectionHeader from './SectionHeader';
 import { cardStyles } from '../styles/commonStyles';
+import { courseService } from '../services/courseService';
+import { countries } from './countries';
 
 const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = false }) => {
   // State for dialogs and custom inputs
   const [courseDialogOpen, setCourseDialogOpen] = useState(false);
   const [teeBoxDialogOpen, setTeeBoxDialogOpen] = useState(false);
+  const [courses, setCourses] = useState([]);
   const [customCourseName, setCustomCourseName] = useState('');
   const [customTeeBox, setCustomTeeBox] = useState('');
 
-  // Course options including "Other"
-  const courseOptions = [
-    'Augusta National Golf Club',
-    'Pebble Beach Golf Links',
-    'Pine Valley Golf Club',
-    'Cypress Point Club',
-    'Royal Melbourne Golf Club',
-    'Other course...'
-  ];
+  useEffect(() => {
+    // Do not fetch if editing, as the course is already set.
+    if (isEditMode || !roundData.country) return;
+
+    const fetchCourses = async () => {
+      try {
+        const coursesData = await courseService.getCoursesByCountry(roundData.country);
+        setCourses(coursesData.map(c => c.name));
+      } catch (error) {
+        console.error("Failed to fetch courses:", error);
+      }
+    };
+    fetchCourses();
+  }, [roundData.country, isEditMode]);
 
   // Tee box options
   const teeBoxOptions = [
@@ -46,12 +56,12 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
     'White',
     'Blue',
     'Black',
-    'Other tee box...'
+    'Add new tee box...'
   ];
 
   // Set default values
   const defaults = {
-    yards_or_meters_unit: 'yards',
+    yards_or_meters_unit: 'meters',
     scoring_zone_level: '100m - Novice',
     round_date: new Date().toISOString().split('T')[0],
     round_type: '18_holes',
@@ -60,8 +70,28 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
   // Merge provided data with defaults
   const formData = { ...defaults, ...roundData };
 
+  const filter = createFilterOptions();
+
+  const handleFilterOptions = (options, params) => {
+    const filtered = filter(options, params);
+
+    // Suggest the creation of a new value
+    const { inputValue } = params;
+    const isExisting = options.some((option) => inputValue === option);
+    if (inputValue !== '' && !isExisting) {
+      filtered.push(`Add new course: "${inputValue}"`);
+    }
+
+    return filtered;
+  };
+
+
   const handleCourseSelect = (event, newValue) => {
-    if (newValue === 'Other course...') {
+    if (newValue && newValue.startsWith('Add new course:')) {
+      // Extract the course name from the "Add new..." string
+      const newCourseName = newValue.substring(newValue.indexOf('"') + 1, newValue.lastIndexOf('"'));
+      handleCourseChange({ target: { name: 'course_name', value: newCourseName } });
+    } else if (newValue === 'Add new course') {
       setCourseDialogOpen(true);
     } else {
       handleCourseChange({ target: { name: 'course_name', value: newValue } });
@@ -69,7 +99,7 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
   };
 
   const handleTeeBoxSelect = (e) => {
-    if (e.target.value === 'Other tee box...') {
+    if (e.target.value === 'Add new tee box...') {
       setTeeBoxDialogOpen(true);
     } else {
       handleCourseChange(e);
@@ -119,6 +149,42 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
             </LocalizationProvider>
           </Box>
         </Box>
+        {/* Country Section */}
+        <Box>
+          <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
+            Country
+          </Typography>
+          <Autocomplete
+            options={countries}
+            getOptionLabel={(option) => option.label || option}
+            value={countries.find(c => c.label === formData.country) || null}
+            onChange={(event, newValue) => {
+              handleCourseChange({ target: { name: 'country', value: newValue ? newValue.label : '' } });
+            }}
+            disabled={isEditMode}
+            renderOption={(props, option) => (
+              <Box component="li" {...props}>
+                <img
+                  loading="lazy"
+                  width="20"
+                  src={`https://flagcdn.com/w20/${option.code.toLowerCase()}.png`}
+                  srcSet={`https://flagcdn.com/w40/${option.code.toLowerCase()}.png 2x`}
+                  alt=""
+                  style={{ marginRight: '10px' }}
+                />
+                {option.label} ({option.code})
+              </Box>
+            )}
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                label="Country"
+                required
+              />
+            )}
+            sx={{ pl: 1 }}
+          />
+        </Box>
 
         {/* Course Information Section */}
         <Box>
@@ -128,10 +194,24 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pl: 1 }}>
             {/* Course Name with Autocomplete */}
             <Autocomplete
-              freeSolo
-              options={courseOptions}
+              options={courses}
               value={formData.course_name || ''}
               onChange={handleCourseSelect}
+              filterOptions={handleFilterOptions}
+              noOptionsText="No course found"
+              renderOption={(props, option) => {
+                if (option.startsWith('Add new course:')) {
+                  return (
+                    <li {...props} style={{ color: 'primary.main', fontWeight: 'bold' }}>
+                      <AddCircleOutlineIcon sx={{ mr: 1 }} />
+                      {option}
+                    </li>
+                  );
+                }
+                return (
+                  <li {...props}>{option}</li>
+                );
+              }}
               renderInput={(params) => (
                 <TextField
                   {...params}

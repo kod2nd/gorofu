@@ -35,7 +35,6 @@ export const roundService = {
       scoring_zone_in_regulation: hole.scoring_zone_in_regulation || false,
       holeout_from_outside_4ft: hole.holeout_from_outside_4ft || false,
       holeout_within_3_shots_scoring_zone: hole.holeout_within_3_shots_scoring_zone || false,
-      bad_habits: hole.bad_habits ? hole.bad_habits.split(',').map(s => s.trim()).filter(Boolean) : []
     }));
 
     const { data: holes, error: holesError } = await supabase
@@ -146,7 +145,6 @@ export const roundService = {
       scoring_zone_in_regulation: hole.scoring_zone_in_regulation || false,
       holeout_from_outside_4ft: hole.holeout_from_outside_4ft || false,
       holeout_within_3_shots_scoring_zone: hole.holeout_within_3_shots_scoring_zone || false,
-      bad_habits: hole.bad_habits ? hole.bad_habits.split(',').map(s => s.trim()).filter(Boolean) : []
     }));
 
     const { data: holes, error: holesError } = await supabase
