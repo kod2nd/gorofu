@@ -104,21 +104,21 @@ const Dashboard = ({ user, onViewRound }) => {
             {recentStats && recentStats.total_holes_played > 0 ? (
               <Grid container spacing={2}>
                 {recentStats.avg_par3_score && (
-                  <Grid item xs={6} sm={4} md={3}> <StatCard label="Avg Score (Par 3)" value={Number(recentStats.avg_par3_score).toFixed(1)} /> </Grid>
+                  <Grid item size={{xs:6,sm:4,md:3}}> <StatCard label="Avg Score (Par 3)" value={Number(recentStats.avg_par3_score).toFixed(1)} /> </Grid>
                 )}
                 {recentStats.avg_par4_score && (
-                  <Grid item xs={6} sm={4} md={3}> <StatCard label="Avg Score (Par 4)" value={Number(recentStats.avg_par4_score).toFixed(1)} /> </Grid>
+                  <Grid item size={{xs:6,sm:4,md:3}}> <StatCard label="Avg Score (Par 4)" value={Number(recentStats.avg_par4_score).toFixed(1)} /> </Grid>
                 )}
                 {recentStats.avg_par5_score && (
-                  <Grid item xs={6} sm={4} md={3}> <StatCard label="Avg Score (Par 5)" value={Number(recentStats.avg_par5_score).toFixed(1)} /> </Grid>
+                  <Grid item size={{xs:6,sm:4,md:3}}> <StatCard label="Avg Score (Par 5)" value={Number(recentStats.avg_par5_score).toFixed(1)} /> </Grid>
                 )}
-                <Grid item xs={6} sm={4} md={3}> <StatCard label="Avg Putts / Hole" value={recentStats.avg_putts_per_hole ? Number(recentStats.avg_putts_per_hole).toFixed(1) : '-'} /> </Grid>
-                <Grid item xs={6} sm={4} md={3}> <StatCard label="Total Holes" value={recentStats.total_holes_played} /> </Grid>
-                <Grid item xs={6} sm={4} md={3}> <StatCard label="SZIR %" value={recentStats.szir_percentage ? `${Number(recentStats.szir_percentage).toFixed(0)}%` : '-'} /> </Grid>
-                <Grid item xs={6} sm={4} md={3}>
+                <Grid item size={{xs:6,sm:4,md:3}}> <StatCard label="Avg Putts / Hole" value={recentStats.avg_putts_per_hole ? Number(recentStats.avg_putts_per_hole).toFixed(1) : '-'} /> </Grid>
+                <Grid item size={{xs:6,sm:4,md:3}}> <StatCard label="Total Holes" value={recentStats.total_holes_played} /> </Grid>
+                <Grid item size={{xs:6,sm:4,md:3}}> <StatCard label="SZIR %" value={recentStats.szir_percentage ? `${Number(recentStats.szir_percentage).toFixed(0)}%` : '-'} /> </Grid>
+                <Grid item size={{xs:6,sm:4,md:3}}>
                   <StatCard label="Holeout w/in 3 Shots" value={recentStats.holeout_within_3_shots_count} percentage={recentStats.total_holes_played > 0 ? (recentStats.holeout_within_3_shots_count / recentStats.total_holes_played) * 100 : 0} />
                 </Grid>
-                <Grid item xs={6} sm={4} md={3}>
+                <Grid item size={{xs:6,sm:4,md:3}}>
                   <StatCard label="Holes w/ >1 Putt <4ft" value={recentStats.multi_putt_4ft_holes} percentage={recentStats.total_holes_played > 0 ? (recentStats.multi_putt_4ft_holes / recentStats.total_holes_played) * 100 : 0} />
                 </Grid>
                 <Grid item xs={12} sm={4} md={3}>
@@ -178,7 +178,7 @@ const Dashboard = ({ user, onViewRound }) => {
       </Grid>
 
       {/* Right Column: All-Time Stats */}
-      <Grid item xs={12} md={4}>
+      <Grid item siz={{xs:12,md:4}}>
         <Paper {...elevatedCardStyles} sx={{ position: 'sticky', top: '88px' }}>
           <Typography {...sectionHeaderStyles}>All-Time Stats</Typography>
           <Grid container spacing={2}>
