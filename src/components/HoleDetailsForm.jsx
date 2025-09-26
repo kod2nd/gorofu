@@ -108,6 +108,7 @@ const StatRow = ({
                   ? tableStyles.focusedCell.backgroundColor
                   : "inherit",
               ...statCellBaseStyles,
+              ...(isDNP && { backgroundColor: 'grey.400' }),
               ...(pulseAnimation && pulseAnimation.holeIndex === holeIndex && pulseAnimation.statName === stat.name && invalidInputPulseStyles)
             }}
             onFocus={() =>
@@ -295,6 +296,7 @@ const HoleTable = ({ holes, startIndex, handleHoleChange, isEditMode }) => {
                   ...cellDividerStyles,
                   p: tableStyles.cellPadding,
                   ...statCellBaseStyles,
+                  ...(!hole.played && { backgroundColor: 'grey.200' }),
                 }}
               >
                 <Tooltip title="Toggle off if you did not play this hole">
@@ -351,25 +353,11 @@ const HoleTable = ({ holes, startIndex, handleHoleChange, isEditMode }) => {
 };
 
 const HoleDetailsForm = ({ holes, handleHoleChange, roundType = '18_holes', isEditMode }) => {
-  // Filter tables based on round type
-  const getTablesData = () => {
-    const allTables = [
-      { holes: holes.slice(0, 9), startIndex: 0, title: "Front 9 - Score Card", panelId: "front9" },
-      { holes: holes.slice(9, 18), startIndex: 9, title: "Back 9 - Score Card", panelId: "back9" },
-    ];
-
-    switch (roundType) {
-      case 'front_9':
-        return [allTables[0]];
-      case 'back_9':
-        return [allTables[1]];
-      case '18_holes':
-      default:
-        return allTables;
-    }
-  };
-
-  const tablesData = getTablesData();
+  // Always show both tables. The played status is controlled in the parent RoundForm.
+  const tablesData = [
+    { holes: holes.slice(0, 9), startIndex: 0, title: "Front 9 - Score Card", panelId: "front9" },
+    { holes: holes.slice(9, 18), startIndex: 9, title: "Back 9 - Score Card", panelId: "back9" },
+  ];
 
   // Determine which panels should be expanded based on round type
   const getInitialExpanded = () => {

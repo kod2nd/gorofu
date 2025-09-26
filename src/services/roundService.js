@@ -61,12 +61,9 @@ export const roundService = {
     const { data, error } = await supabase
       .from('rounds')
       .select(`
-        *,
-        courses (
-          name,
-          country,
-          city
-        )
+        id, round_date, total_score, total_putts, total_holes_played, is_eligible_round, tee_box,
+        courses ( name ),
+        round_holes ( scoring_zone_in_regulation, holeout_within_3_shots_scoring_zone )
       `)
       .eq('user_email', userEmail)
       .order('round_date', { ascending: false })
@@ -198,6 +195,8 @@ export const roundService = {
         round_date,
         total_score,
         total_putts,
+        total_holes_played,
+        tee_box,
         courses ( name ),
         round_holes ( * )
       `)
@@ -221,10 +220,22 @@ export const roundService = {
     return data;
   },
 
-  // Get cumulative stats for a user by calling the database function
-  async getCumulativeStats(userEmail) {
-    const { data, error } = await supabase.rpc('get_user_cumulative_stats', {
+  // Get the current SZ Par streak by calling the database function
+  async getCurrentSzParStreak(userEmail) {
+    const { data, error } = await supabase.rpc('calculate_user_szpar_streak', {
       user_email_param: userEmail
+    });
+
+    if (error) throw error;
+
+    return data;
+  },
+
+  // Get cumulative stats for a user by calling the database function
+  async getCumulativeStats(userEmail, eligibleRoundsOnly) {
+    const { data, error } = await supabase.rpc('get_user_cumulative_stats', {
+      user_email_param: userEmail,
+      eligible_rounds_only: eligibleRoundsOnly
     });
 
     if (error) throw error;
@@ -234,10 +245,11 @@ export const roundService = {
   },
 
   // Get recent rounds stats by calling the database function
-  async getRecentRoundsStats(userEmail, limit) {
+  async getRecentRoundsStats(userEmail, limit, eligibleRoundsOnly) {
     const { data, error } = await supabase.rpc('get_recent_rounds_stats', {
       user_email_param: userEmail,
-      round_limit: limit
+      round_limit: limit,
+      eligible_rounds_only: eligibleRoundsOnly
     });
 
     if (error) throw error;

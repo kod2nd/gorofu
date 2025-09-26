@@ -85,7 +85,7 @@ export const statDefinitions = {
       tooltip: "The number of putts made from within 4 feet of the hole.",
     },
     {
-      label: "Bonus",
+      label: "Luck",
       name: "holeout_from_outside_4ft",
       type: "checkbox",
       tooltip:

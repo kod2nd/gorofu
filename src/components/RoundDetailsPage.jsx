@@ -77,7 +77,15 @@ const RoundDetailsPage = ({ roundId, user, onEdit, onBack }) => {
     <Grid container spacing={3}>
       <Grid item xs={12}>
         <Paper {...elevatedCardStyles}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+          <Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 1.5, mb: 2 }}>
+          <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={onBack}>
+            Back
+          </Button>
+          <Button variant="contained" startIcon={<EditIcon />} onClick={() => onEdit(round.id)}>
+            Edit Round
+          </Button>
+        </Box>
             <Box>
               <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
                 {round.courses.name}
@@ -86,21 +94,15 @@ const RoundDetailsPage = ({ roundId, user, onEdit, onBack }) => {
                 {new Date(round.round_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', gap: 1 }}>
-              <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={onBack}>
-                Back to History
-              </Button>
-              <Button variant="contained" startIcon={<EditIcon />} onClick={() => onEdit(round.id)}>
-                Edit Round
-              </Button>
-            </Box>
           </Box>
           <Divider sx={{ my: 2 }} />
           <Grid container spacing={2}>
-            <Grid item xs={6} sm={3}><StatItem label="Tee Box" value={round.tee_box} /></Grid>
-            <Grid item xs={6} sm={3}><StatItem label="Total Score" value={round.total_score} /></Grid>
-            <Grid item xs={6} sm={3}><StatItem label="Total Putts" value={round.total_putts} /></Grid>
-            <Grid item xs={6} sm={3}><StatItem label="Holes Played" value={round.total_holes_played} /></Grid>
+            <Grid item xs={6} sm={3} md={2}><StatItem label="Tee Box" value={round.tee_box} /></Grid>
+            <Grid item xs={6} sm={3} md={2}><StatItem label="Total Score" value={round.total_score} /></Grid>
+            <Grid item xs={6} sm={3} md={2}><StatItem label="Total Putts" value={round.total_putts} /></Grid>
+            <Grid item xs={6} sm={3} md={3}><StatItem label="Scoring Zone" value={round.scoring_zone_level} /></Grid>
+            <Grid item xs={6} sm={3} md={2}><StatItem label="Holes Played" value={round.total_holes_played} /></Grid>            
+            <Grid item xs={6} sm={3} md={1}><StatItem label="Eligible" value={round.is_eligible_round ? '✓' : '✗'} /></Grid>
           </Grid>
         </Paper>
       </Grid>
@@ -140,6 +142,50 @@ const RoundDetailsPage = ({ roundId, user, onEdit, onBack }) => {
                   {Array.from({ length: 18 }, (_, i) => {
                     const hole = round.holes.find(h => h.hole_number === i + 1);
                     return <TableCell key={i} align="center">{hole?.putts ?? '-'}</TableCell>;
+                  })}
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>SZIR</TableCell>
+                  {Array.from({ length: 18 }, (_, i) => {
+                    const hole = round.holes.find(h => h.hole_number === i + 1);
+                    return <TableCell key={i} align="center">{hole?.hole_score ? (hole.scoring_zone_in_regulation ? '✓' : '✗') : '-'}</TableCell>;
+                  })}
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>SZ Par</TableCell>
+                  {Array.from({ length: 18 }, (_, i) => {
+                    const hole = round.holes.find(h => h.hole_number === i + 1);
+                    return <TableCell key={i} align="center">{hole?.hole_score ? (hole.holeout_within_3_shots_scoring_zone ? '✓' : '✗') : '-'}</TableCell>;
+                  })}
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Putts &lt;4ft</TableCell>
+                  {Array.from({ length: 18 }, (_, i) => {
+                    const hole = round.holes.find(h => h.hole_number === i + 1);
+                    return <TableCell key={i} align="center">{hole?.putts_within4ft ?? '-'}</TableCell>;
+                  })}
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Luck</TableCell>
+                  {Array.from({ length: 18 }, (_, i) => { 
+                    const hole = round.holes.find(h => h.hole_number === i + 1);
+                    return <TableCell key={i} align="center">{hole?.hole_score ? (hole.holeout_from_outside_4ft ? '✓' : '-') : '-'}</TableCell>;
+                  })}
+                </TableRow>
+                <TableRow>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Penalties</TableCell>
+                  {Array.from({ length: 18 }, (_, i) => {
+                    const hole = round.holes.find(h => h.hole_number === i + 1);
+                    const penalties = hole?.penalty_shots;
+                    return (
+                      <TableCell 
+                        key={i} 
+                        align="center"
+                        sx={{ color: penalties > 0 ? 'error.main' : 'text.primary' }}
+                      >
+                        {penalties ?? '-'}
+                      </TableCell>
+                    );
                   })}
                 </TableRow>
               </TableBody>

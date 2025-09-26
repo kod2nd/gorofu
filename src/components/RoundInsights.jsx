@@ -1,8 +1,9 @@
-import { Typography, Paper, Box, Grid } from "@mui/material";
+import { Typography, Paper, Box, Grid, Tooltip } from "@mui/material";
 import { cardStyles, sectionHeaderStyles, hoverEffects } from "../styles/commonStyles";
 
 const StatCard = ({ label, value, percentage, tooltip }) => (
-  <Box sx={{ 
+  <Tooltip title={tooltip || ''} arrow placement="top">
+    <Box sx={{ 
     p: 2, 
     height: '100%',
     border: '1px solid',
@@ -10,7 +11,7 @@ const StatCard = ({ label, value, percentage, tooltip }) => (
     borderRadius: 2,
     backgroundColor: 'background.paper',
     ...hoverEffects.card,
-  }}>
+    }}>
     <Typography variant="caption" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
       {label}
     </Typography>
@@ -22,7 +23,8 @@ const StatCard = ({ label, value, percentage, tooltip }) => (
         {percentage.toFixed(0)}%
       </Typography>
     )}
-  </Box>
+    </Box>
+  </Tooltip>
 );
 
 const RoundInsights = ({ insightsData }) => {
@@ -43,7 +45,7 @@ const RoundInsights = ({ insightsData }) => {
   const SZIRPercentage = totalHolesPlayed > 0 ? (totalSZIR / totalHolesPlayed) * 100 : null;
   const multiPuttRatio = totalHolesPlayed > 0 ? (holesWithMoreThanOnePuttWithin4ft / totalHolesPlayed) * 100 : null;
   const holeoutFromOutside4ftPercentage = totalHolesPlayed > 0 ? (totalHoleoutFromOutside4ft / totalHolesPlayed) * 100 : null;
-  const holeoutWithin3ShotsPercentage = totalHolesPlayed > 0 ? (totalHoleoutWithin3Shots / totalHolesPlayed) * 100 : null;
+  const holeoutWithin3ShotsPercentage = totalSZIR > 0 ? (totalHoleoutWithin3Shots / totalSZIR) * 100 : null;
 
   return (
     <Paper {...cardStyles}>
@@ -54,16 +56,16 @@ const RoundInsights = ({ insightsData }) => {
         </Typography>
         <Grid container spacing={2}>
           <Grid item xs={6} sm={3}>
-            <StatCard label="Scoring Holes" value={totalHolesPlayed} />
+            <StatCard label="Scoring Holes" value={totalHolesPlayed} tooltip="Total number of holes with hole-by-hole data." />
           </Grid>
           <Grid item xs={6} sm={3}>
-            <StatCard label="Total Strokes" value={totalScore} />
+            <StatCard label="Total Strokes" value={totalScore} tooltip="Sum of all strokes for the round(s)." />
           </Grid>
           <Grid item xs={6} sm={3}>
-            <StatCard label="Total Penalties" value={totalPenalties} />
+            <StatCard label="Total Penalties" value={totalPenalties} tooltip="Total penalty strokes recorded." />
           </Grid>
           <Grid item xs={6} sm={3}>
-            <StatCard label="Avg Penalties/Hole" value={avgPenaltiesPerHole} />
+            <StatCard label="Avg Penalties/Hole" value={avgPenaltiesPerHole} tooltip="Average number of penalty strokes per hole." />
           </Grid>
         </Grid>
       </Box>
@@ -75,9 +77,10 @@ const RoundInsights = ({ insightsData }) => {
         <Grid container spacing={2}>
           <Grid item xs={12} sm={6}>
             <StatCard 
-              label="Scoring Zone in Regulation" 
-              value={totalSZIR} 
+              label="Scoring Zone in Regulation (SZIR)" 
+              value={`${totalSZIR} / ${totalHolesPlayed}`}
               percentage={SZIRPercentage} 
+              tooltip="Getting inside the Scoring Zone within Par-2 shots. This shows you the number of times you have given yourself a change to score"
             />
           </Grid>
         </Grid>
@@ -89,26 +92,28 @@ const RoundInsights = ({ insightsData }) => {
         </Typography>
         <Grid container spacing={2}>
           <Grid item xs={6} sm={4}>
-            <StatCard label="Total Putts" value={totalPutts} />
+            <StatCard label="Total Putts" value={totalPutts} tooltip="Total number of putts." />
           </Grid>
           <Grid item xs={6} sm={4}>
-            <StatCard label="Avg Putts/Hole" value={avgPuttsPerHole} />
+            <StatCard label="Avg Putts/Hole" value={avgPuttsPerHole} tooltip="Average number of putts per hole." />
           </Grid>
           <Grid item xs={6} sm={4}>
-            <StatCard label="Putts within 4ft" value={totalPuttsWithin4ft} />
+            <StatCard label="Putts within 4ft" value={totalPuttsWithin4ft} tooltip="Total number of putts taken from within 4 feet of the hole." />
           </Grid>
           <Grid item xs={6} sm={4}>
             <StatCard 
-              label="Holeouts within 3 Shots" 
-              value={totalHoleoutWithin3Shots} 
+              label="SZ Par (Holeout in 3)" 
+              value={`${totalHoleoutWithin3Shots} / ${totalSZIR}`} 
               percentage={holeoutWithin3ShotsPercentage} 
+              tooltip="Holing out in 3 or fewer shots once inside the Scoring Zone. This is your conversion rate for scoring opportunities."
             />
           </Grid>
           <Grid item xs={6} sm={4}>
             <StatCard 
-              label="Holes w/ >1 Putt <4ft" 
+              label="Holes w/ Short Misses (<4ft)" 
               value={holesWithMoreThanOnePuttWithin4ft} 
               percentage={multiPuttRatio}
+              tooltip="Number of holes where you took more than one putt from inside 4 feet."
             />
           </Grid>
           <Grid item xs={6} sm={4}>
@@ -116,6 +121,7 @@ const RoundInsights = ({ insightsData }) => {
               label="Luck Stat (Holeout >4ft)" 
               value={totalHoleoutFromOutside4ft} 
               percentage={holeoutFromOutside4ftPercentage} 
+              tooltip="Number of times you holed out from outside 4 feet!"
             />
           </Grid>
         </Grid>

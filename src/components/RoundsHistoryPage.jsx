@@ -3,15 +3,7 @@ import {
   Box,
   Typography,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Button,
-  IconButton,
-  Tooltip,
   CircularProgress,
   Alert,
   Dialog,
@@ -20,9 +12,9 @@ import {
   DialogContentText,
   DialogTitle,
 } from '@mui/material';
-import { Visibility as VisibilityIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { roundService } from '../services/roundService';
 import { elevatedCardStyles } from '../styles/commonStyles';
+import RoundsTable from './RoundsTable';
 
 const RoundsHistoryPage = ({ user, onViewRound, onAddRound }) => {
   const [rounds, setRounds] = useState([]);
@@ -90,43 +82,7 @@ const RoundsHistoryPage = ({ user, onViewRound, onAddRound }) => {
       {rounds.length === 0 ? (
         <Typography>You haven't recorded any rounds yet.</Typography>
       ) : (
-        <TableContainer>
-          <Table>
-            <TableHead>
-              <TableRow>
-                <TableCell>Date</TableCell>
-                <TableCell>Course</TableCell>
-                <TableCell>Tee Box</TableCell>
-                <TableCell align="right">Score</TableCell>
-                <TableCell align="right">Putts</TableCell>
-                <TableCell align="center">Actions</TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {rounds.map((round) => (
-                <TableRow key={round.id} hover>
-                  <TableCell>{new Date(round.round_date).toLocaleDateString()}</TableCell>
-                  <TableCell>{round.courses.name}</TableCell>
-                  <TableCell>{round.tee_box}</TableCell>
-                  <TableCell align="right">{round.total_score}</TableCell>
-                  <TableCell align="right">{round.total_putts}</TableCell>
-                  <TableCell align="center">
-                    <Tooltip title="View Details">
-                      <IconButton onClick={() => onViewRound(round.id)} size="small">
-                        <VisibilityIcon />
-                      </IconButton>
-                    </Tooltip>
-                    <Tooltip title="Delete Round">
-                      <IconButton onClick={() => handleDeleteClick(round.id)} size="small" color="error">
-                        <DeleteIcon />
-                      </IconButton>
-                    </Tooltip>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </TableContainer>
+        <RoundsTable rounds={rounds} onViewRound={onViewRound} onDelete={handleDeleteClick} />
       )}
 
       {/* Delete Confirmation Dialog */}

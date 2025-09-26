@@ -211,6 +211,17 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
     e.preventDefault();
     setLoading(true);
 
+    // Determine if it's an "eligible" round (>=7 holes for 9, >=14 for 18)
+    let is_eligible_round = false;
+    if (courseDetails.round_type === '18_holes') {
+      is_eligible_round = holes.filter(h => h.played).length >= 14;
+    } else if (courseDetails.round_type === 'front_9') {
+      is_eligible_round = holes.slice(0, 9).filter(h => h.played).length >= 7;
+    } else if (courseDetails.round_type === 'back_9') {
+      is_eligible_round = holes.slice(9, 18).filter(h => h.played).length >= 7;
+    }
+
+
     // Find or create course_id
     let finalCourseId = courseDetails.course_id;
     if (!finalCourseId) {
@@ -270,6 +281,7 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
       total_score: totalScore,
       total_putts: totalPutts,
       total_penalties: totalPenalties,
+      is_eligible_round,
     };
 
     const holesData = holes
