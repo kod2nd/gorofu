@@ -52,12 +52,21 @@ const Analytics = ({ recentRounds, recentStats }) => {
   ].filter(d => (d['Putts'] + d['Strokes to Green']) > 0);
 
   const correlationData = [
-    { name: 'SZIR (Par 3)', 'Avg Score': parseFloat(recentStats.avg_score_with_szir_par3).toFixed(2) },
-    { name: 'SZIR (Par 4)', 'Avg Score': parseFloat(recentStats.avg_score_with_szir_par4).toFixed(2) },
-    { name: 'SZIR (Par 5)', 'Avg Score': parseFloat(recentStats.avg_score_with_szir_par5).toFixed(2) },
-    { name: 'Missed SZIR', 'Avg Score': parseFloat(recentStats.avg_score_without_szir).toFixed(2) },
-    { name: 'Achieved SZ Par', 'Avg Score': parseFloat(recentStats.avg_score_with_szpar).toFixed(2) },
-    { name: 'Missed SZ Par', 'Avg Score': parseFloat(recentStats.avg_score_without_szpar).toFixed(2) },
+    {
+      name: 'Par 3',
+      'Achieved SZIR': recentStats.avg_score_with_szir_par3 ? parseFloat(recentStats.avg_score_with_szir_par3).toFixed(2) : null,
+      'Missed SZIR': recentStats.avg_score_without_szir_par3 ? parseFloat(recentStats.avg_score_without_szir_par3).toFixed(2) : null,
+    },
+    {
+      name: 'Par 4',
+      'Achieved SZIR': recentStats.avg_score_with_szir_par4 ? parseFloat(recentStats.avg_score_with_szir_par4).toFixed(2) : null,
+      'Missed SZIR': recentStats.avg_score_without_szir_par4 ? parseFloat(recentStats.avg_score_without_szir_par4).toFixed(2) : null,
+    },
+    {
+      name: 'Par 5',
+      'Achieved SZIR': recentStats.avg_score_with_szir_par5 ? parseFloat(recentStats.avg_score_with_szir_par5).toFixed(2) : null,
+      'Missed SZIR': recentStats.avg_score_without_szir_par5 ? parseFloat(recentStats.avg_score_without_szir_par5).toFixed(2) : null,
+    },
   ];
 
   const scoreDistributionData = [
@@ -151,18 +160,17 @@ const Analytics = ({ recentRounds, recentStats }) => {
       </Grid>
       <Grid item xs={12} lg={6} sx={{ width: '100%', p: 2 }}>
         <Paper {...elevatedCardStyles} sx={{ width: '100%', p: 2 }}>
-          <Typography {...sectionHeaderStyles}>Score Correlation</Typography>
+          <Typography {...sectionHeaderStyles}>Score Correlation - SZIR</Typography>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={correlationData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" />
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip />
-              <Bar dataKey="Avg Score" name="Average Score">
-                {correlationData.map((entry, index) => (
-                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                ))}
-              </Bar>
+              <Legend />
+              <Bar dataKey="Achieved SZIR" fill="#82ca9d" />
+              <Bar dataKey="Missed SZIR" fill="#FF8042" />
+            
             </BarChart>
           </ResponsiveContainer>
         </Paper>
