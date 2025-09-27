@@ -210,7 +210,7 @@ export const courseService = {
         name: courseData.name,
         country: courseData.country,
         city: courseData.city,
-        created_by: courseData.id ? undefined : userEmail, // Only set creator on new course
+        created_by: userEmail,
         is_verified: false, // Or handle verification logic
       })
       .select()
@@ -221,7 +221,10 @@ export const courseService = {
     // Step 2: Prepare all hole data for all tee boxes
     const allHolesData = courseData.tee_boxes.flatMap(teeBox =>
       teeBox.holes
-        .filter(hole => hole.par && hole.distance) // Only save holes with data
+        // Ensure both par and distance have valid, non-empty values before attempting to save.
+        .filter(hole => 
+          (hole.par !== null && hole.par !== '') && 
+          (hole.distance !== null && hole.distance !== ''))
         .map(hole => ({
           course_id: savedCourse.id,
           tee_box: teeBox.name,
@@ -233,17 +236,12 @@ export const courseService = {
         }))
     );
 
-    // Step 3: Delete old tee box data for this course to ensure a clean slate
-    // This is important for updates, to remove any deleted tee boxes or holes
-    const { error: deleteError } = await supabase
+    // Step 3: Upsert the new, complete set of tee box data.
+    // `upsert` will handle both creating new holes and updating existing ones
+    // based on the unique constraint defined in `onConflict`.
+    const { error: holesError } = await supabase
       .from('course_tee_boxes')
-      .delete()
-      .eq('course_id', savedCourse.id);
-
-    if (deleteError) throw deleteError;
-
-    // Step 4: Insert the new, complete set of tee box data
-    const { error: holesError } = await supabase.from('course_tee_boxes').insert(allHolesData);
+      .upsert(allHolesData, { onConflict: 'course_id, tee_box, hole_number' });
 
     if (holesError) throw holesError;
 

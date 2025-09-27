@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -113,7 +113,7 @@ const CourseForm = ({ course: initialCourse, onSave, onCancel }) => {
       const newParOverrides = { ...hole.par_overrides };
       delete newParOverrides[teeBoxToRemove.name];
       delete newDistances[teeBoxToRemove.name];
-      return { ...hole, distances: newDistances };
+      return { ...hole, distances: newDistances, par_overrides: newParOverrides };
     });
 
     setCourse({ ...course, tee_boxes: newTeeBoxes, holes: newHoles });
@@ -136,6 +136,16 @@ const CourseForm = ({ course: initialCourse, onSave, onCancel }) => {
     onSave(courseDataForSave);
   };
 
+  // Check for duplicate tee box names to disable the save button
+  const hasDuplicateTeeBoxes = useMemo(() => {
+    const names = course.tee_boxes.map(tb => tb.name.trim());
+    // A name is a duplicate if it's not empty and its first index is not its last index.
+    return names.some((name, index) => 
+      name !== '' && 
+      names.indexOf(name) !== index
+    );
+  }, [course.tee_boxes]);
+
   return (
     <Paper {...elevatedCardStyles}>
       <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
@@ -154,9 +164,16 @@ const CourseForm = ({ course: initialCourse, onSave, onCancel }) => {
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>Tee Boxes</Typography>
           <Grid container spacing={2}>
             {course.tee_boxes.map((teeBox, index) => (
-              <Grid item xs={12} sm={4} md={3} key={index}>
+              <Grid item xs={12} sm={6} md={4} key={index}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <TextField label={`Tee ${index + 1} Name`} value={teeBox.name} onChange={(e) => handleTeeBoxNameChange(index, e.target.value)} fullWidth />
+                  <TextField 
+                    label={`Tee ${index + 1} Name`} 
+                    value={teeBox.name} 
+                    onChange={(e) => handleTeeBoxNameChange(index, e.target.value)} 
+                    fullWidth 
+                    error={course.tee_boxes.some((tb, i) => tb.name.trim() === teeBox.name.trim() && i !== index)}
+                    helperText={course.tee_boxes.some((tb, i) => tb.name.trim() === teeBox.name.trim() && i !== index) ? 'Duplicate name' : ''}
+                  />
                   <IconButton onClick={() => removeTeeBox(index)} color="error"><DeleteIcon /></IconButton>
                 </Box>
               </Grid>
@@ -221,7 +238,7 @@ const CourseForm = ({ course: initialCourse, onSave, onCancel }) => {
         ))}
 
         <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
-          <Button type="submit" variant="contained" color="primary">
+          <Button type="submit" variant="contained" color="primary" disabled={hasDuplicateTeeBoxes}>
             Save Course
           </Button>
           <Button variant="outlined" onClick={onCancel}>
