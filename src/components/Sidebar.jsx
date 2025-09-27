@@ -30,6 +30,11 @@ const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, active
       icon: <AdminPanelSettingsIcon />,
       page: "userManagement"
     });
+    menuItems.push({
+      text: "Course Management",
+      icon: <SportsGolfIcon />,
+      page: "courseManagement"
+    });
   }
 
   return (

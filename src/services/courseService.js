@@ -108,6 +108,50 @@ export const courseService = {
     return [...new Set(data.map(item => item.tee_box))];
   },
 
+   // Get a course and all its tee box data, formatted for the CourseForm
+  async getCourseForEditing(courseId) {
+    const { data: course, error: courseError } = await supabase
+      .from('courses')
+      .select('*')
+      .eq('id', courseId)
+      .single();
+
+    if (courseError) throw courseError;
+
+    const { data: teeBoxData, error: teeBoxError } = await supabase
+      .from('course_tee_boxes')
+      .select('*')
+      .eq('course_id', courseId);
+
+    if (teeBoxError) throw teeBoxError;
+
+    // Transform the data into the "hole-centric" format the form expects
+    const tee_boxes = [...new Map(teeBoxData.map(item => [item.tee_box, { name: item.tee_box, yards_or_meters_unit: item.yards_or_meters_unit }])).values()];
+
+    const holes = Array.from({ length: 18 }, (_, i) => {
+      const hole_number = i + 1;
+      const distances = {};
+      const par_overrides = {};
+      let defaultPar = '';
+
+      teeBoxData.forEach(tbh => {
+        if (tbh.hole_number === hole_number) {
+          distances[tbh.tee_box] = tbh.distance;
+          // Assume the first par found is the default
+          if (!defaultPar) defaultPar = tbh.par;
+          // If a par differs from the default, it's an override
+          if (tbh.par !== defaultPar) {
+            par_overrides[tbh.tee_box] = tbh.par;
+          }
+        }
+      });
+
+      return { hole_number, par: defaultPar, distances, par_overrides };
+    });
+
+    return { ...course, tee_boxes, holes };
+  },
+
   // Create tee box data for a course
   async createTeeBoxData(courseId, teeBox, holesData, userEmail, yardsOrMeters = 'yards') {
     const teeBoxInserts = holesData.map(hole => ({
@@ -155,5 +199,54 @@ export const courseService = {
     
     // Return unique countries
     return [...new Set(data.map(item => item.country))];
-  }
+  },
+    // Save a course and all its tee box data
+  async saveCourseWithTeeBoxes(courseData, userEmail) {
+    // Step 1: Upsert the course itself to get an ID
+    const { data: savedCourse, error: courseError } = await supabase
+      .from('courses')
+      .upsert({
+        id: courseData.id, // Will be null for new courses
+        name: courseData.name,
+        country: courseData.country,
+        city: courseData.city,
+        created_by: courseData.id ? undefined : userEmail, // Only set creator on new course
+        is_verified: false, // Or handle verification logic
+      })
+      .select()
+      .single();
+
+    if (courseError) throw courseError;
+
+    // Step 2: Prepare all hole data for all tee boxes
+    const allHolesData = courseData.tee_boxes.flatMap(teeBox =>
+      teeBox.holes
+        .filter(hole => hole.par && hole.distance) // Only save holes with data
+        .map(hole => ({
+          course_id: savedCourse.id,
+          tee_box: teeBox.name,
+          hole_number: hole.hole_number,
+          par: parseInt(hole.par, 10),
+          distance: parseInt(hole.distance, 10),
+          yards_or_meters_unit: teeBox.yards_or_meters_unit,
+          last_updated_by: userEmail,
+        }))
+    );
+
+    // Step 3: Delete old tee box data for this course to ensure a clean slate
+    // This is important for updates, to remove any deleted tee boxes or holes
+    const { error: deleteError } = await supabase
+      .from('course_tee_boxes')
+      .delete()
+      .eq('course_id', savedCourse.id);
+
+    if (deleteError) throw deleteError;
+
+    // Step 4: Insert the new, complete set of tee box data
+    const { error: holesError } = await supabase.from('course_tee_boxes').insert(allHolesData);
+
+    if (holesError) throw holesError;
+
+    return savedCourse;
+  },
 };

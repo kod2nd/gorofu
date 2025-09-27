@@ -22,6 +22,7 @@ import AdminRoute from './components/AdminRoute';
 import AccountPage from './components/AccountPage';
 import RoundsHistoryPage from './components/RoundsHistoryPage';
 import RoundDetailsPage from './components/RoundDetailsPage';
+import CourseManagementPage from './components/CourseManagementPage';
 import { userService } from './services/userService';
 
 const drawerWidth = 240;
@@ -126,6 +127,8 @@ function App() {
         return 'User Management';
       case 'viewRound':
         return 'Round Details';
+      case 'courseManagement':
+        return 'Course Management';
       default:
         return 'GolfStat';
     }
@@ -149,8 +152,14 @@ function App() {
         return <AccountPage userProfile={userProfile} onProfileUpdate={handleProfileUpdate} />;
       case 'userManagement':
         return (
-          <AdminRoute>
+          <AdminRoute userProfile={userProfile}>
             <UserManagement />
+          </AdminRoute>
+        );
+      case 'courseManagement':
+        return (
+          <AdminRoute userProfile={userProfile}>
+            <CourseManagementPage user={session.user} onBack={() => setActivePage('dashboard')} />
           </AdminRoute>
         );
       case 'roundsHistory':
