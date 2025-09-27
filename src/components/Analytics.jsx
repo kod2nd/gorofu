@@ -69,6 +69,24 @@ const Analytics = ({ recentRounds, recentStats }) => {
     },
   ];
 
+  const shortGameCorrelationData = [
+    {
+      name: 'Par 3',
+      'Achieved SZ Par': recentStats.avg_score_with_szpar_par3 ? parseFloat(recentStats.avg_score_with_szpar_par3).toFixed(2) : null,
+      'Missed SZ Par': recentStats.avg_score_without_szpar_par3 ? parseFloat(recentStats.avg_score_without_szpar_par3).toFixed(2) : null,
+    },
+    {
+      name: 'Par 4',
+      'Achieved SZ Par': recentStats.avg_score_with_szpar_par4 ? parseFloat(recentStats.avg_score_with_szpar_par4).toFixed(2) : null,
+      'Missed SZ Par': recentStats.avg_score_without_szpar_par4 ? parseFloat(recentStats.avg_score_without_szpar_par4).toFixed(2) : null,
+    },
+    {
+      name: 'Par 5',
+      'Achieved SZ Par': recentStats.avg_score_with_szpar_par5 ? parseFloat(recentStats.avg_score_with_szpar_par5).toFixed(2) : null,
+      'Missed SZ Par': recentStats.avg_score_without_szpar_par5 ? parseFloat(recentStats.avg_score_without_szpar_par5).toFixed(2) : null,
+    },
+  ];
+
   const getDistributionPercentages = (prefix) => {
     const birdie = recentStats[`${prefix}birdie_or_better_count`] || 0;
     const par = recentStats[`${prefix}par_count`] || 0;
@@ -131,7 +149,7 @@ const Analytics = ({ recentRounds, recentStats }) => {
 
   return (
     <Grid container spacing={3}>
-      <Grid item xs={12} sx={{ width: '100%', p: 2 }}>
+      {performanceData.some(d => d['Par 3 Avg Score'] != null) && <Grid item xs={12} sx={{ width: '100%', p: 2 }}>
         <Paper {...elevatedCardStyles} sx={{ width: '100%', p: 2 }}>
           <Typography {...sectionHeaderStyles}>Par 3 Performance</Typography>
           <ResponsiveContainer width="100%" height={250}>
@@ -146,8 +164,8 @@ const Analytics = ({ recentRounds, recentStats }) => {
             </LineChart>
           </ResponsiveContainer>
         </Paper>
-      </Grid>
-      <Grid item xs={12} sx={{ width: '100%', p: 2 }}>
+      </Grid>}
+      {performanceData.some(d => d['Par 4 Avg Score'] != null) && <Grid item xs={12} sx={{ width: '100%', p: 2 }}>
         <Paper {...elevatedCardStyles} sx={{ width: '100%', p: 2 }}>
           <Typography {...sectionHeaderStyles}>Par 4 Performance</Typography>
           <ResponsiveContainer width="100%" height={250}>
@@ -162,8 +180,8 @@ const Analytics = ({ recentRounds, recentStats }) => {
             </LineChart>
           </ResponsiveContainer>
         </Paper>
-      </Grid>
-      <Grid item xs={12} sx={{ width: '100%', p: 2 }}>
+      </Grid>}
+      {performanceData.some(d => d['Par 5 Avg Score'] != null) && <Grid item xs={12} sx={{ width: '100%', p: 2 }}>
         <Paper {...elevatedCardStyles} sx={{ width: '100%', p: 2 }}>
           <Typography {...sectionHeaderStyles}>Par 5 Performance</Typography>
           <ResponsiveContainer width="100%" height={250}>
@@ -178,8 +196,8 @@ const Analytics = ({ recentRounds, recentStats }) => {
             </LineChart>
           </ResponsiveContainer>
         </Paper>
-      </Grid>
-      <Grid item xs={12} lg={6} sx={{ width: '100%', p: 2 }}>
+      </Grid>}
+      {scoreProportionData.length > 0 && <Grid item xs={12} lg={6} sx={{ width: '100%', p: 2 }}>
         <Paper {...elevatedCardStyles} sx={{ width: '100%', p: 2 }}>
           <Typography {...sectionHeaderStyles}>Putts as Proportion of Score</Typography>
           <ResponsiveContainer width="100%" height={350}>
@@ -194,8 +212,8 @@ const Analytics = ({ recentRounds, recentStats }) => {
             </BarChart>
           </ResponsiveContainer>
         </Paper>
-      </Grid>
-      <Grid item xs={12} lg={6} sx={{ width: '100%', p: 2 }}>
+      </Grid>}
+      {correlationData.some(d => d['Achieved SZIR'] || d['Missed SZIR']) && <Grid item xs={12} lg={6} sx={{ width: '100%', p: 2 }}>
         <Paper {...elevatedCardStyles} sx={{ width: '100%', p: 2 }}>
           <Typography {...sectionHeaderStyles}>Score Correlation (Long Game)</Typography>
           <ResponsiveContainer width="100%" height={350}>
@@ -210,8 +228,24 @@ const Analytics = ({ recentRounds, recentStats }) => {
             </BarChart>
           </ResponsiveContainer>
         </Paper>
-      </Grid>
-      <Grid item xs={12} sx={{ width: '100%', p: 2 }}>
+      </Grid>}
+      {shortGameCorrelationData.some(d => d['Achieved SZ Par'] || d['Missed SZ Par']) && <Grid item xs={12} lg={6} sx={{ width: '100%', p: 2 }}>
+        <Paper {...elevatedCardStyles} sx={{ width: '100%', p: 2 }}>
+          <Typography {...sectionHeaderStyles}>Score Correlation (Short Game)</Typography>
+          <ResponsiveContainer width="100%" height={350}>
+            <BarChart data={shortGameCorrelationData} margin={{ top: 5, right: 20, left: -10, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Legend />
+              <Bar dataKey="Achieved SZ Par" fill="#82ca9d" />
+              <Bar dataKey="Missed SZ Par" fill="#FF8042" />
+            </BarChart>
+          </ResponsiveContainer>
+        </Paper>
+      </Grid>}
+      {distributionData.length > 0 && <Grid item xs={12} sx={{ width: '100%', p: 2 }}>
         <Paper {...elevatedCardStyles} sx={{ width: '100%', p: 2 }}>
           <Typography {...sectionHeaderStyles}>Score Distribution Analysis</Typography>
           <ResponsiveContainer width="100%" height={400}>
@@ -228,7 +262,7 @@ const Analytics = ({ recentRounds, recentStats }) => {
             </BarChart>
           </ResponsiveContainer>
         </Paper>
-      </Grid>
+      </Grid>}
     </Grid>
   );
 };
