@@ -18,6 +18,7 @@ import { roundService } from '../services/roundService';
 import { elevatedCardStyles, sectionHeaderStyles } from '../styles/commonStyles';
 import RoundsTable from './RoundsTable';
 import Analytics from './Analytics';
+import StreakBox from './StreakBox';
 
 const StatCard = ({ label, value, percentage, tooltip }) => (
   <Tooltip title={tooltip || ''} arrow placement="top">
@@ -106,19 +107,19 @@ const Dashboard = ({ user, onViewRound }) => {
           <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>All-Time Stats</Typography>
           <Grid container spacing={3} alignItems="stretch">
             <Grid item xs={12} sm={4} md={3}>
-                <Box sx={{ p: 2, border: '2px solid', borderColor: 'primary.main', borderRadius: 2, background: (theme) => theme.palette.action.hover, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <Typography variant="h2" sx={{ fontWeight: 'bold', color: 'primary.main' }}>{szirStreak}</Typography>
-                    <Typography variant="h6" color="text.secondary">SZIR Streak</Typography>
-                </Box>
+              <Box sx={{ textAlign: 'center' }}>
+                <StreakBox streak={szirStreak} type="szir" />
+                <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>SZIR Streak</Typography>
+              </Box>
             </Grid>
             <Grid item xs={12} sm={4} md={3}>
-                <Box sx={{ p: 2, border: '2px solid', borderColor: 'secondary.main', borderRadius: 2, background: (theme) => theme.palette.action.hover, height: '100%', display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <Typography variant="h2" sx={{ fontWeight: 'bold', color: 'secondary.main' }}>{szParStreak}</Typography>
-                    <Typography variant="h6" color="text.secondary">SZ Par Streak</Typography>
-                </Box>
+              <Box sx={{ textAlign: 'center' }}>
+                <StreakBox streak={szParStreak} type="szpar" />
+                <Typography variant="h6" color="text.secondary" sx={{ mt: 1 }}>SZ Par Streak</Typography>
+              </Box>
             </Grid>
             <Grid item xs={12} sm={8} md={6}>
-              <Grid container spacing={2}>
+              <Grid container spacing={2} sx={{ height: '100%' }}>
                 <Grid item xs={6} sm={4}> <StatCard label="Total Rounds" value={cumulativeStats?.total_rounds_played} /> </Grid>
                 <Grid item xs={6} sm={4}> <StatCard label="Eligible Rounds" value={cumulativeStats?.eligible_rounds_count} /> </Grid>
                 <Grid item xs={12} sm={4}> <StatCard label="Total Holes" value={cumulativeStats?.total_holes_played} /> </Grid>
@@ -176,11 +177,6 @@ const Dashboard = ({ user, onViewRound }) => {
         </Paper>
       </Grid>
 
-      {/* Right Column: Analytics Charts */}
-      <Grid item xs={12} md={8} sx={{ width: '100%' }}>
-        <Analytics recentRounds={recentRounds} recentStats={recentStats} sx={{ width: '100%' }} />
-      </Grid>
-
       {/* Recent Rounds Table (Full Width Below) */}
       <Grid item xs={12}  sx={{ width: '100%', p: 2 }}>
         <Paper {...elevatedCardStyles}>
@@ -189,6 +185,11 @@ const Dashboard = ({ user, onViewRound }) => {
           </Typography>
           <RoundsTable rounds={recentRounds} onViewRound={onViewRound} />
         </Paper>
+      </Grid>
+
+      {/* Right Column: Analytics Charts */}
+      <Grid item xs={12} md={8} sx={{ width: '100%' }}>
+        <Analytics recentRounds={recentRounds} recentStats={recentStats} sx={{ width: '100%' }} />
       </Grid>
     </Grid>
   );
