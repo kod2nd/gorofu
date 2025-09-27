@@ -101,7 +101,7 @@ const Dashboard = ({ user, onViewRound }) => {
   return (
     <Grid container spacing={3}>
       {/* All-Time Stats (Unaffected by filters) */}
-      <Grid item xs={12}>
+      <Grid item xs={12} sx={{ width: '100%', p: 2 }}>
         <Paper {...elevatedCardStyles} sx={{ p: 3, textAlign: 'center' }}>
           <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>All-Time Stats</Typography>
           <Grid container spacing={3} alignItems="stretch">
@@ -132,7 +132,7 @@ const Dashboard = ({ user, onViewRound }) => {
       <Grid item xs={12}><Divider /></Grid>
 
       {/* Left Column: Filters & Insights */}
-      <Grid item xs={12} md={4}>
+      <Grid item xs={12} md={4} sx={{ width: '100%', p: 2 }}>
         <Paper {...elevatedCardStyles} sx={{ p: 2 }}>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {/* Filters */}
@@ -152,10 +152,15 @@ const Dashboard = ({ user, onViewRound }) => {
                 sx={{ mt: 1 }}
               />
             </Box>
-            <Divider />
+            </Box>
+            </Paper>
+      </Grid>
             {/* Insights */}
-            <Box>
-              <Typography {...sectionHeaderStyles} sx={{mb: 1}}>Recent Insights</Typography>
+      <Grid item xs={12} md={4} sx={{ width: '100%', p: 2 }}>
+        <Paper {...elevatedCardStyles} sx={{ p: 2 }}>
+              <Typography sx={{ fontWeight: 'bold', mb: 1 }}>Recent Insights</Typography>
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <Box sx={{ width: '100%', p: 2 }}>
               {recentStats && recentStats.total_holes_played > 0 ? (
                 <Grid container spacing={2}>
                   <Grid item xs={6}> <StatCard label="Avg Score" value={Number(recentStats.avg_par4_score).toFixed(1)} tooltip="Average score on par 4 holes." /> </Grid>
@@ -177,7 +182,7 @@ const Dashboard = ({ user, onViewRound }) => {
       </Grid>
 
       {/* Recent Rounds Table (Full Width Below) */}
-      <Grid item xs={12}>
+      <Grid item xs={12}  sx={{ width: '100%', p: 2 }}>
         <Paper {...elevatedCardStyles}>
           <Typography variant="h6" component="h2" sx={{ mb: 2, fontWeight: 'bold' }}>
             Recent Rounds

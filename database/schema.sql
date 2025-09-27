@@ -243,7 +243,7 @@ DROP FUNCTION IF EXISTS public.get_recent_rounds_stats(TEXT, INT, BOOLEAN); -- K
 
 -- Function to get stats for a specific number of recent rounds
 CREATE OR REPLACE FUNCTION get_recent_rounds_stats(user_email_param TEXT, round_limit INT, eligible_rounds_only BOOLEAN)
-RETURNS TABLE(total_holes_played BIGINT, avg_par3_score NUMERIC, avg_par4_score NUMERIC, avg_par5_score NUMERIC, avg_putts_per_hole NUMERIC, szir_percentage NUMERIC, szir_count BIGINT, multi_putt_4ft_holes BIGINT, holeout_within_3_shots_count BIGINT, holeout_from_outside_4ft_count BIGINT, total_penalties BIGINT, avg_penalties_per_round NUMERIC, one_putt_count BIGINT, two_putt_count BIGINT, three_putt_plus_count BIGINT, birdie_or_better_count BIGINT, par_count BIGINT, bogey_count BIGINT, double_bogey_plus_count BIGINT, avg_putts_par3 NUMERIC, avg_putts_par4 NUMERIC, avg_putts_par5 NUMERIC, avg_score_with_szir NUMERIC, avg_score_without_szir NUMERIC, avg_score_with_szpar NUMERIC, avg_score_without_szpar NUMERIC, avg_score_with_szir_par3 NUMERIC, avg_score_with_szir_par4 NUMERIC, avg_score_with_szir_par5 NUMERIC, avg_score_without_szir_par3 NUMERIC, avg_score_without_szir_par4 NUMERIC, avg_score_without_szir_par5 NUMERIC)
+RETURNS TABLE(total_holes_played BIGINT, avg_par3_score NUMERIC, avg_par4_score NUMERIC, avg_par5_score NUMERIC, avg_putts_per_hole NUMERIC, szir_percentage NUMERIC, szir_count BIGINT, multi_putt_4ft_holes BIGINT, holeout_within_3_shots_count BIGINT, holeout_from_outside_4ft_count BIGINT, total_penalties BIGINT, avg_penalties_per_round NUMERIC, one_putt_count BIGINT, two_putt_count BIGINT, three_putt_plus_count BIGINT, birdie_or_better_count BIGINT, par_count BIGINT, bogey_count BIGINT, double_bogey_plus_count BIGINT, avg_putts_par3 NUMERIC, avg_putts_par4 NUMERIC, avg_putts_par5 NUMERIC, avg_score_with_szir NUMERIC, avg_score_without_szir NUMERIC, avg_score_with_szpar NUMERIC, avg_score_without_szpar NUMERIC, avg_score_with_szir_par3 NUMERIC, avg_score_with_szir_par4 NUMERIC, avg_score_with_szir_par5 NUMERIC, avg_score_without_szir_par3 NUMERIC, avg_score_without_szir_par4 NUMERIC, avg_score_without_szir_par5 NUMERIC, par3_birdie_or_better_count BIGINT, par3_par_count BIGINT, par3_bogey_count BIGINT, par3_double_bogey_plus_count BIGINT, par4_birdie_or_better_count BIGINT, par4_par_count BIGINT, par4_bogey_count BIGINT, par4_double_bogey_plus_count BIGINT, par5_birdie_or_better_count BIGINT, par5_par_count BIGINT, par5_bogey_count BIGINT, par5_double_bogey_plus_count BIGINT)
 LANGUAGE plpgsql
 AS $$
 BEGIN
@@ -292,7 +292,19 @@ BEGIN
         (AVG(rh.hole_score) FILTER (WHERE rh.scoring_zone_in_regulation IS TRUE AND ctb.par = 5))::NUMERIC,
         (AVG(rh.hole_score) FILTER (WHERE rh.scoring_zone_in_regulation IS FALSE AND ctb.par = 3))::NUMERIC,
         (AVG(rh.hole_score) FILTER (WHERE rh.scoring_zone_in_regulation IS FALSE AND ctb.par = 4))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.scoring_zone_in_regulation IS FALSE AND ctb.par = 5))::NUMERIC
+        (AVG(rh.hole_score) FILTER (WHERE rh.scoring_zone_in_regulation IS FALSE AND ctb.par = 5))::NUMERIC,
+        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score < rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score = rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score = rh.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score >= rh.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score < rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score = rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score = rh.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score >= rh.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score < rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score = rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score = rh.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score >= rh.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT
     FROM
         rounds r
     LEFT JOIN
