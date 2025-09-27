@@ -46,7 +46,7 @@ const Auth = () => {
       >
         <SportsGolfIcon sx={{ fontSize: 100, mb: 2 }} />
         <Typography variant="h3" component="h1" gutterBottom sx={{ fontWeight: 'bold', mb: 1 }}>
-          Improve Gorofu
+          Gorofu
         </Typography>
         <Typography variant="h6" align="center" sx={{ mb: 4, maxWidth: '80%', mx: 'auto' }}>
           Sign in to track your golf stats and improve your game with data-driven insights.
