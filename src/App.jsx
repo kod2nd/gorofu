@@ -280,7 +280,6 @@ function App() {
               easing: theme.transitions.easing.sharp,
               duration: theme.transitions.duration.leavingScreen,
             }),
-            marginLeft: isDrawerOpen ? `${drawerWidth}px` : `${collapsedWidth}px`,
           }}
         >
           <Toolbar />
