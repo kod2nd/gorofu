@@ -14,14 +14,21 @@ import {
   Tabs,
   Tab,
   useTheme,
-  useMediaQuery
+  useMediaQuery,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from '@mui/material';
 import { 
   Edit as EditIcon, 
   ArrowBack as ArrowBackIcon,
   GolfCourse as GolfCourseIcon,
   Score as ScoreIcon,
-  TrendingUp as TrendingUpIcon
+  TrendingUp as TrendingUpIcon,
+  Lock as LockIcon
 } from '@mui/icons-material';
 import { roundService } from '../services/roundService';
 import { elevatedCardStyles, sectionHeaderStyles } from '../styles/commonStyles';
@@ -42,93 +49,247 @@ const StatItem = ({ label, value, size = 'medium' }) => (
   </Box>
 );
 
-const HoleCard = ({ hole, holeNumber }) => {
-  if (!hole.played) {
-    return (
-      <Card sx={{ opacity: 0.5, height: '100%' }}>
-        <CardContent sx={{ textAlign: 'center', p: 2 }}>
-          <Typography variant="h6" color="text.secondary">
-            Hole {holeNumber}
-          </Typography>
-          <Typography variant="body2" color="text.secondary">
-            Not Played
-          </Typography>
-        </CardContent>
-      </Card>
-    );
-  }
+const MobileScorecardTable = ({ holes }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+
+  const rowDefinitions = [
+    { key: 'par', label: 'Par', getValue: (hole) => hole.par || '-' },
+    { key: 'score', label: 'Score', getValue: (hole) => hole.hole_score || '-' },
+    { key: 'putts', label: 'Putts', getValue: (hole) => hole.putts || '-' },
+    { key: 'szir', label: 'SZIR', getValue: (hole) => hole.hole_score ? (hole.scoring_zone_in_regulation ? '✓' : '✗') : '-' },
+    { key: 'sz_par', label: 'SZ Par', getValue: (hole) => hole.hole_score ? (hole.holeout_within_3_shots_scoring_zone ? '✓' : '✗') : '-' },
+    { key: 'putts_4ft', label: 'Putts <4ft', getValue: (hole) => hole.putts_within4ft || '-' },
+    { key: 'luck', label: 'Luck', getValue: (hole) => hole.hole_score ? (hole.holeout_from_outside_4ft ? '✓' : '-') : '-' },
+    { key: 'penalties', label: 'Penalties', getValue: (hole) => hole.penalty_shots || '-' },
+  ];
 
   return (
-    <Card sx={{ height: '100%', position: 'relative' }}>
-      <CardContent sx={{ p: 2 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-          <Typography variant="h6" fontWeight="bold">
-            Hole {holeNumber}
-          </Typography>
-          <Chip 
-            label={`Par ${hole.par}`} 
-            size="small" 
-            color="primary" 
-            variant="outlined"
-          />
+    <Box sx={{ 
+      height: isMobile ? '60vh' : '70vh', 
+      display: 'flex', 
+      flexDirection: 'column',
+      border: `1px solid ${theme.palette.divider}`,
+      borderRadius: 1,
+      overflow: 'hidden'
+    }}>
+      {/* Frozen Column Headers */}
+      <Box sx={{ 
+        display: 'flex', 
+        borderBottom: `2px solid ${theme.palette.primary.main}`,
+        backgroundColor: theme.palette.background.paper,
+        position: 'sticky',
+        top: 0,
+        zIndex: 10,
+        flexShrink: 0
+      }}>
+        <Box sx={{ 
+          width: 80, 
+          minWidth: 80,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: theme.palette.primary.main,
+          color: 'white',
+          fontWeight: 'bold',
+          fontSize: isMobile ? '0.75rem' : '0.875rem'
+        }}>
+          Hole
         </Box>
+        {Array.from({ length: 18 }, (_, i) => (
+          <Box 
+            key={i}
+            sx={{ 
+              width: 50,
+              minWidth: 50,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: theme.palette.grey[100],
+              fontWeight: 'bold',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
+              borderLeft: `1px solid ${theme.palette.divider}`
+            }}
+          >
+            {i + 1}
+          </Box>
+        ))}
+      </Box>
 
-        <Grid container spacing={1} sx={{ mb: 1 }}>
-          <Grid item xs={6}>
-            <Typography variant="body2" color="text.secondary">Score</Typography>
-            <Typography variant="h6" fontWeight="bold" color={
-              hole.hole_score < hole.par ? 'success.main' : 
-              hole.hole_score > hole.par ? 'error.main' : 'text.primary'
-            }>
-              {hole.hole_score}
-            </Typography>
-          </Grid>
-          <Grid item xs={6}>
-            <Typography variant="body2" color="text.secondary">Putts</Typography>
-            <Typography variant="h6" fontWeight="bold">
-              {hole.putts}
-            </Typography>
-          </Grid>
-        </Grid>
+      {/* Scrollable Content */}
+      <Box sx={{ flex: 1, overflow: 'auto' }}>
+        {rowDefinitions.map((rowDef) => (
+          <Box 
+            key={rowDef.key}
+            sx={{ 
+              display: 'flex',
+              borderBottom: `1px solid ${theme.palette.divider}`,
+              '&:nth-of-type(odd)': {
+                backgroundColor: theme.palette.action.hover
+              }
+            }}
+          >
+            {/* Frozen Row Header */}
+            <Box sx={{ 
+              width: 80,
+              minWidth: 80,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              backgroundColor: theme.palette.background.paper,
+              position: 'sticky',
+              left: 0,
+              zIndex: 5,
+              fontWeight: 'bold',
+              fontSize: isMobile ? '0.75rem' : '0.875rem',
+              borderRight: `1px solid ${theme.palette.divider}`,
+              padding: 1
+            }}>
+              {rowDef.label}
+            </Box>
 
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5, mb: 1 }}>
-          {hole.scoring_zone_in_regulation && (
-            <Chip label="SZIR" size="small" color="success" variant="outlined" />
-          )}
-          {hole.holeout_within_3_shots_scoring_zone && (
-            <Chip label="SZ Par" size="small" color="primary" variant="outlined" />
-          )}
-          {hole.holeout_from_outside_4ft && (
-            <Chip label="Lucky" size="small" color="warning" variant="outlined" />
-          )}
-        </Box>
+            {/* Scrollable Data Cells */}
+            {holes.map((hole, index) => (
+              <Box 
+                key={index}
+                sx={{ 
+                  width: 50,
+                  minWidth: 50,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  padding: 1,
+                  fontSize: isMobile ? '0.75rem' : '0.875rem',
+                  borderLeft: `1px solid ${theme.palette.divider}`,
+                  backgroundColor: 'inherit',
+                  ...(rowDef.key === 'score' && hole.hole_score && {
+                    color: hole.hole_score < hole.par ? theme.palette.success.main : 
+                           hole.hole_score > hole.par ? theme.palette.error.main : 'inherit',
+                    fontWeight: 'bold'
+                  }),
+                  ...(rowDef.key === 'penalties' && hole.penalty_shots > 0 && {
+                    color: theme.palette.error.main,
+                    fontWeight: 'bold'
+                  })
+                }}
+              >
+                {rowDef.getValue(hole)}
+              </Box>
+            ))}
+          </Box>
+        ))}
+      </Box>
 
-        <Grid container spacing={1}>
-          <Grid item xs={6}>
-            <Typography variant="caption" color="text.secondary">
-              Putts &lt;4ft
-            </Typography>
-            <Typography variant="body2" fontWeight="medium">
-              {hole.putts_within4ft || '0'}
-            </Typography>
-          </Grid>
-          <Grid item xs={6}>
-            <Typography variant="caption" color="text.secondary">
-              Penalties
-            </Typography>
-            <Typography 
-              variant="body2" 
-              fontWeight="medium"
-              color={hole.penalty_shots > 0 ? 'error.main' : 'text.primary'}
-            >
-              {hole.penalty_shots || '0'}
-            </Typography>
-          </Grid>
-        </Grid>
-      </CardContent>
-    </Card>
+      {/* Legend Footer */}
+      <Box sx={{ 
+        padding: 1,
+        backgroundColor: theme.palette.grey[50],
+        borderTop: `1px solid ${theme.palette.divider}`,
+        fontSize: '0.7rem',
+        color: theme.palette.text.secondary,
+        textAlign: 'center'
+      }}>
+        SZIR = Scoring Zone In Regulation | Scroll horizontally to view all holes
+      </Box>
+    </Box>
   );
 };
+
+const DesktopScorecardTable = ({ holes }) => (
+  <TableContainer sx={{ maxHeight: 400 }}>
+    <Table size="small" stickyHeader>
+      <TableHead>
+        <TableRow>
+          <TableCell sx={{ fontWeight: 'bold', backgroundColor: 'background.paper' }}>Hole</TableCell>
+          {Array.from({ length: 18 }, (_, i) => (
+            <TableCell key={i} align="center" sx={{ fontWeight: 'bold', backgroundColor: 'background.paper' }}>
+              {i + 1}
+            </TableCell>
+          ))}
+        </TableRow>
+      </TableHead>
+      <TableBody>
+        <TableRow>
+          <TableCell sx={{ fontWeight: 'bold', position: 'sticky', left: 0, backgroundColor: 'white' }}>Par</TableCell>
+          {Array.from({ length: 18 }, (_, i) => {
+            const hole = holes.find(h => h.hole_number === i + 1);
+            return <TableCell key={i} align="center">{hole?.par ?? '-'}</TableCell>;
+          })}
+        </TableRow>
+        <TableRow>
+          <TableCell sx={{ fontWeight: 'bold', position: 'sticky', left: 0, backgroundColor: 'white' }}>Score</TableCell>
+          {Array.from({ length: 18 }, (_, i) => {
+            const hole = holes.find(h => h.hole_number === i + 1);
+            return (
+              <TableCell 
+                key={i} 
+                align="center"
+                sx={{ 
+                  fontWeight: 'bold',
+                  color: hole?.hole_score < hole?.par ? 'success.main' : 
+                         hole?.hole_score > hole?.par ? 'error.main' : 'inherit'
+                }}
+              >
+                {hole?.hole_score ?? '-'}
+              </TableCell>
+            );
+          })}
+        </TableRow>
+        <TableRow>
+          <TableCell sx={{ fontWeight: 'bold', position: 'sticky', left: 0, backgroundColor: 'white' }}>Putts</TableCell>
+          {Array.from({ length: 18 }, (_, i) => {
+            const hole = holes.find(h => h.hole_number === i + 1);
+            return <TableCell key={i} align="center">{hole?.putts ?? '-'}</TableCell>;
+          })}
+        </TableRow>
+        <TableRow>
+          <TableCell sx={{ fontWeight: 'bold', position: 'sticky', left: 0, backgroundColor: 'white' }}>SZIR</TableCell>
+          {Array.from({ length: 18 }, (_, i) => {
+            const hole = holes.find(h => h.hole_number === i + 1);
+            return <TableCell key={i} align="center">{hole?.hole_score ? (hole.scoring_zone_in_regulation ? '✓' : '✗') : '-'}</TableCell>;
+          })}
+        </TableRow>
+        <TableRow>
+          <TableCell sx={{ fontWeight: 'bold', position: 'sticky', left: 0, backgroundColor: 'white' }}>SZ Par</TableCell>
+          {Array.from({ length: 18 }, (_, i) => {
+            const hole = holes.find(h => h.hole_number === i + 1);
+            return <TableCell key={i} align="center">{hole?.hole_score ? (hole.holeout_within_3_shots_scoring_zone ? '✓' : '✗') : '-'}</TableCell>;
+          })}
+        </TableRow>
+        <TableRow>
+          <TableCell sx={{ fontWeight: 'bold', position: 'sticky', left: 0, backgroundColor: 'white' }}>Putts &lt;4ft</TableCell>
+          {Array.from({ length: 18 }, (_, i) => {
+            const hole = holes.find(h => h.hole_number === i + 1);
+            return <TableCell key={i} align="center">{hole?.putts_within4ft ?? '-'}</TableCell>;
+          })}
+        </TableRow>
+        <TableRow>
+          <TableCell sx={{ fontWeight: 'bold', position: 'sticky', left: 0, backgroundColor: 'white' }}>Luck</TableCell>
+          {Array.from({ length: 18 }, (_, i) => {
+            const hole = holes.find(h => h.hole_number === i + 1);
+            return <TableCell key={i} align="center">{hole?.hole_score ? (hole.holeout_from_outside_4ft ? '✓' : '-') : '-'}</TableCell>;
+          })}
+        </TableRow>
+        <TableRow>
+          <TableCell sx={{ fontWeight: 'bold', position: 'sticky', left: 0, backgroundColor: 'white' }}>Penalties</TableCell>
+          {Array.from({ length: 18 }, (_, i) => {
+            const hole = holes.find(h => h.hole_number === i + 1);
+            const penalties = hole?.penalty_shots;
+            return (
+              <TableCell 
+                key={i} 
+                align="center"
+                sx={{ color: penalties > 0 ? 'error.main' : 'text.primary' }}
+              >
+                {penalties ?? '-'}
+              </TableCell>
+            );
+          })}
+        </TableRow>
+      </TableBody>
+    </Table>
+  </TableContainer>
+);
 
 const RoundDetailsPage = ({ roundId, user, onEdit, onBack }) => {
   const theme = useTheme();
@@ -185,8 +346,6 @@ const RoundDetailsPage = ({ roundId, user, onEdit, onBack }) => {
   if (!round) return <Typography>No round data found.</Typography>;
 
   const playedHoles = round.holes.filter(hole => hole.played);
-  const frontNine = round.holes.slice(0, 9);
-  const backNine = round.holes.slice(9, 18);
 
   return (
     <Box sx={{ pb: 2 }}>
@@ -277,18 +436,17 @@ const RoundDetailsPage = ({ roundId, user, onEdit, onBack }) => {
             value={activeTab}
             onChange={(e, newValue) => setActiveTab(newValue)}
             variant="fullWidth"
-            sx={{ mb: 2 }}
           >
             <Tab icon={<TrendingUpIcon />} label="Insights" />
-            <Tab icon={<GolfCourseIcon />} label="Scorecard" />
-            <Tab icon={<ScoreIcon />} label="Details" />
+            <Tab icon={<ScoreIcon />} label="Scorecard" />
+            <Tab icon={<GolfCourseIcon />} label="Details" />
           </Tabs>
         </Paper>
       )}
 
       {/* Content based on active tab (mobile) or all content (desktop) */}
       <Box sx={{ display: isMobile ? 'block' : 'grid', gap: 2 }}>
-        {/* Insights - Always show on desktop, conditional on mobile */}
+        {/* Insights */}
         {(isMobile ? activeTab === 0 : true) && (
           <Paper {...elevatedCardStyles}>
             <Typography {...sectionHeaderStyles}>Round Insights</Typography>
@@ -296,52 +454,24 @@ const RoundDetailsPage = ({ roundId, user, onEdit, onBack }) => {
           </Paper>
         )}
 
-        {/* Scorecard - Always show on desktop, conditional on mobile */}
+        {/* Scorecard */}
         {(isMobile ? activeTab === 1 : true) && (
           <Paper {...elevatedCardStyles}>
-            <Typography {...sectionHeaderStyles}>Scorecard</Typography>
-            
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 2 }}>
+              {isMobile && <LockIcon color="primary" fontSize="small" />}
+              <Typography {...sectionHeaderStyles}>
+                Scorecard {isMobile && '(Scroll to view)'}
+              </Typography>
+            </Box>
             {isMobile ? (
-              // Mobile: Card-based layout
-              <Box>
-                {/* Front 9 */}
-                <Typography variant="h6" sx={{ mb: 2, mt: 1, color: 'primary.main' }}>
-                  Front 9
-                </Typography>
-                <Grid container spacing={1} sx={{ mb: 3 }}>
-                  {frontNine.map((hole, index) => (
-                    <Grid item xs={6} key={hole.hole_number}>
-                      <HoleCard hole={hole} holeNumber={index + 1} />
-                    </Grid>
-                  ))}
-                </Grid>
-
-                {/* Back 9 */}
-                <Typography variant="h6" sx={{ mb: 2, color: 'primary.main' }}>
-                  Back 9
-                </Typography>
-                <Grid container spacing={1}>
-                  {backNine.map((hole, index) => (
-                    <Grid item xs={6} key={hole.hole_number}>
-                      <HoleCard hole={hole} holeNumber={index + 10} />
-                    </Grid>
-                  ))}
-                </Grid>
-              </Box>
+              <MobileScorecardTable holes={round.holes} />
             ) : (
-              // Desktop: Grid layout
-              <Grid container spacing={1}>
-                {round.holes.map((hole) => (
-                  <Grid item xs={6} sm={4} md={3} lg={2} key={hole.hole_number}>
-                    <HoleCard hole={hole} holeNumber={hole.hole_number} />
-                  </Grid>
-                ))}
-              </Grid>
+              <DesktopScorecardTable holes={round.holes} />
             )}
           </Paper>
         )}
 
-        {/* Round Details - Always show on desktop, conditional on mobile */}
+        {/* Round Details */}
         {(isMobile ? activeTab === 2 : true) && (
           <Paper {...elevatedCardStyles}>
             <Typography {...sectionHeaderStyles}>Round Details</Typography>
