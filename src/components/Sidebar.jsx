@@ -41,7 +41,7 @@ const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, active
     <Box
       sx={{
         width: isExpanded ? 240 : 60,
-        height: '100vh',
+        height: '100%',
         backgroundColor: theme.palette.custom.primaryDarkBlue,
         color: 'white',
         p: 2,
