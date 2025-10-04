@@ -262,6 +262,7 @@ function App() {
               handleDrawerToggle={handleDrawerToggle}
               activePage={activePage}
               userRole={userProfile?.role}
+              isMobile={isMobile}
             />
           </Drawer>
         </Box>
@@ -309,16 +310,6 @@ function App() {
                 easing: theme.transitions.easing.sharp,
                 duration: theme.transitions.duration.leavingScreen,
               }),
-              width: {
-                xs: "100%",
-                md: `calc(100% - ${
-                  isDrawerOpen ? drawerWidth : collapsedWidth
-                }px)`,
-              },
-              ml: {
-                xs: 0,
-                md: `${isDrawerOpen ? drawerWidth : collapsedWidth}px`,
-              },
             }}
           >
             <Container
