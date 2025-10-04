@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { supabase } from './supabaseClient';
 import { ThemeProvider } from '@mui/material/styles';
 import {
@@ -10,6 +10,7 @@ import {
   Typography,
   useMediaQuery,
   IconButton,
+  CircularProgress,
 } from '@mui/material';
 import theme from './theme';
 import Drawer from '@mui/material/Drawer';
@@ -17,19 +18,28 @@ import Drawer from '@mui/material/Drawer';
 // Import your components
 import MenuIcon from '@mui/icons-material/Menu';
 import Auth from './Auth';
-import Dashboard from './components/Dashboard';
-import RoundForm from './RoundForm';
 import Sidebar from './components/Sidebar';
-import UserManagement from './components/UserManagement';
 import AdminRoute from './components/AdminRoute';
-import AccountPage from './components/AccountPage';
-import RoundsHistoryPage from './components/RoundsHistoryPage';
-import RoundDetailsPage from './components/RoundDetailsPage';
-import CourseManagementPage from './components/CourseManagementPage';
 import { userService } from './services/userService';
+
+// Lazy load heavy components
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const RoundForm = lazy(() => import('./RoundForm'));
+const UserManagement = lazy(() => import('./components/UserManagement'));
+const AccountPage = lazy(() => import('./components/AccountPage'));
+const RoundsHistoryPage = lazy(() => import('./components/RoundsHistoryPage'));
+const RoundDetailsPage = lazy(() => import('./components/RoundDetailsPage'));
+const CourseManagementPage = lazy(() => import('./components/CourseManagementPage'));
 
 const drawerWidth = 240;
 const collapsedWidth = 60;
+
+// PageContainer component to keep components mounted but hidden
+const PageContainer = ({ active, children }) => (
+  <Box sx={{ display: active ? 'block' : 'none', height: '100%' }}>
+    {children}
+  </Box>
+);
 
 function App() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -73,15 +83,12 @@ function App() {
       setUserProfile(profile);
     } catch (error) {
       console.error('Failed to load user profile:', error);
-      // If no profile exists, create a basic one
       if (session?.user) {
         try {
-          // Create a profile with basic info from the auth user
           await userService.upsertUserProfile({
             full_name: session.user.user_metadata?.full_name || '',
             status: 'active'
           });
-          // Immediately re-fetch the newly created profile to get all DB defaults
           const newlyCreatedProfile = await userService.getCurrentUserProfile();
           setUserProfile(newlyCreatedProfile);
         } catch (createError) {
@@ -94,7 +101,6 @@ function App() {
   };
 
   const handleProfileUpdate = (updatedProfile) => {
-    // Update the userProfile state in the App component
     setUserProfile(updatedProfile);
   };
 
@@ -109,7 +115,7 @@ function App() {
 
   const handleEditRound = (roundId) => {
     setEditingRoundId(roundId);
-    setActivePage('addRound'); // Navigate to the form for editing
+    setActivePage('addRound');
   };
 
   const handleViewRound = (roundId) => {
@@ -138,55 +144,6 @@ function App() {
     }
   };
 
-  const renderContent = () => {
-    switch (activePage) {
-      case 'dashboard':
-        return <Dashboard user={session.user} onViewRound={handleViewRound} />;
-      case 'addRound':
-        return <RoundForm 
-          user={session.user} 
-          userProfile={userProfile}
-          closeForm={() => {
-            setEditingRoundId(null);
-            setActivePage('roundsHistory');
-          }}
-          roundIdToEdit={editingRoundId}
-        />;
-      case 'account':
-        return <AccountPage userProfile={userProfile} onProfileUpdate={handleProfileUpdate} />;
-      case 'userManagement':
-        return (
-          <AdminRoute userProfile={userProfile}>
-            <UserManagement />
-          </AdminRoute>
-        );
-      case 'courseManagement':
-        return (
-          <AdminRoute userProfile={userProfile}>
-            <CourseManagementPage user={session.user} onBack={() => setActivePage('dashboard')} />
-          </AdminRoute>
-        );
-      case 'roundsHistory':
-        return <RoundsHistoryPage 
-          user={session.user}
-          onViewRound={handleViewRound} 
-          onAddRound={() => setActivePage('addRound')} 
-        />;
-      case 'viewRound':
-        return <RoundDetailsPage
-          roundId={viewingRoundId}
-          user={session.user}
-          onEdit={handleEditRound}
-          onBack={() => {
-            setViewingRoundId(null);
-            setActivePage('roundsHistory');
-          }}
-        />;
-      default:
-        return <Dashboard user={session.user} />;
-    }
-  };
-
   if (!session) {
     return (
       <ThemeProvider theme={theme}>
@@ -195,7 +152,6 @@ function App() {
     );
   }
 
-  // Show loading while profile is being loaded
   if (profileLoading) {
     return (
       <ThemeProvider theme={theme}>
@@ -250,11 +206,11 @@ function App() {
           >
             <Sidebar
               onNavClick={(page) => {
-                setEditingRoundId(null); // Clear any editing state when navigating
+                setEditingRoundId(null);
                 setViewingRoundId(null);
                 setActivePage(page);
                 if (isMobile) {
-                  setIsDrawerOpen(false); // Close drawer on mobile after navigation
+                  setIsDrawerOpen(false);
                 }
               }}
               onSignOut={handleSignOut}
@@ -274,15 +230,7 @@ function App() {
             overflow: "hidden",
           }}
         >
-          <AppBar
-            position="static" // Changed to static as it's now part of the flex flow
-            elevation={1}
-            sx={
-              {
-                // No more complex width/margin calculations needed
-              }
-            }
-          >
+          <AppBar position="static" elevation={1}>
             <Toolbar>
               {isMobile && (
                 <IconButton
@@ -305,7 +253,7 @@ function App() {
             sx={{
               flexGrow: 1,
               overflowY: "auto",
-              p: { xs: 1, sm: 3 }, // Use responsive padding
+              p: { xs: 1, sm: 3 },
               transition: theme.transitions.create(["margin", "width"], {
                 easing: theme.transitions.easing.sharp,
                 duration: theme.transitions.duration.leavingScreen,
@@ -321,7 +269,57 @@ function App() {
               }}
               disableGutters={isMobile}
             >
-              {renderContent()}
+              <Suspense fallback={<CircularProgress />}>
+                {/* ALL components stay mounted, only visibility changes */}
+                <PageContainer active={activePage === 'dashboard'}>
+                  <Dashboard user={session.user} onViewRound={handleViewRound} />
+                </PageContainer>
+                
+                <PageContainer active={activePage === 'addRound'}>
+                  <RoundForm 
+                    user={session.user} 
+                    userProfile={userProfile}
+                    closeForm={() => {
+                      setEditingRoundId(null);
+                      setActivePage('roundsHistory');
+                    }}
+                    roundIdToEdit={editingRoundId}
+                  />
+                </PageContainer>
+                
+                <PageContainer active={activePage === 'account'}>
+                  <AccountPage userProfile={userProfile} onProfileUpdate={handleProfileUpdate} />
+                </PageContainer>
+                
+                <PageContainer active={activePage === 'userManagement'}>
+                  <AdminRoute userProfile={userProfile}>
+                    <UserManagement />
+                  </AdminRoute>
+                </PageContainer>
+                
+                <PageContainer active={activePage === 'courseManagement'}>
+                  <AdminRoute userProfile={userProfile}>
+                    <CourseManagementPage user={session.user} onBack={() => setActivePage('dashboard')} />
+                  </AdminRoute>
+                </PageContainer>
+                
+                <PageContainer active={activePage === 'roundsHistory'}>
+                  <RoundsHistoryPage 
+                    user={session.user}
+                    onViewRound={handleViewRound} 
+                    onAddRound={() => setActivePage('addRound')} 
+                  />
+                </PageContainer>
+                
+                <PageContainer active={activePage === 'viewRound'}>
+                  <RoundDetailsPage
+                    roundId={viewingRoundId}
+                    user={session.user}
+                    onEdit={handleEditRound}
+                    onBack={() => { setViewingRoundId(null); setActivePage('roundsHistory'); }}
+                  />
+                </PageContainer>
+              </Suspense>
             </Container>
           </Box>
         </Box>
