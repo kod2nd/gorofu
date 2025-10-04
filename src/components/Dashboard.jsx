@@ -92,7 +92,7 @@ const Dashboard = ({ user, onViewRound }) => {
 
   return (
     <Grid container spacing={3}>
-      <Grid item xs={12}>
+      <Grid item xs={12} sx={{ width: '100%'}}>
         <AllTimeStats
           cumulativeStats={cumulativeStats}
           szirStreak={szirStreak}
@@ -102,9 +102,9 @@ const Dashboard = ({ user, onViewRound }) => {
 
       <Grid item xs={12}><Divider /></Grid>
 
-      <Grid item xs={12} md={4}>
+      <Grid item xs={12} sx={{ width: '100%'}}>
         <Grid container spacing={3}>
-          <Grid item xs={12}>
+          <Grid item xs={12} sx={{ width: '100%'}}>
             <DashboardFilters
               roundLimit={roundLimit}
               setRoundLimit={setRoundLimit}
@@ -113,14 +113,14 @@ const Dashboard = ({ user, onViewRound }) => {
               isFiltering={isFiltering}
             />
           </Grid>
-          <Grid item xs={12}>
+          <Grid item xs={12} sx={{ width: '100%'}}>
             <RecentInsights recentStats={recentStats} isFiltering={isFiltering} />
           </Grid>
         </Grid>
       </Grid>
 
-      <Grid item xs={12} md={8}>
-        <Paper {...elevatedCardStyles} sx={{ mb: 3 }}>
+      <Grid item xs={12} sx={{ width: '100%'}}>
+        <Paper {...elevatedCardStyles} sx={{ mb: 3, width: '100%'}}>
           <Typography variant="h6" component="h2" sx={{ p: 2, fontWeight: 'bold' }}>
             Recent Rounds
           </Typography>

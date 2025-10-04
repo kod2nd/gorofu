@@ -30,7 +30,7 @@ const StatCard = ({ label, value, percentage, tooltip }) => (
 );
 
 const RecentInsights = ({ recentStats, isFiltering }) => (
-  <Paper {...elevatedCardStyles} sx={{ p: 2 }}>
+  <Paper {...elevatedCardStyles} sx={{ p: 2 , width: '100%' }}>
     <Typography sx={{ fontWeight: 'bold', mb: 1 }}>Recent Insights</Typography>
     {isFiltering ? (
       <Grid container spacing={2} sx={{ p: 2 }}>
