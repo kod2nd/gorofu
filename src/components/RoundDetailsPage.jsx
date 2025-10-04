@@ -71,115 +71,98 @@ const MobileScorecardTable = ({ holes }) => {
       flexDirection: 'column',
       border: `1px solid ${theme.palette.divider}`,
       borderRadius: 1,
-      overflow: 'hidden'
+      overflow: 'hidden',
     }}>
-      {/* Frozen Column Headers */}
-      <Box sx={{ 
-        display: 'flex', 
-        borderBottom: `2px solid ${theme.palette.primary.main}`,
-        backgroundColor: theme.palette.background.paper,
-        position: 'sticky',
-        top: 0,
-        zIndex: 10,
-        flexShrink: 0
+      <TableContainer sx={{ 
+        flex: 1, 
+        overflow: 'auto',
+        position: 'relative',
       }}>
-        <Box sx={{ 
-          width: 80, 
-          minWidth: 80,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: theme.palette.primary.main,
-          color: 'white',
-          fontWeight: 'bold',
-          fontSize: isMobile ? '0.75rem' : '0.875rem'
-        }}>
-          Hole
-        </Box>
-        {Array.from({ length: 18 }, (_, i) => (
-          <Box 
-            key={i}
-            sx={{ 
-              width: 50,
-              minWidth: 50,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: theme.palette.grey[100],
+        <Table 
+          size="small" 
+          stickyHeader
+          sx={{
+            '& .MuiTableCell-root': {
+              padding: '8px 4px',
+              fontSize: '0.75rem',
+            },
+            '& .MuiTableHead-root .MuiTableCell-root': {
+              backgroundColor: theme.palette.primary.main,
+              color: 'white',
               fontWeight: 'bold',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
-              borderLeft: `1px solid ${theme.palette.divider}`
-            }}
-          >
-            {i + 1}
-          </Box>
-        ))}
-      </Box>
-
-      {/* Scrollable Content */}
-      <Box sx={{ flex: 1, overflow: 'auto' }}>
-        {rowDefinitions.map((rowDef) => (
-          <Box 
-            key={rowDef.key}
-            sx={{ 
-              display: 'flex',
-              borderBottom: `1px solid ${theme.palette.divider}`,
-              '&:nth-of-type(odd)': {
-                backgroundColor: theme.palette.action.hover
-              }
-            }}
-          >
-            {/* Frozen Row Header */}
-            <Box sx={{ 
-              width: 80,
-              minWidth: 80,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: theme.palette.background.paper,
-              position: 'sticky',
-              left: 0,
-              zIndex: 5,
-              fontWeight: 'bold',
-              fontSize: isMobile ? '0.75rem' : '0.875rem',
-              borderRight: `1px solid ${theme.palette.divider}`,
-              padding: 1
-            }}>
-              {rowDef.label}
-            </Box>
-
-            {/* Scrollable Data Cells */}
-            {holes.map((hole, index) => (
-              <Box 
-                key={index}
-                sx={{ 
-                  width: 50,
-                  minWidth: 50,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  padding: 1,
-                  fontSize: isMobile ? '0.75rem' : '0.875rem',
-                  borderLeft: `1px solid ${theme.palette.divider}`,
-                  backgroundColor: 'inherit',
-                  ...(rowDef.key === 'score' && hole.hole_score && {
-                    color: hole.hole_score < hole.par ? theme.palette.success.main : 
-                           hole.hole_score > hole.par ? theme.palette.error.main : 'inherit',
-                    fontWeight: 'bold'
-                  }),
-                  ...(rowDef.key === 'penalties' && hole.penalty_shots > 0 && {
-                    color: theme.palette.error.main,
-                    fontWeight: 'bold'
-                  })
-                }}
-              >
-                {rowDef.getValue(hole)}
-              </Box>
+              fontSize: '0.75rem',
+            }
+          }}
+        >
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ 
+                position: 'sticky', 
+                left: 0, 
+                zIndex: 20,
+                backgroundColor: theme.palette.primary.main,
+                minWidth: 80,
+              }}>
+                Hole
+              </TableCell>
+              {Array.from({ length: 18 }, (_, i) => (
+                <TableCell 
+                  key={i} 
+                  align="center"
+                  sx={{ 
+                    minWidth: 50,
+                    backgroundColor: theme.palette.grey[100],
+                    color: theme.palette.text.primary,
+                    fontWeight: 'bold',
+                  }}
+                >
+                  {i + 1}
+                </TableCell>
+              ))}
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {rowDefinitions.map((rowDef) => (
+              <TableRow key={rowDef.key}>
+                <TableCell 
+                  sx={{ 
+                    position: 'sticky', 
+                    left: 0, 
+                    zIndex: 15,
+                    backgroundColor: 'background.paper',
+                    fontWeight: 'bold',
+                    borderRight: `1px solid ${theme.palette.divider}`,
+                    boxShadow: '2px 0 4px rgba(0,0,0,0.1)',
+                  }}
+                >
+                  {rowDef.label}
+                </TableCell>
+                {holes.map((hole, index) => (
+                  <TableCell 
+                    key={index}
+                    align="center"
+                    sx={{ 
+                      minWidth: 50,
+                      ...(rowDef.key === 'score' && hole.hole_score && {
+                        color: hole.hole_score < hole.par ? 'success.main' : 
+                               hole.hole_score > hole.par ? 'error.main' : 'inherit',
+                        fontWeight: 'bold'
+                      }),
+                      ...(rowDef.key === 'penalties' && hole.penalty_shots > 0 && {
+                        color: 'error.main',
+                        fontWeight: 'bold'
+                      })
+                    }}
+                  >
+                    {rowDef.getValue(hole)}
+                  </TableCell>
+                ))}
+              </TableRow>
             ))}
-          </Box>
-        ))}
-      </Box>
-
+          </TableBody>
+        </Table>
+      </TableContainer>
+      
       {/* Legend Footer */}
       <Box sx={{ 
         padding: 1,
