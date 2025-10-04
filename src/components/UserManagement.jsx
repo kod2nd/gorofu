@@ -3,14 +3,7 @@ import {
   Box,
   Typography,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
   Button,
-  Chip,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -23,13 +16,10 @@ import {
   Tabs,
   Tab,
   IconButton,
-  Tooltip,
   Alert,
   Snackbar,
-  Grid,
-  Card,
-  CardContent,
-  CardActions
+  useTheme,
+  useMediaQuery
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -40,9 +30,15 @@ import {
   Email as EmailIcon
 } from '@mui/icons-material';
 import { userService } from '../services/userService';
-import { cardStyles, elevatedCardStyles } from '../styles/commonStyles';
+import { elevatedCardStyles } from '../styles/commonStyles';
+import UsersTable from './UsersTable';
+import InvitationsList from './InvitationsList';
+import AuditLog from './AuditLog';
 
 const UserManagement = ({ currentUser }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
+  
   const [users, setUsers] = useState([]);
   const [invitations, setInvitations] = useState([]);
   const [auditLogs, setAuditLogs] = useState([]);
@@ -152,210 +148,74 @@ const UserManagement = ({ currentUser }) => {
     }
   };
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'active': return 'success';
-      case 'pending': return 'warning';
-      case 'suspended': return 'error';
-      case 'inactive': return 'default';
-      default: return 'default';
+  const renderTabContent = () => {
+    switch (tabValue) {
+      case 0:
+        return <UsersTable users={users} onEditUser={handleEditUser} onChangeUserStatus={handleChangeUserStatus} onViewAuditLog={handleViewAuditLog} />;
+      case 1:
+        return <InvitationsList invitations={invitations} />;
+      case 2:
+        return <AuditLog logs={auditLogs} />;
+      default:
+        return null;
     }
-  };
-
-  const getRoleColor = (role) => {
-    switch (role) {
-      case 'super_admin': return 'error';
-      case 'admin': return 'warning';
-      case 'user': return 'primary';
-      default: return 'default';
-    }
-  };
-
-  const UsersTab = () => (
-    <TableContainer component={Paper} sx={{ mt: 2 }}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Name</TableCell>
-            <TableCell>Email</TableCell>
-            <TableCell>Role</TableCell>
-            <TableCell>Status</TableCell>
-            <TableCell>Country</TableCell>
-            <TableCell>Handicap</TableCell>
-            <TableCell>Created</TableCell>
-            <TableCell>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {users.map((user) => (
-            <TableRow key={user.id}>
-              <TableCell>{user.full_name || 'N/A'}</TableCell>
-              <TableCell>{user.email}</TableCell>
-              <TableCell>
-                <Chip 
-                  label={user.role} 
-                  color={getRoleColor(user.role)} 
-                  size="small" 
-                />
-              </TableCell>
-              <TableCell>
-                <Chip 
-                  label={user.status} 
-                  color={getStatusColor(user.status)} 
-                  size="small" 
-                />
-              </TableCell>
-              <TableCell>{user.country}</TableCell>
-              <TableCell>{user.handicap || 'N/A'}</TableCell>
-              <TableCell>{new Date(user.created_at).toLocaleDateString()}</TableCell>
-              <TableCell>
-                <Box sx={{ display: 'flex', gap: 1 }}>
-                  <Tooltip title="Edit User">
-                    <IconButton size="small" onClick={() => handleEditUser(user)}>
-                      <EditIcon />
-                    </IconButton>
-                  </Tooltip>
-                  
-                  {user.status === 'active' ? (
-                    <Tooltip title="Suspend User">
-                      <IconButton 
-                        size="small" 
-                        color="error"
-                        onClick={() => handleChangeUserStatus(user.user_id, 'suspended')}
-                      >
-                        <BlockIcon />
-                      </IconButton>
-                    </Tooltip>
-                  ) : (
-                    <Tooltip title="Activate User">
-                      <IconButton 
-                        size="small" 
-                        color="success"
-                        onClick={() => handleChangeUserStatus(user.user_id, 'active')}
-                      >
-                        <CheckCircleIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                  
-                  <Tooltip title="View Audit Log">
-                    <IconButton 
-                      size="small" 
-                      onClick={() => handleViewAuditLog(user.email)}
-                    >
-                      <HistoryIcon />
-                    </IconButton>
-                  </Tooltip>
-                </Box>
-              </TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
-
-  const InvitationsTab = () => (
-    <Box sx={{ mt: 2 }}>
-      <Grid container spacing={2}>
-        {invitations.map((invitation) => (
-          <Grid item xs={12} md={6} lg={4} key={invitation.id}>
-            <Card>
-              <CardContent>
-                <Typography variant="h6" gutterBottom>
-                  {invitation.email}
-                </Typography>
-                <Typography color="text.secondary" gutterBottom>
-                  Role: {invitation.role}
-                </Typography>
-                <Typography variant="body2">
-                  Invited by: {invitation.invited_by}
-                </Typography>
-                <Typography variant="body2">
-                  Expires: {new Date(invitation.expires_at).toLocaleDateString()}
-                </Typography>
-              </CardContent>
-              <CardActions>
-                <Button size="small" startIcon={<EmailIcon />}>
-                  Resend
-                </Button>
-                <Button size="small" color="error">
-                  Cancel
-                </Button>
-              </CardActions>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-      
-      {invitations.length === 0 && (
-        <Paper sx={{ p: 3, textAlign: 'center', mt: 2 }}>
-          <Typography color="text.secondary">
-            No pending invitations
-          </Typography>
-        </Paper>
-      )}
-    </Box>
-  );
-
-  const AuditTab = () => (
-    <TableContainer component={Paper} sx={{ mt: 2 }}>
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell>Date</TableCell>
-            <TableCell>Action</TableCell>
-            <TableCell>Target User</TableCell>
-            <TableCell>Performed By</TableCell>
-            <TableCell>Notes</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {auditLogs.map((log) => (
-            <TableRow key={log.id}>
-              <TableCell>{new Date(log.created_at).toLocaleString()}</TableCell>
-              <TableCell>
-                <Chip label={log.action} size="small" />
-              </TableCell>
-              <TableCell>{log.target_user_email}</TableCell>
-              <TableCell>{log.performed_by}</TableCell>
-              <TableCell>{log.notes}</TableCell>
-            </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
-  );
+  }
 
   return (
-    <Box>
-      <Paper {...elevatedCardStyles}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+    <Box sx={{ 
+      width: '100%',
+      overflow: 'hidden',
+      px: isMobile ? 1 : 0
+    }}>
+      <Paper {...elevatedCardStyles} sx={{ 
+        p: isMobile ? 2 : 3,
+        mx: isMobile ? 0 : 'auto',
+        overflow: 'hidden'
+      }}>
+        <Box sx={{ 
+          display: 'flex', 
+          justifyContent: 'space-between', 
+          alignItems: isMobile ? 'flex-start' : 'center', 
+          mb: 3,
+          flexDirection: isMobile ? 'column' : 'row',
+          gap: isMobile ? 2 : 0
+        }}>
+          <Typography variant={isMobile ? "h5" : "h4"} component="h1" sx={{ fontWeight: 'bold' }}>
             User Management
           </Typography>
           <Button
             variant="contained"
             startIcon={<PersonAddIcon />}
             onClick={() => setInviteUserDialog({ open: true })}
+            fullWidth={isMobile}
+            size={isMobile ? "small" : "medium"}
           >
             Invite User
           </Button>
         </Box>
 
-        <Tabs value={tabValue} onChange={(e, newValue) => setTabValue(newValue)}>
+        <Tabs 
+          value={tabValue} 
+          onChange={(e, newValue) => setTabValue(newValue)}
+          variant={isMobile ? "scrollable" : "standard"}
+          scrollButtons={isMobile ? "auto" : false}
+          allowScrollButtonsMobile
+        >
           <Tab label={`Users (${users.length})`} />
           <Tab label={`Invitations (${invitations.length})`} />
           <Tab label="Audit Log" />
         </Tabs>
-
-        {tabValue === 0 && <UsersTab />}
-        {tabValue === 1 && <InvitationsTab />}
-        {tabValue === 2 && <AuditTab />}
+        {renderTabContent()}
       </Paper>
 
       {/* Edit User Dialog */}
-      <Dialog open={editUserDialog.open} onClose={() => setEditUserDialog({ open: false, user: null })} maxWidth="sm" fullWidth>
+      <Dialog 
+        open={editUserDialog.open} 
+        onClose={() => setEditUserDialog({ open: false, user: null })} 
+        maxWidth="sm" 
+        fullWidth
+        fullScreen={isMobile}
+      >
         <DialogTitle>Edit User</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
@@ -364,9 +224,10 @@ const UserManagement = ({ currentUser }) => {
               value={editForm.full_name || ''}
               onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })}
               fullWidth
+              size={isMobile ? "small" : "medium"}
             />
             
-            <FormControl fullWidth>
+            <FormControl fullWidth size={isMobile ? "small" : "medium"}>
               <InputLabel>Role</InputLabel>
               <Select
                 value={editForm.role || 'user'}
@@ -379,7 +240,7 @@ const UserManagement = ({ currentUser }) => {
               </Select>
             </FormControl>
 
-            <FormControl fullWidth>
+            <FormControl fullWidth size={isMobile ? "small" : "medium"}>
               <InputLabel>Status</InputLabel>
               <Select
                 value={editForm.status || 'pending'}
@@ -398,6 +259,7 @@ const UserManagement = ({ currentUser }) => {
               value={editForm.country || ''}
               onChange={(e) => setEditForm({ ...editForm, country: e.target.value })}
               fullWidth
+              size={isMobile ? "small" : "medium"}
             />
 
             <TextField
@@ -406,6 +268,7 @@ const UserManagement = ({ currentUser }) => {
               value={editForm.handicap || ''}
               onChange={(e) => setEditForm({ ...editForm, handicap: parseFloat(e.target.value) })}
               fullWidth
+              size={isMobile ? "small" : "medium"}
             />
 
             <TextField
@@ -413,10 +276,11 @@ const UserManagement = ({ currentUser }) => {
               value={editForm.phone || ''}
               onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })}
               fullWidth
+              size={isMobile ? "small" : "medium"}
             />
           </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: isMobile ? 2 : 1 }}>
           <Button onClick={() => setEditUserDialog({ open: false, user: null })}>
             Cancel
           </Button>
@@ -427,7 +291,13 @@ const UserManagement = ({ currentUser }) => {
       </Dialog>
 
       {/* Invite User Dialog */}
-      <Dialog open={inviteUserDialog.open} onClose={() => setInviteUserDialog({ open: false })} maxWidth="sm" fullWidth>
+      <Dialog 
+        open={inviteUserDialog.open} 
+        onClose={() => setInviteUserDialog({ open: false })} 
+        maxWidth="sm" 
+        fullWidth
+        fullScreen={isMobile}
+      >
         <DialogTitle>Invite New User</DialogTitle>
         <DialogContent>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, mt: 1 }}>
@@ -438,9 +308,10 @@ const UserManagement = ({ currentUser }) => {
               onChange={(e) => setInviteForm({ ...inviteForm, email: e.target.value })}
               fullWidth
               required
+              size={isMobile ? "small" : "medium"}
             />
             
-            <FormControl fullWidth>
+            <FormControl fullWidth size={isMobile ? "small" : "medium"}>
               <InputLabel>Role</InputLabel>
               <Select
                 value={inviteForm.role}
@@ -453,7 +324,7 @@ const UserManagement = ({ currentUser }) => {
             </FormControl>
           </Box>
         </DialogContent>
-        <DialogActions>
+        <DialogActions sx={{ p: isMobile ? 2 : 1 }}>
           <Button onClick={() => setInviteUserDialog({ open: false })}>
             Cancel
           </Button>
@@ -463,13 +334,45 @@ const UserManagement = ({ currentUser }) => {
         </DialogActions>
       </Dialog>
 
+      {/* Audit Log Dialog */}
+      <Dialog 
+        open={auditDialog.open} 
+        onClose={() => setAuditDialog({ open: false, userEmail: '' })} 
+        maxWidth="lg" 
+        fullWidth
+        fullScreen={isMobile}
+      >
+        <DialogTitle>
+          Audit Log for {auditDialog.userEmail}
+        </DialogTitle>
+        <DialogContent>
+          <AuditLog logs={auditLogs} />
+        </DialogContent>
+        <DialogActions sx={{ p: isMobile ? 2 : 1 }}>
+          <Button onClick={() => setAuditDialog({ open: false, userEmail: '' })}>
+            Close
+          </Button>
+        </DialogActions>
+      </Dialog>
+
       {/* Snackbar */}
       <Snackbar
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ 
+          vertical: isMobile ? 'top' : 'bottom', 
+          horizontal: 'center' 
+        }}
       >
-        <Alert severity={snackbar.severity} onClose={() => setSnackbar({ ...snackbar, open: false })}>
+        <Alert 
+          severity={snackbar.severity} 
+          onClose={() => setSnackbar({ ...snackbar, open: false })}
+          sx={{ 
+            width: '100%',
+            fontSize: isMobile ? '0.875rem' : '1rem'
+          }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>

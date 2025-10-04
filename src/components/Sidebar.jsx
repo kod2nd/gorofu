@@ -12,7 +12,7 @@ import SportsGolfIcon from '@mui/icons-material/SportsGolf';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 
-const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, activePage, userRole }) => {
+const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, activePage, userRole, isMobile }) => {
   const theme = useTheme();
 
   const menuItems = [
@@ -62,9 +62,11 @@ const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, active
             </Typography>
           </Box>
         )}
-        <IconButton onClick={handleDrawerToggle} sx={{ color: 'white' }}>
-          {isExpanded ? <ChevronLeftIcon /> : <MenuIcon />}
-        </IconButton>
+        {!isMobile && (
+          <IconButton onClick={handleDrawerToggle} sx={{ color: 'white' }}>
+            {isExpanded ? <ChevronLeftIcon /> : <MenuIcon />}
+          </IconButton>
+        )}
       </Box>
       {isExpanded && (
         <Typography variant="body2" color="rgba(255,255,255,0.7)" sx={{textAlign: 'center', mt: -2, mb: 2}}>

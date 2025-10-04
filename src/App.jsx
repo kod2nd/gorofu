@@ -8,11 +8,14 @@ import {
   AppBar,
   Toolbar,
   Typography,
+  useMediaQuery,
+  IconButton,
 } from '@mui/material';
 import theme from './theme';
 import Drawer from '@mui/material/Drawer';
 
 // Import your components
+import MenuIcon from '@mui/icons-material/Menu';
 import Auth from './Auth';
 import Dashboard from './components/Dashboard';
 import RoundForm from './RoundForm';
@@ -29,6 +32,7 @@ const drawerWidth = 240;
 const collapsedWidth = 60;
 
 function App() {
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [session, setSession] = useState(null);
   const [activePage, setActivePage] = useState('dashboard');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
@@ -211,30 +215,13 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
-      <Box sx={{ display: 'flex' }}>
-        <AppBar
-          position="fixed"
-          sx={{
-            width: `calc(100% - ${isDrawerOpen ? drawerWidth : collapsedWidth}px)`,
-            ml: `${isDrawerOpen ? drawerWidth : collapsedWidth}px`,
-            transition: theme.transitions.create(['width', 'margin'], {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.leavingScreen,
-            }),
-          }}
-        >
-          <Toolbar>
-            <Typography variant="h6" noWrap component="div">
-              {getPageTitle(activePage)}
-            </Typography>
-          </Toolbar>
-        </AppBar>
+      <Box sx={{ display: "flex", height: "100vh" }}>
         <Box
           component="nav"
           sx={{
-            width: isDrawerOpen ? drawerWidth : collapsedWidth,
+            width: isMobile ? 0 : isDrawerOpen ? drawerWidth : collapsedWidth,
             flexShrink: 0,
-            transition: theme.transitions.create('width', {
+            transition: theme.transitions.create("width", {
               easing: theme.transitions.easing.sharp,
               duration: theme.transitions.duration.enteringScreen,
             }),
@@ -242,15 +229,19 @@ function App() {
           aria-label="mailbox folders"
         >
           <Drawer
-            variant="permanent"
-            open={isDrawerOpen}
+            variant={isMobile ? "temporary" : "permanent"}
+            open={isMobile ? isDrawerOpen : true}
             onClose={handleDrawerToggle}
             sx={{
-              '& .MuiDrawer-paper': {
-                boxSizing: 'border-box',
-                width: isDrawerOpen ? drawerWidth : collapsedWidth,
-                overflowX: 'hidden',
-                transition: theme.transitions.create('width', {
+              "& .MuiDrawer-paper": {
+                boxSizing: "border-box",
+                width: isMobile
+                  ? drawerWidth
+                  : isDrawerOpen
+                  ? drawerWidth
+                  : collapsedWidth,
+                overflowX: "hidden",
+                transition: theme.transitions.create("width", {
                   easing: theme.transitions.easing.sharp,
                   duration: theme.transitions.duration.enteringScreen,
                 }),
@@ -262,6 +253,9 @@ function App() {
                 setEditingRoundId(null); // Clear any editing state when navigating
                 setViewingRoundId(null);
                 setActivePage(page);
+                if (isMobile) {
+                  setIsDrawerOpen(false); // Close drawer on mobile after navigation
+                }
               }}
               onSignOut={handleSignOut}
               isExpanded={isDrawerOpen}
@@ -272,20 +266,73 @@ function App() {
           </Drawer>
         </Box>
         <Box
-          component="main"
           sx={{
             flexGrow: 1,
-            p: 3,
-            transition: theme.transitions.create('margin', {
-              easing: theme.transitions.easing.sharp,
-              duration: theme.transitions.duration.leavingScreen,
-            }),
+            display: "flex",
+            flexDirection: "column",
+            overflow: "hidden",
           }}
         >
-          <Toolbar />
-          <Container maxWidth="lg" sx={{ pt: 2, pb: 4 }}>
-            {renderContent()}
-          </Container>
+          <AppBar
+            position="static" // Changed to static as it's now part of the flex flow
+            elevation={1}
+            sx={
+              {
+                // No more complex width/margin calculations needed
+              }
+            }
+          >
+            <Toolbar>
+              {isMobile && (
+                <IconButton
+                  color="inherit"
+                  aria-label="open drawer"
+                  edge="start"
+                  onClick={handleDrawerToggle}
+                  sx={{ mr: 2 }}
+                >
+                  <MenuIcon />
+                </IconButton>
+              )}
+              <Typography variant="h6" noWrap component="div">
+                {getPageTitle(activePage)}
+              </Typography>
+            </Toolbar>
+          </AppBar>
+          <Box
+            component="main"
+            sx={{
+              flexGrow: 1,
+              overflowY: "auto",
+              p: { xs: 1, sm: 3 }, // Use responsive padding
+              transition: theme.transitions.create(["margin", "width"], {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.leavingScreen,
+              }),
+              width: {
+                xs: "100%",
+                md: `calc(100% - ${
+                  isDrawerOpen ? drawerWidth : collapsedWidth
+                }px)`,
+              },
+              ml: {
+                xs: 0,
+                md: `${isDrawerOpen ? drawerWidth : collapsedWidth}px`,
+              },
+            }}
+          >
+            <Container
+              maxWidth="lg"
+              sx={{
+                pt: { xs: 1, sm: 2 },
+                pb: { xs: 2, sm: 4 },
+                px: { xs: 1, sm: 2 },
+              }}
+              disableGutters={isMobile}
+            >
+              {renderContent()}
+            </Container>
+          </Box>
         </Box>
       </Box>
     </ThemeProvider>
