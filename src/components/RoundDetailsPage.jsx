@@ -54,14 +54,14 @@ const MobileScorecardTable = ({ holes }) => {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   const rowDefinitions = [
-    { key: 'par', label: 'Par', getValue: (hole) => hole.par || '-' },
-    { key: 'score', label: 'Score', getValue: (hole) => hole.hole_score || '-' },
-    { key: 'putts', label: 'Putts', getValue: (hole) => hole.putts || '-' },
-    { key: 'szir', label: 'SZIR', getValue: (hole) => hole.hole_score ? (hole.scoring_zone_in_regulation ? '✓' : '✗') : '-' },
-    { key: 'sz_par', label: 'SZ Par', getValue: (hole) => hole.hole_score ? (hole.holeout_within_3_shots_scoring_zone ? '✓' : '✗') : '-' },
-    { key: 'putts_4ft', label: 'Putts <4ft', getValue: (hole) => hole.putts_within4ft || '-' },
-    { key: 'luck', label: 'Luck', getValue: (hole) => hole.hole_score ? (hole.holeout_from_outside_4ft ? '✓' : '-') : '-' },
-    { key: 'penalties', label: 'Penalties', getValue: (hole) => hole.penalty_shots || '-' },
+    { key: 'par', label: 'Par', getValue: (hole) => hole.par || '-', icon: '⛳' },
+    { key: 'score', label: 'Score', getValue: (hole) => hole.hole_score || '-', icon: '🎯' },
+    { key: 'putts', label: 'Putts', getValue: (hole) => hole.putts || '-', icon: '🏌️' },
+    { key: 'szir', label: 'SZIR', getValue: (hole) => hole.hole_score ? (hole.scoring_zone_in_regulation ? '✓' : '✗') : '-', icon: '🎪' },
+    { key: 'sz_par', label: 'SZ Par', getValue: (hole) => hole.hole_score ? (hole.holeout_within_3_shots_scoring_zone ? '✓' : '✗') : '-', icon: '⭐' },
+    { key: 'putts_4ft', label: 'Putts <4ft', getValue: (hole) => hole.putts_within4ft || '-', icon: '📏' },
+    { key: 'luck', label: 'Luck', getValue: (hole) => hole.hole_score ? (hole.holeout_from_outside_4ft ? '✓' : '-') : '-', icon: '🍀' },
+    { key: 'penalties', label: 'Penalties', getValue: (hole) => hole.penalty_shots || '-', icon: '⚠️' },
   ];
 
   return (
@@ -70,27 +70,41 @@ const MobileScorecardTable = ({ holes }) => {
       display: 'flex', 
       flexDirection: 'column',
       border: `1px solid ${theme.palette.divider}`,
-      borderRadius: 1,
+      borderRadius: 2,
       overflow: 'hidden',
+      boxShadow: 2,
     }}>
       <TableContainer sx={{ 
         flex: 1, 
         overflow: 'auto',
         position: 'relative',
+        '&::-webkit-scrollbar': {
+          width: 8,
+          height: 8,
+        },
+        '&::-webkit-scrollbar-track': {
+          background: theme.palette.grey[100],
+        },
+        '&::-webkit-scrollbar-thumb': {
+          background: theme.palette.primary.main,
+          borderRadius: 4,
+        },
       }}>
         <Table 
           size="small" 
           stickyHeader
           sx={{
             '& .MuiTableCell-root': {
-              padding: '8px 4px',
+              padding: '10px 6px',
               fontSize: '0.75rem',
+              borderRight: `1px solid ${theme.palette.divider}`,
             },
             '& .MuiTableHead-root .MuiTableCell-root': {
               backgroundColor: theme.palette.primary.main,
               color: 'white',
               fontWeight: 'bold',
               fontSize: '0.75rem',
+              borderRight: `1px solid ${theme.palette.primary.dark}`,
             }
           }}
         >
@@ -101,60 +115,161 @@ const MobileScorecardTable = ({ holes }) => {
                 left: 0, 
                 zIndex: 20,
                 backgroundColor: theme.palette.primary.main,
-                minWidth: 80,
+                minWidth: 90,
+                textAlign: 'center',
+                borderRight: `2px solid ${theme.palette.primary.dark}`,
               }}>
-                Hole
+                <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 0.5 }}>
+                  <span>🏌️‍♂️</span>
+                  <Typography variant="body2" sx={{ fontWeight: 'bold', color: 'white' }}>
+                    Hole
+                  </Typography>
+                </Box>
               </TableCell>
               {Array.from({ length: 18 }, (_, i) => (
                 <TableCell 
                   key={i} 
                   align="center"
                   sx={{ 
-                    minWidth: 50,
+                    minWidth: 52,
                     backgroundColor: theme.palette.grey[100],
                     color: theme.palette.text.primary,
                     fontWeight: 'bold',
+                    borderRight: `1px solid ${theme.palette.divider}`,
+                    background: `linear-gradient(135deg, ${theme.palette.grey[200]} 0%, ${theme.palette.grey[100]} 100%)`,
                   }}
                 >
-                  {i + 1}
+                  <Box sx={{ 
+                    display: 'flex', 
+                    flexDirection: 'column',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                    <Typography variant="body2" sx={{ fontWeight: 'bold', lineHeight: 1 }}>
+                      {i + 1}
+                    </Typography>
+                    <Box sx={{ 
+                      width: 4, 
+                      height: 4, 
+                      borderRadius: '50%', 
+                      backgroundColor: theme.palette.primary.main,
+                      mt: 0.25,
+                      opacity: 0.6,
+                    }} />
+                  </Box>
                 </TableCell>
               ))}
             </TableRow>
           </TableHead>
           <TableBody>
-            {rowDefinitions.map((rowDef) => (
-              <TableRow key={rowDef.key}>
+            {rowDefinitions.map((rowDef, rowIndex) => (
+              <TableRow 
+                key={rowDef.key}
+                sx={{
+                  '&:nth-of-type(odd)': {
+                    backgroundColor: theme.palette.action.hover,
+                  },
+                  '&:hover': {
+                    backgroundColor: theme.palette.action.selected,
+                  }
+                }}
+              >
                 <TableCell 
                   sx={{ 
                     position: 'sticky', 
                     left: 0, 
                     zIndex: 15,
-                    backgroundColor: 'background.paper',
+                    backgroundColor: rowIndex % 2 === 0 ? 'background.paper' : theme.palette.action.hover,
                     fontWeight: 'bold',
-                    borderRight: `1px solid ${theme.palette.divider}`,
-                    boxShadow: '2px 0 4px rgba(0,0,0,0.1)',
+                    borderRight: `2px solid ${theme.palette.primary.main}`,
+                    boxShadow: '3px 0 6px rgba(0,0,0,0.1)',
+                    minWidth: 90,
+                    background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.grey[50]} 100%)`,
+                    '&:hover': {
+                      background: `linear-gradient(135deg, ${theme.palette.primary.light}10 0%, ${theme.palette.grey[100]} 100%)`,
+                    }
                   }}
                 >
-                  {rowDef.label}
+                  <Box sx={{ 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    gap: 1,
+                    justifyContent: 'flex-start',
+                  }}>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        fontSize: '0.9rem',
+                        opacity: 0.8,
+                      }}
+                    >
+                      {rowDef.icon}
+                    </Typography>
+                    <Typography 
+                      variant="body2" 
+                      sx={{ 
+                        fontWeight: 'bold',
+                        color: theme.palette.text.primary,
+                        fontSize: '0.75rem',
+                        textAlign: 'left',
+                        flex: 1,
+                      }}
+                    >
+                      {rowDef.label}
+                    </Typography>
+                  </Box>
                 </TableCell>
                 {holes.map((hole, index) => (
                   <TableCell 
                     key={index}
                     align="center"
                     sx={{ 
-                      minWidth: 50,
+                      minWidth: 52,
+                      borderRight: `1px solid ${theme.palette.divider}`,
                       ...(rowDef.key === 'score' && hole.hole_score && {
                         color: hole.hole_score < hole.par ? 'success.main' : 
                                hole.hole_score > hole.par ? 'error.main' : 'inherit',
-                        fontWeight: 'bold'
+                        fontWeight: 'bold',
+                        backgroundColor: hole.hole_score < hole.par ? 
+                          theme.palette.success.light + '40' : 
+                          hole.hole_score > hole.par ? 
+                          theme.palette.error.light + '40' : 'inherit',
                       }),
                       ...(rowDef.key === 'penalties' && hole.penalty_shots > 0 && {
                         color: 'error.main',
-                        fontWeight: 'bold'
-                      })
+                        fontWeight: 'bold',
+                        backgroundColor: theme.palette.error.light + '40',
+                      }),
+                      ...(rowDef.key === 'szir' && hole.scoring_zone_in_regulation && {
+                        backgroundColor: theme.palette.success.light + '30',
+                      }),
+                      ...(rowDef.key === 'sz_par' && hole.holeout_within_3_shots_scoring_zone && {
+                        backgroundColor: theme.palette.info.light + '30',
+                      }),
+                      ...(rowDef.key === 'luck' && hole.holeout_from_outside_4ft && {
+                        backgroundColor: theme.palette.warning.light + '30',
+                      }),
                     }}
                   >
-                    {rowDef.getValue(hole)}
+                    <Box sx={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      width: '100%',
+                      height: '100%',
+                      borderRadius: 1,
+                      py: 0.5,
+                    }}>
+                      <Typography 
+                        variant="body2" 
+                        sx={{ 
+                          fontWeight: 'bold',
+                          fontSize: '0.75rem',
+                        }}
+                      >
+                        {rowDef.getValue(hole)}
+                      </Typography>
+                    </Box>
                   </TableCell>
                 ))}
               </TableRow>
@@ -163,16 +278,27 @@ const MobileScorecardTable = ({ holes }) => {
         </Table>
       </TableContainer>
       
-      {/* Legend Footer */}
+      {/* Enhanced Legend Footer */}
       <Box sx={{ 
-        padding: 1,
+        padding: 1.5,
         backgroundColor: theme.palette.grey[50],
-        borderTop: `1px solid ${theme.palette.divider}`,
+        borderTop: `2px solid ${theme.palette.divider}`,
         fontSize: '0.7rem',
         color: theme.palette.text.secondary,
-        textAlign: 'center'
+        textAlign: 'center',
+        background: `linear-gradient(135deg, ${theme.palette.grey[50]} 0%, ${theme.palette.grey[100]} 100%)`,
       }}>
-        SZIR = Scoring Zone In Regulation | Scroll horizontally to view all holes
+        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 2, flexWrap: 'wrap' }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography variant="caption" fontWeight="bold">SZIR:</Typography>
+            <Typography variant="caption">Scoring Zone In Regulation</Typography>
+          </Box>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Typography variant="caption" fontWeight="bold">SZ Par:</Typography>
+            <Typography variant="caption">Scoring Zone Par</Typography>
+          </Box>
+          <Typography variant="caption">| Scroll horizontally to view all holes →</Typography>
+        </Box>
       </Box>
     </Box>
   );
