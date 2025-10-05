@@ -141,6 +141,7 @@ CREATE INDEX idx_course_tee_boxes_course_tee ON course_tee_boxes(course_id, tee_
 CREATE INDEX idx_rounds_user_email ON rounds(user_email);
 CREATE INDEX idx_rounds_course_date ON rounds(course_id, round_date);
 CREATE INDEX idx_round_holes_round_id ON round_holes(round_id);
+CREATE INDEX IF NOT EXISTS idx_course_change_requests_course_id ON course_change_requests(course_id);
 
 -- Helper function to get the role of the current user
 -- This is used in RLS policies to avoid recursion
@@ -158,7 +159,7 @@ $$;
 -- Function to calculate the current SZIR streak for a user
 CREATE OR REPLACE FUNCTION calculate_user_szir_streak(user_email_param TEXT)
 RETURNS INTEGER
-LANGUAGE plpgsql
+LANGUAGE plpgsql STABLE SET search_path = 'public'
 AS $$
 DECLARE
     streak_count INTEGER := 0;
@@ -186,7 +187,7 @@ $$;
 -- Function to calculate the current SZ Par streak for a user
 CREATE OR REPLACE FUNCTION calculate_user_szpar_streak(user_email_param TEXT)
 RETURNS INTEGER
-LANGUAGE plpgsql
+LANGUAGE plpgsql STABLE SET search_path = 'public'
 AS $$
 DECLARE
     streak_count INTEGER := 0;
@@ -215,7 +216,7 @@ DROP FUNCTION IF EXISTS public.get_user_cumulative_stats(TEXT, BOOLEAN); -- Keep
 -- Function to get cumulative (all-time) stats for a user
 CREATE OR REPLACE FUNCTION get_user_cumulative_stats(user_email_param TEXT, eligible_rounds_only BOOLEAN)
 RETURNS TABLE(total_rounds_played BIGINT, total_holes_played BIGINT, avg_score NUMERIC, avg_putts NUMERIC, total_szir BIGINT)
-LANGUAGE plpgsql
+LANGUAGE plpgsql STABLE SET search_path = 'public'
 AS $$
 BEGIN
     RETURN QUERY
@@ -244,7 +245,7 @@ DROP FUNCTION IF EXISTS public.get_recent_rounds_stats(TEXT, INT, BOOLEAN); -- K
 -- Function to get stats for a specific number of recent rounds
 CREATE OR REPLACE FUNCTION get_recent_rounds_stats(user_email_param TEXT, round_limit INT, eligible_rounds_only BOOLEAN)
 RETURNS TABLE(total_holes_played BIGINT, avg_par3_score NUMERIC, avg_par4_score NUMERIC, avg_par5_score NUMERIC, avg_putts_per_hole NUMERIC, szir_percentage NUMERIC, szir_count BIGINT, multi_putt_4ft_holes BIGINT, holeout_within_3_shots_count BIGINT, holeout_from_outside_4ft_count BIGINT, total_penalties BIGINT, avg_penalties_per_round NUMERIC, one_putt_count BIGINT, two_putt_count BIGINT, three_putt_plus_count BIGINT, birdie_or_better_count BIGINT, par_count BIGINT, bogey_count BIGINT, double_bogey_plus_count BIGINT, avg_putts_par3 NUMERIC, avg_putts_par4 NUMERIC, avg_putts_par5 NUMERIC, avg_score_with_szir NUMERIC, avg_score_without_szir NUMERIC, avg_score_with_szpar NUMERIC, avg_score_without_szpar NUMERIC, avg_score_with_szir_par3 NUMERIC, avg_score_with_szir_par4 NUMERIC, avg_score_with_szir_par5 NUMERIC, avg_score_without_szir_par3 NUMERIC, avg_score_without_szir_par4 NUMERIC, avg_score_without_szir_par5 NUMERIC, par3_birdie_or_better_count BIGINT, par3_par_count BIGINT, par3_bogey_count BIGINT, par3_double_bogey_plus_count BIGINT, par4_birdie_or_better_count BIGINT, par4_par_count BIGINT, par4_bogey_count BIGINT, par4_double_bogey_plus_count BIGINT, par5_birdie_or_better_count BIGINT, par5_par_count BIGINT, par5_bogey_count BIGINT, par5_double_bogey_plus_count BIGINT, avg_score_with_szpar_par3 NUMERIC, avg_score_without_szpar_par3 NUMERIC, avg_score_with_szpar_par4 NUMERIC, avg_score_without_szpar_par4 NUMERIC, avg_score_with_szpar_par5 NUMERIC, avg_score_without_szpar_par5 NUMERIC)
-LANGUAGE plpgsql
+LANGUAGE plpgsql STABLE SET search_path = 'public'
 AS $$
 BEGIN
     RETURN QUERY
@@ -415,7 +416,7 @@ BEGIN
     NEW.updated_at = NOW();
     RETURN NEW;
 END;
-$$ language 'plpgsql';
+$$ language 'plpgsql' STABLE SET search_path = 'public';
 
 -- Add triggers for updated_at
 CREATE TRIGGER update_courses_updated_at BEFORE UPDATE ON courses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
