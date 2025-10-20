@@ -18,6 +18,7 @@ export const statDefinitions = {
       pattern: "[2-7]",
       patternDescription: "Valid range: 2-7",
       tooltip: "The standard number of strokes for a given hole.",
+      placeholder: "e.g. 4",
     },
     {
       label: "Dist.",
@@ -26,6 +27,7 @@ export const statDefinitions = {
       inputMode: "numeric",
       pattern: "([1-9][0-9]{0,2})",
       patternDescription: "Valid range: 1-999",
+      placeholder: "e.g. 350",
       tooltip:
         "The total distance of the hole in yards or meters. Yards and meters are configured in section 1 Course Details.",
     },
@@ -36,6 +38,7 @@ export const statDefinitions = {
       inputMode: "numeric",
       pattern: "([1-9]|1[0-9]|20)",
       patternDescription: "Valid range: 1-20",
+      placeholder: "e.g. 4",
       tooltip: "The number of strokes taken on the hole.",
     },
     {
@@ -45,6 +48,7 @@ export const statDefinitions = {
       inputMode: "numeric",
       pattern: "(0|[1-20])",
       patternDescription: "Valid range: 0-20",
+      placeholder: "e.g. 0",
       tooltip: "The number of penalty shots taken on the hole.",
     },
   ],
@@ -73,6 +77,7 @@ export const statDefinitions = {
       inputMode: "numeric",
       pattern: "(0|[1-9]|1[0-9]|20)",
       patternDescription: "Valid range: 0-20",
+      placeholder: "e.g. 2",
       tooltip: "The total number of putts on the green.",
     },
     {
@@ -82,12 +87,13 @@ export const statDefinitions = {
       inputMode: "numeric",
       pattern: "(0|[1-9]|1[0-9]|20)",
       patternDescription: "Valid range: 0-20",
+      placeholder: "Putts made within 4ft. e.g. 1",
       tooltip: "The number of putts made from within 4 feet of the hole.",
     },
     {
       label: "Luck",
       name: "holeout_from_outside_4ft",
-      type: "checkbox",
+      type: "switch",
       tooltip:
         "Holed out from a distance greater than 4 feet. A great result that involves both skill and a bit of luck.",
     },

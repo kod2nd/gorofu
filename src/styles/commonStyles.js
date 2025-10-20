@@ -112,6 +112,11 @@ export const switchStyles = {
 // Text field styles for consistent input appearance
 export const textFieldStyles = {
   textAlign: "center",
+  "& .MuiInputBase-input::placeholder": {
+            fontStyle: "italic",
+            opacity: 0.8,
+            color: "text.secondary",
+  },
   "& .MuiOutlinedInput-root": {
     "& fieldset": {
       border: "none",

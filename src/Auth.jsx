@@ -14,6 +14,12 @@ const Auth = () => {
     setLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
+      options: {
+        // If in development, redirect to localhost.
+        // If in production, this will be `undefined`, and Supabase will use
+        // the default Site URL from your project settings.
+        redirectTo: import.meta.env.DEV ? 'http://localhost:5173/' : undefined,
+      },
     });
 
     if (error) {
