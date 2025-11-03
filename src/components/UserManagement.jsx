@@ -82,9 +82,15 @@ const UserManagement = ({ currentUser, isActive }) => {
 
   const handleSaveUser = async () => {
     try {
+      // Prepare the update payload, converting empty handicap to null
+      const updatePayload = {
+        ...editForm,
+        handicap: editForm.handicap === '' || isNaN(editForm.handicap) ? null : parseFloat(editForm.handicap),
+      };
+
       await userService.updateUserProfile(
         editUserDialog.user.user_id,
-        editForm,
+        updatePayload,
         currentUser.email
       );
       showSnackbar('User updated successfully');
@@ -211,8 +217,11 @@ const UserManagement = ({ currentUser, isActive }) => {
           </Box>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setInviteUserDialog({ open: false })}>
+          <Button onClick={() => setEditUserDialog({ open: false, user: null })}>
             Cancel
+          </Button>
+          <Button onClick={handleSaveUser} variant="contained">
+            Save Changes
           </Button>
         </DialogActions>
       </Dialog>
