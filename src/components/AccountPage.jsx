@@ -5,13 +5,9 @@ import {
   Typography,
   Grid,
   Button,
-  TextField,
   Snackbar,
-  Autocomplete,
   Alert,
   Avatar,
-  Card,
-  CardContent,
   Stack,
   Chip,
   IconButton,
@@ -19,97 +15,19 @@ import {
   useMediaQuery,
 } from '@mui/material';
 import {
-  Person as PersonIcon,
-  Email as EmailIcon,
-  Public as PublicIcon,
-  Phone as PhoneIcon,
-  Cake as CakeIcon,
-  SportsGolf as SportsGolfIcon,
   Edit as EditIcon,
   Save as SaveIcon,
   Close as CloseIcon,
   AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
 import { userService } from '../services/userService';
-import { countries } from './countries';
-
-const InfoCard = ({ icon, label, value, color = 'primary.main' }) => (
-  <Card sx={{ 
-    height: '100%', 
-    position: 'relative', 
-    overflow: 'visible',
-    minHeight: { xs: 140, sm: 160 }, // Consistent minimum height
-    display: 'flex',
-    flexDirection: 'column',
-  }}>
-    <CardContent sx={{ 
-      pb: 2, 
-      flex: 1,
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
-      <Box
-        sx={{
-          position: 'absolute',
-          top: -20,
-          left: 16,
-          width: 48,
-          height: 48,
-          borderRadius: 2,
-          background: color,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          boxShadow: 2,
-          zIndex: 1,
-        }}
-      >
-        {React.cloneElement(icon, { sx: { fontSize: 28 } })}
-      </Box>
-      <Box sx={{ 
-        mt: 2, 
-        pt: 1,
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-      }}>
-        <Typography 
-          variant="caption" 
-          color="text.secondary" 
-          sx={{ 
-            fontWeight: 500, 
-            textTransform: 'uppercase', 
-            letterSpacing: 0.5,
-            lineHeight: 1.2,
-          }}
-        >
-          {label}
-        </Typography>
-        <Typography 
-          variant="h6" 
-          sx={{ 
-            mt: 1, 
-            wordBreak: 'break-word', 
-            fontSize: { xs: '1rem', sm: '1.1rem' },
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
-          {value || 'Not set'}
-        </Typography>
-      </Box>
-    </CardContent>
-  </Card>
-);
+import ProfileDisplay from './ProfileDisplay';
+import ProfileEditForm from './ProfileEditForm';
 
 const AccountPage = ({ userProfile, onProfileUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     if (userProfile) {
@@ -281,182 +199,13 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
 
       {/* Content Section */}
       {isEditing ? (
-        <Paper elevation={2} sx={{ p: { xs: 3, sm: 4 }, borderRadius: 3 }}>
-          <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mb: 3 }}>
-            Edit Personal Information
-          </Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6} sx={{ width: '100%'}}>
-              <TextField
-                label="Display Name"
-                name="full_name"
-                value={formData.full_name}
-                onChange={handleInputChange}
-                fullWidth
-                variant="outlined"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} sx={{ width: '100%'}}>
-              <TextField
-                label="Email"
-                value={email}
-                fullWidth
-                disabled
-                variant="outlined"
-                helperText="Email cannot be changed"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} sx={{ width: '100%'}}>
-              <TextField
-                label="Handicap"
-                name="handicap"
-                type="number"
-                value={formData.handicap}
-                onChange={handleInputChange}
-                fullWidth
-                variant="outlined"
-                inputProps={{ step: 0.1 }}
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} sx={{ width: '100%'}}>
-              <Autocomplete
-                options={countries}
-                getOptionLabel={(option) => option.label}
-                value={countries.find(c => c.label === formData.country) || null}
-                onChange={(event, newValue) => {
-                  handleInputChange({ target: { name: 'country', value: newValue ? newValue.label : '' } });
-                }}
-                renderOption={(props, option) => {
-                  const { key, ...otherProps } = props;
-                  return (
-                    <Box 
-                      component="li" 
-                      key={key}
-                      sx={{ 
-                        '& > img': { mr: 2, flexShrink: 0 },
-                        py: 1.5,
-                        minHeight: 48,
-                        display: 'flex',
-                        alignItems: 'center',
-                      }} 
-                      {...otherProps}
-                    >
-                      <img
-                        loading="lazy"
-                        width="20"
-                        src={`https://flagcdn.com/w20/${option.code.toLowerCase()}.png`}
-                        srcSet={`https://flagcdn.com/w40/${option.code.toLowerCase()}.png 2x`}
-                        alt=""
-                      />
-                      <Typography noWrap sx={{ flex: 1, minWidth: 0 }}>
-                        {option.label}
-                      </Typography>
-                    </Box>
-                  );
-                }}
-                renderInput={(params) => (
-                  <TextField 
-                    {...params} 
-                    label="Country" 
-                    variant="outlined" 
-                    sx={{
-                      '& .MuiAutocomplete-inputRoot': {
-                        paddingRight: '32px', // Ensure space for dropdown arrow
-                      }
-                    }}
-                  />
-                )}
-                sx={{
-                  '& .MuiAutocomplete-input': {
-                    minWidth: '120px', // Ensure input field has enough width
-                  },
-                }}
-                fullWidth
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} sx={{ width: '100%'}}>
-              <TextField
-                label="Phone Number"
-                name="phone"
-                value={formData.phone}
-                onChange={handleInputChange}
-                fullWidth
-                variant="outlined"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} sx={{ width: '100%'}}>
-              <TextField
-                label="Date of Birth"
-                name="date_of_birth"
-                type="date"
-                value="{formData.date_of_birth}"
-                onChange={handleInputChange}
-                fullWidth
-                variant="outlined"
-              />
-            </Grid>
-          </Grid>
-        </Paper>
+        <ProfileEditForm
+          formData={formData}
+          email={email}
+          handleInputChange={handleInputChange}
+        />
       ) : (
-        <>
-          <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mb: 4, px: 1 }}>
-            Personal Information
-          </Typography>
-          <Grid container spacing={4} >
-            <Grid xs={12} sm={6} md={4} sx={{ width: '45%'}}>
-              <InfoCard
-                icon={<PersonIcon />}
-                label="Display Name"
-                value={userProfile.full_name}
-                color="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-              />
-            </Grid>
-            <Grid xs={12} sm={6} md={4} sx={{ width: '45%'}}>
-              <InfoCard
-                icon={<EmailIcon />}
-                label="Email"
-                value={userProfile.email}
-                color="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
-              />
-            </Grid>
-            <Grid xs={12} sm={6} md={4} sx={{ width: '45%'}}>
-              <InfoCard
-                icon={<PublicIcon />}
-                label="Country"
-                value={userProfile.country}
-                color="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
-              />
-            </Grid>
-            <Grid xs={12} sm={6} md={4} sx={{ width: '45%'}}>
-              <InfoCard
-                icon={<SportsGolfIcon />}
-                label="Handicap"
-                value={userProfile.handicap != null ? Number(userProfile.handicap).toFixed(1) : null}
-                color="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4} sx={{ width: '45%'}}>
-              <InfoCard
-                icon={<PhoneIcon />}
-                label="Phone"
-                value={userProfile.phone}
-                color="linear-gradient(135deg, #fa709a 0%, #fee140 100%)"
-              />
-            </Grid>
-            <Grid item xs={12} sm={6} md={4} sx={{ width: '45%'}}>
-              <InfoCard
-                icon={<CakeIcon />}
-                label="Date of Birth"
-                value={
-                  userProfile.date_of_birth
-                    ? new Date(userProfile.date_of_birth).toLocaleDateString()
-                    : null
-                }
-                color="linear-gradient(135deg, #30cfd0 0%, #330867 100%)"
-              />
-            </Grid>
-          </Grid>
-        </>
+        <ProfileDisplay userProfile={userProfile} />
       )}
 
       <Snackbar
