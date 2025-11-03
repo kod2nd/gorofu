@@ -378,13 +378,25 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
 
   return (
     <Container maxWidth="lg" sx={{ my: 4 }}>
-      <Paper {...elevatedCardStyles}>
+      <Paper
+              elevation={0}
+              sx={{
+                p: { xs: 3, sm: 4 },
+                mb: 3,
+                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                color: 'white',
+                borderRadius: 3,
+              }}
+            >
         <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
           {roundIdToEdit ? 'Edit Round' : 'Add a New Round'}
         </Typography>
-        <Typography variant="body1" align="center" color="text.secondary" sx={{ mb: 4 }}>
+        <Typography variant="body1" align="center" color="white" sx={{ mb: 4 }}>
           Log your round, including course details and hole-by-hole stats.
         </Typography>
+            </Paper>
+      <Paper {...elevatedCardStyles}>
+
         <form onSubmit={handleSubmit}>
           <SectionHeader 
             title="Course Details" 

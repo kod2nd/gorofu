@@ -23,7 +23,7 @@ const StatCard = ({ label, value, percentage, tooltip }) => (
 
 const AllTimeStats = ({ cumulativeStats, szirStreak, szParStreak }) => (
   <Paper {...elevatedCardStyles} sx={{ p: 3, textAlign: 'center' }}>
-    <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>All-Time Stats</Typography>
+    <Typography variant="h5" sx={{ fontWeight: 'bold', mb: 2 }}>All-Time Stats</Typography>
     <Grid container spacing={3} alignItems="stretch">
       <Grid item xs={12} sm={4} md={3}>
         <Box sx={{ textAlign: 'center' }}>
