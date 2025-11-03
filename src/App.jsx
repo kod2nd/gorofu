@@ -10,7 +10,6 @@ import {
   Typography,
   useMediaQuery,
   IconButton,
-  CircularProgress,
 } from '@mui/material';
 import theme from './theme';
 import Drawer from '@mui/material/Drawer';
@@ -21,6 +20,7 @@ import Auth from './Auth';
 import Sidebar from './components/Sidebar';
 import AdminRoute from './components/AdminRoute';
 import { userService } from './services/userService';
+import FlippingGolfIcon from './components/FlippingGolfIcon';
 
 // Lazy load heavy components
 const Dashboard = lazy(() => import('./components/Dashboard'));
@@ -47,7 +47,7 @@ function App() {
   const [activePage, setActivePage] = useState('dashboard');
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
-  const [profileLoading, setProfileLoading] = useState(true);
+  const [initialProfileLoad, setInitialProfileLoad] = useState(true); // ✅ Separate state for initial load only
   const [editingRoundId, setEditingRoundId] = useState(null);
   const [viewingRoundId, setViewingRoundId] = useState(null);
 
@@ -55,9 +55,9 @@ function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
       if (session) {
-        loadUserProfile();
+        loadUserProfile(true); // Pass true for initial load
       } else {
-        setProfileLoading(false);
+        setInitialProfileLoad(false);
       }
     });
 
@@ -66,19 +66,18 @@ function App() {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setSession(session);
       if (session) {
-        loadUserProfile();
+        loadUserProfile(false); // Pass false for subsequent loads
       } else {
         setUserProfile(null);
-        setProfileLoading(false);
+        setInitialProfileLoad(false);
       }
     });
 
     return () => subscription.unsubscribe();
   }, []);
 
-  const loadUserProfile = async () => {
+  const loadUserProfile = async (isInitial = false) => {
     try {
-      setProfileLoading(true);
       const profile = await userService.getCurrentUserProfile();
       setUserProfile(profile);
     } catch (error) {
@@ -96,7 +95,9 @@ function App() {
         }
       }
     } finally {
-      setProfileLoading(false);
+      if (isInitial) {
+        setInitialProfileLoad(false); // ✅ Only set this false on initial load
+      }
     }
   };
 
@@ -152,17 +153,22 @@ function App() {
     );
   }
 
-  if (profileLoading) {
+  // ✅ Show full-screen loading ONLY on very first profile load
+  if (initialProfileLoad) {
     return (
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Box sx={{ 
-          display: 'flex', 
-          justifyContent: 'center', 
-          alignItems: 'center', 
-          minHeight: '100vh' 
-        }}>
-          <Typography>Loading...</Typography>
+        <Box
+          sx={{
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            alignItems: 'center',
+            minHeight: '100vh',
+            backgroundColor: 'background.default',
+          }}
+        >
+          <FlippingGolfIcon size={80} />
         </Box>
       </ThemeProvider>
     );
@@ -269,7 +275,16 @@ function App() {
               }}
               disableGutters={isMobile}
             >
-              <Suspense fallback={<CircularProgress />}>
+              <Suspense fallback={
+                <Box sx={{ 
+                  display: 'flex', 
+                  justifyContent: 'center', 
+                  alignItems: 'center', 
+                  minHeight: '60vh' 
+                }}>
+                  <FlippingGolfIcon size={60} />
+                </Box>
+              }>
                 {/* ALL components stay mounted, only visibility changes */}
                 <PageContainer active={activePage === 'dashboard'}>
                   <Dashboard user={session.user} onViewRound={handleViewRound} />
