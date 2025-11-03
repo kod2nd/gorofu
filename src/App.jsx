@@ -287,13 +287,18 @@ function App() {
               }>
                 {/* ALL components stay mounted, only visibility changes */}
                 <PageContainer active={activePage === 'dashboard'}>
-                  <Dashboard user={session.user} onViewRound={handleViewRound} />
+                  <Dashboard 
+                    user={session.user} 
+                    onViewRound={handleViewRound} 
+                    isActive={activePage === 'dashboard'} 
+                  />
                 </PageContainer>
                 
                 <PageContainer active={activePage === 'addRound'}>
                   <RoundForm 
                     user={session.user} 
                     userProfile={userProfile}
+                    isActive={activePage === 'addRound'}
                     closeForm={() => {
                       setEditingRoundId(null);
                       setActivePage('roundsHistory');
@@ -308,7 +313,7 @@ function App() {
                 
                 <PageContainer active={activePage === 'userManagement'}>
                   <AdminRoute userProfile={userProfile}>
-                    <UserManagement />
+                    <UserManagement isActive={activePage === 'userManagement'} />
                   </AdminRoute>
                 </PageContainer>
                 
@@ -321,6 +326,7 @@ function App() {
                 <PageContainer active={activePage === 'roundsHistory'}>
                   <RoundsHistoryPage 
                     user={session.user}
+                    isActive={activePage === 'roundsHistory'}
                     onViewRound={handleViewRound} 
                     onAddRound={() => setActivePage('addRound')} 
                   />

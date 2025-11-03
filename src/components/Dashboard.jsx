@@ -16,7 +16,7 @@ import DashboardFilters from './DashboardFilters';
 import RecentInsights from './RecentInsights';
 import FlippingGolfIcon from './FlippingGolfIcon';
 
-const Dashboard = ({ user, onViewRound }) => {
+const Dashboard = ({ user, onViewRound, isActive }) => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [isFiltering, setIsFiltering] = useState(false);
   const [error, setError] = useState('');
@@ -30,11 +30,10 @@ const Dashboard = ({ user, onViewRound }) => {
   
   const isInitialMount = useRef(true);
   const hasFetchedAllTime = useRef(false); // Track if we've fetched all-time stats
-  const lastFetchedFilters = useRef(null); // Track the last filters we actually fetched with
   
   useEffect(() => {
     // Effect 1: Fetch all-time stats ONCE when component first mounts
-    if (user && !hasFetchedAllTime.current) {
+    if (isActive && user && !hasFetchedAllTime.current) {
       const fetchAllTimeData = async () => {
         try {
           const [szirStreakData, szParStreakData, allTimeStats] = await Promise.all([
@@ -52,24 +51,14 @@ const Dashboard = ({ user, onViewRound }) => {
       };
       fetchAllTimeData();
     }
-  }, [user]);
+  }, [user, isActive]);
   
   useEffect(() => {
-    // Effect 2: Fetch filter-dependent data ONLY when filters actually change
+    // Effect 2: Fetch filter-dependent data when page is active or filters change
     const fetchData = async () => {
-      if (!user) return;
-
-      // Create a key representing current filter state
-      const currentFilters = `${roundLimit}-${showEligibleRoundsOnly}`;
+      // Only fetch if the page is active and the user is available
+      if (!isActive || !user) return;
       
-      // ✅ CRITICAL FIX: Skip if we've already fetched with these exact filters
-      if (lastFetchedFilters.current === currentFilters && !isInitialMount.current) {
-        return;
-      }
-
-      // Mark these filters as fetched
-      lastFetchedFilters.current = currentFilters;
-
       // Determine which loading state to set
       if (isInitialMount.current) {
         setInitialLoading(true);
@@ -99,7 +88,7 @@ const Dashboard = ({ user, onViewRound }) => {
     };
 
     fetchData();
-  }, [user, roundLimit, showEligibleRoundsOnly]);
+  }, [user, roundLimit, showEligibleRoundsOnly, isActive]);
   
   // ✅ Show centered flipping icon only on initial load
   if (initialLoading) {

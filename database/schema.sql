@@ -330,6 +330,10 @@ GRANT EXECUTE ON FUNCTION public.calculate_user_szpar_streak(TEXT) TO authentica
 GRANT EXECUTE ON FUNCTION public.get_user_cumulative_stats(TEXT, BOOLEAN) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.get_recent_rounds_stats(TEXT, INT, BOOLEAN) TO authenticated, service_role;
 
+-- Grant execute permissions for uuid_generate_v4 to allow creating invitation tokens
+-- This function is part of the uuid-ossp extension
+GRANT EXECUTE ON FUNCTION extensions.uuid_generate_v4() TO authenticated, service_role;
+
 
 -- Row Level Security (RLS) Policies
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;

@@ -170,14 +170,17 @@ export const userService = {
 
   // Admin: Send invitation
   async sendInvitation(email, role, adminEmail) {
-    const invitationToken = crypto.randomUUID();
+    // Use Supabase's built-in crypto to generate a UUID for the token
+    const { data: invitationToken, error: uuidError } = await supabase.rpc('uuid_generate_v4');
+    if (uuidError || !invitationToken) throw new Error('Failed to generate invitation token.');
+
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days expiry
 
     const { data, error } = await supabase
       .from('user_invitations')
       .insert({
-        email,
+        email: email.toLowerCase(),
         invited_by: adminEmail,
         role,
         invitation_token: invitationToken,
@@ -188,8 +191,6 @@ export const userService = {
 
     if (error) throw error;
 
-    // Here you would typically send an email with the invitation link
-    // For now, we'll just return the invitation data
     return {
       ...data,
       invitation_link: `${window.location.origin}/invite/${invitationToken}`

@@ -55,23 +55,20 @@ const InvitationAccept = () => {
     try {
       setLoading(true);
       
-      // Sign up the user with Supabase Auth
-      const { data, error: signUpError } = await supabase.auth.signUp({
+      // 1. Create the user via the admin API without a password.
+      // This prevents a confirmation email and lets us control the next step.
+      const { data: { user }, error: createError } = await supabase.auth.admin.createUser({
         email: invitation.email,
-        password: 'temp-password-' + Math.random().toString(36), // They'll need to reset this
-        options: {
-          data: {
-            full_name: profileForm.full_name
-          }
-        }
+        email_confirm: true, // Mark email as confirmed since they came from an invite
+        user_metadata: { full_name: profileForm.full_name },
       });
 
-      if (signUpError) throw signUpError;
+      if (createError) throw createError;
 
-      // Create user profile
-      if (data.user) {
+      // 2. Create their user profile in your public table.
+      if (user) {
         await userService.upsertUserProfile({
-          user_id: data.user.id,
+          user_id: user.id,
           email: invitation.email,
           full_name: profileForm.full_name,
           role: invitation.role,
@@ -84,10 +81,16 @@ const InvitationAccept = () => {
         });
 
         setSuccess(true);
+
+        // 3. Send the password recovery (setup) email.
+        const { error: recoveryError } = await supabase.auth.resetPasswordForEmail(invitation.email, {
+          redirectTo: `${window.location.origin}/update-password`,
+        });
+
+        if (recoveryError) throw recoveryError;
         
-        // Redirect to login after a delay
         setTimeout(() => {
-          navigate('/login');
+          navigate('/'); // Redirect to home page after success
         }, 3000);
       }
     } catch (error) {
