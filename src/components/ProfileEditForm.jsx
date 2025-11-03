@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 import {
   Box,
   Paper,
@@ -6,8 +6,8 @@ import {
   Grid,
   TextField,
   Autocomplete,
-} from '@mui/material';
-import { countries } from './countries';
+} from "@mui/material";
+import { countries } from "./countries";
 
 const ProfileEditForm = ({ formData, email, handleInputChange }) => {
   return (
@@ -16,7 +16,7 @@ const ProfileEditForm = ({ formData, email, handleInputChange }) => {
         Edit Personal Information
       </Typography>
       <Grid container spacing={3}>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={6} sx={{ width: '45%'}}>
           <TextField
             label="Display Name"
             name="full_name"
@@ -26,7 +26,7 @@ const ProfileEditForm = ({ formData, email, handleInputChange }) => {
             variant="outlined"
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={6} sx={{ width: '45%'}}>
           <TextField
             label="Email"
             value={email}
@@ -36,7 +36,7 @@ const ProfileEditForm = ({ formData, email, handleInputChange }) => {
             helperText="Email cannot be changed"
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={6} sx={{ width: '45%'}}>
           <TextField
             label="Handicap"
             name="handicap"
@@ -48,28 +48,31 @@ const ProfileEditForm = ({ formData, email, handleInputChange }) => {
             inputProps={{ step: 0.1 }}
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={6} sx={{ width: '45%'}}>
           <Autocomplete
             options={countries}
             getOptionLabel={(option) => option.label}
-            value={countries.find(c => c.label === formData.country) || null}
+            value={countries.find((c) => c.label === formData.country) || null}
             onChange={(event, newValue) => {
-              handleInputChange({ target: { name: 'country', value: newValue ? newValue.label : '' } });
+              handleInputChange({
+                target: {
+                  name: "country",
+                  value: newValue ? newValue.label : "",
+                },
+              });
             }}
             renderOption={(props, option) => {
-              const { key, ...otherProps } = props;
               return (
                 <Box
                   component="li"
-                  key={key}
+                  {...props}
                   sx={{
-                    '& > img': { mr: 2, flexShrink: 0 },
+                    "& > img": { mr: 2, flexShrink: 0 },
                     py: 1.5,
-                    minHeight: 48,
-                    display: 'flex',
-                    alignItems: 'center',
+                    minHeight: 47,
+                    display: "flex",
+                    alignItems: "center",
                   }}
-                  {...otherProps}
                 >
                   <img
                     loading="lazy"
@@ -90,33 +93,33 @@ const ProfileEditForm = ({ formData, email, handleInputChange }) => {
                 label="Country"
                 variant="outlined"
                 sx={{
-                  '& .MuiAutocomplete-inputRoot': {
-                    paddingRight: '32px !important',
-                  }
+                  "& .MuiAutocomplete-inputRoot": {
+                    paddingRight: "32px !important",
+                  },
                 }}
               />
             )}
             ListboxProps={{
               sx: {
                 maxHeight: 300,
-                '& li': {
-                  whiteSpace: 'normal',
-                  wordWrap: 'break-word',
+                "& li": {
+                  whiteSpace: "normal",
+                  wordWrap: "break-word",
                   minHeight: 48,
-                  display: 'flex',
-                  alignItems: 'center',
-                }
-              }
+                  display: "flex",
+                  alignItems: "center",
+                },
+              },
             }}
             sx={{
-              '& .MuiAutocomplete-input': {
-                minWidth: '120px !important',
+              "& .MuiAutocomplete-input": {
+                minWidth: "120px !important",
               },
             }}
             fullWidth
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={6} sx={{ width: '45%'}}>
           <TextField
             label="Phone Number"
             name="phone"
@@ -126,7 +129,7 @@ const ProfileEditForm = ({ formData, email, handleInputChange }) => {
             variant="outlined"
           />
         </Grid>
-        <Grid item xs={12} sm={6}>
+        <Grid item xs={12} sm={6} sx={{ width: '45%'}}>
           <TextField
             label="Date of Birth"
             name="date_of_birth"

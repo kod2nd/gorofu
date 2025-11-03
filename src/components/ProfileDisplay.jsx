@@ -93,7 +93,7 @@ const ProfileDisplay = ({ userProfile }) => {
         Personal Information
       </Typography>
       <Grid container spacing={4}>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={4} sx={{ width: '45%'}}>
           <InfoCard
             icon={<PersonIcon />}
             label="Display Name"
@@ -101,7 +101,7 @@ const ProfileDisplay = ({ userProfile }) => {
             color="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={4} sx={{ width: '45%'}}>
           <InfoCard
             icon={<EmailIcon />}
             label="Email"
@@ -109,7 +109,7 @@ const ProfileDisplay = ({ userProfile }) => {
             color="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={4} sx={{ width: '45%'}}>
           <InfoCard
             icon={<PublicIcon />}
             label="Country"
@@ -117,7 +117,7 @@ const ProfileDisplay = ({ userProfile }) => {
             color="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={4} sx={{ width: '45%'}}>
           <InfoCard
             icon={<SportsGolfIcon />}
             label="Handicap"
@@ -125,7 +125,7 @@ const ProfileDisplay = ({ userProfile }) => {
             color="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={4} sx={{ width: '45%'}}>
           <InfoCard
             icon={<PhoneIcon />}
             label="Phone"
@@ -133,7 +133,7 @@ const ProfileDisplay = ({ userProfile }) => {
             color="linear-gradient(135deg, #fa709a 0%, #fee140 100%)"
           />
         </Grid>
-        <Grid item xs={12} sm={6} md={4}>
+        <Grid item xs={12} sm={6} md={4} sx={{ width: '45%'}}>
           <InfoCard
             icon={<CakeIcon />}
             label="Date of Birth"

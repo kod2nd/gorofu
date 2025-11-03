@@ -60,6 +60,7 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
     try {
       const dataToSave = {
         ...formData,
+        handicap: formData.handicap === '' || isNaN(formData.handicap) ? null : parseFloat(formData.handicap),
         date_of_birth: formData.date_of_birth || null,
       };
 
