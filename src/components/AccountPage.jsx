@@ -15,6 +15,8 @@ import {
   Stack,
   Chip,
   IconButton,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 import {
   Person as PersonIcon,
@@ -32,8 +34,20 @@ import { userService } from '../services/userService';
 import { countries } from './countries';
 
 const InfoCard = ({ icon, label, value, color = 'primary.main' }) => (
-  <Card sx={{ height: '100%', position: 'relative', overflow: 'visible' }}>
-    <CardContent sx={{ pb: 2 }}>
+  <Card sx={{ 
+    height: '100%', 
+    position: 'relative', 
+    overflow: 'visible',
+    minHeight: { xs: 140, sm: 160 }, // Consistent minimum height
+    display: 'flex',
+    flexDirection: 'column',
+  }}>
+    <CardContent sx={{ 
+      pb: 2, 
+      flex: 1,
+      display: 'flex',
+      flexDirection: 'column',
+    }}>
       <Box
         sx={{
           position: 'absolute',
@@ -48,15 +62,41 @@ const InfoCard = ({ icon, label, value, color = 'primary.main' }) => (
           justifyContent: 'center',
           color: 'white',
           boxShadow: 2,
+          zIndex: 1,
         }}
       >
         {React.cloneElement(icon, { sx: { fontSize: 28 } })}
       </Box>
-      <Box sx={{ mt: 2, pt: 1 }}>
-        <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500, textTransform: 'uppercase', letterSpacing: 0.5 }}>
+      <Box sx={{ 
+        mt: 2, 
+        pt: 1,
+        flex: 1,
+        display: 'flex',
+        flexDirection: 'column',
+      }}>
+        <Typography 
+          variant="caption" 
+          color="text.secondary" 
+          sx={{ 
+            fontWeight: 500, 
+            textTransform: 'uppercase', 
+            letterSpacing: 0.5,
+            lineHeight: 1.2,
+          }}
+        >
           {label}
         </Typography>
-        <Typography variant="h6" sx={{ mt: 0.5, wordBreak: 'break-word', fontSize: '1.1rem' }}>
+        <Typography 
+          variant="h6" 
+          sx={{ 
+            mt: 1, 
+            wordBreak: 'break-word', 
+            fontSize: { xs: '1rem', sm: '1.1rem' },
+            flex: 1,
+            display: 'flex',
+            alignItems: 'center',
+          }}
+        >
           {value || 'Not set'}
         </Typography>
       </Box>
@@ -68,6 +108,8 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
 
   useEffect(() => {
     if (userProfile) {
@@ -148,12 +190,12 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
   };
 
   return (
-    <Box sx={{ maxWidth: 1200, margin: 'auto' }}>
+    <Box sx={{ maxWidth: 1200, margin: 'auto', px: { xs: 2, sm: 3 } }}>
       {/* Header Section */}
       <Paper
         elevation={0}
         sx={{
-          p: 4,
+          p: { xs: 3, sm: 4 },
           mb: 3,
           background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
           color: 'white',
@@ -163,9 +205,9 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={3} alignItems="center">
           <Avatar
             sx={{
-              width: 100,
-              height: 100,
-              fontSize: '2rem',
+              width: { xs: 80, sm: 100 },
+              height: { xs: 80, sm: 100 },
+              fontSize: { xs: '1.5rem', sm: '2rem' },
               bgcolor: 'rgba(255, 255, 255, 0.3)',
               border: '4px solid rgba(255, 255, 255, 0.5)',
             }}
@@ -173,10 +215,10 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
             {getInitials(full_name)}
           </Avatar>
           <Box sx={{ flex: 1, textAlign: { xs: 'center', sm: 'left' } }}>
-            <Typography variant="h4" fontWeight="bold" gutterBottom>
+            <Typography variant="h4" fontWeight="bold" gutterBottom sx={{ fontSize: { xs: '1.75rem', sm: '2.25rem' } }}>
               {full_name || 'User'}
             </Typography>
-            <Typography variant="body1" sx={{ opacity: 0.9, mb: 1 }}>
+            <Typography variant="body1" sx={{ opacity: 0.9, mb: 1, wordBreak: 'break-word' }}>
               {email}
             </Typography>
             <Chip
@@ -239,12 +281,12 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
 
       {/* Content Section */}
       {isEditing ? (
-        <Paper elevation={2} sx={{ p: 4, borderRadius: 3 }}>
+        <Paper elevation={2} sx={{ p: { xs: 3, sm: 4 }, borderRadius: 3 }}>
           <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mb: 3 }}>
             Edit Personal Information
           </Typography>
           <Grid container spacing={3}>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={6} sx={{ width: '100%'}}>
               <TextField
                 label="Display Name"
                 name="full_name"
@@ -254,7 +296,7 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={6} sx={{ width: '100%'}}>
               <TextField
                 label="Email"
                 value={email}
@@ -264,7 +306,7 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
                 helperText="Email cannot be changed"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={6} sx={{ width: '100%'}}>
               <TextField
                 label="Handicap"
                 name="handicap"
@@ -276,7 +318,7 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
                 inputProps={{ step: 0.1 }}
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={6} sx={{ width: '100%'}}>
               <Autocomplete
                 options={countries}
                 getOptionLabel={(option) => option.label}
@@ -293,6 +335,9 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
                       sx={{ 
                         '& > img': { mr: 2, flexShrink: 0 },
                         py: 1.5,
+                        minHeight: 48,
+                        display: 'flex',
+                        alignItems: 'center',
                       }} 
                       {...otherProps}
                     >
@@ -303,24 +348,33 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
                         srcSet={`https://flagcdn.com/w40/${option.code.toLowerCase()}.png 2x`}
                         alt=""
                       />
-                      {option.label}
+                      <Typography noWrap sx={{ flex: 1, minWidth: 0 }}>
+                        {option.label}
+                      </Typography>
                     </Box>
                   );
                 }}
-                renderInput={(params) => <TextField {...params} label="Country" variant="outlined" />}
-                ListboxProps={{
-                  sx: {
-                    maxHeight: 300,
-                    '& li': {
-                      whiteSpace: 'normal',
-                      wordWrap: 'break-word',
-                    }
-                  }
+                renderInput={(params) => (
+                  <TextField 
+                    {...params} 
+                    label="Country" 
+                    variant="outlined" 
+                    sx={{
+                      '& .MuiAutocomplete-inputRoot': {
+                        paddingRight: '32px', // Ensure space for dropdown arrow
+                      }
+                    }}
+                  />
+                )}
+                sx={{
+                  '& .MuiAutocomplete-input': {
+                    minWidth: '120px', // Ensure input field has enough width
+                  },
                 }}
                 fullWidth
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={6} sx={{ width: '100%'}}>
               <TextField
                 label="Phone Number"
                 name="phone"
@@ -330,27 +384,26 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
                 variant="outlined"
               />
             </Grid>
-            <Grid item xs={12} sm={6}>
+            <Grid item xs={12} sm={6} sx={{ width: '100%'}}>
               <TextField
                 label="Date of Birth"
                 name="date_of_birth"
                 type="date"
-                value={formData.date_of_birth}
+                value="{formData.date_of_birth}"
                 onChange={handleInputChange}
                 fullWidth
                 variant="outlined"
-                InputLabelProps={{ shrink: true }}
               />
             </Grid>
           </Grid>
         </Paper>
       ) : (
         <>
-          <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mb: 2, px: 1 }}>
+          <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mb: 4, px: 1 }}>
             Personal Information
           </Typography>
-          <Grid container spacing={3}>
-            <Grid item xs={12} sm={6} md={4}>
+          <Grid container spacing={4} >
+            <Grid xs={12} sm={6} md={4} sx={{ width: '45%'}}>
               <InfoCard
                 icon={<PersonIcon />}
                 label="Display Name"
@@ -358,7 +411,7 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
                 color="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid xs={12} sm={6} md={4} sx={{ width: '45%'}}>
               <InfoCard
                 icon={<EmailIcon />}
                 label="Email"
@@ -366,7 +419,7 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
                 color="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid xs={12} sm={6} md={4} sx={{ width: '45%'}}>
               <InfoCard
                 icon={<PublicIcon />}
                 label="Country"
@@ -374,7 +427,7 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
                 color="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid xs={12} sm={6} md={4} sx={{ width: '45%'}}>
               <InfoCard
                 icon={<SportsGolfIcon />}
                 label="Handicap"
@@ -382,7 +435,7 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
                 color="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid item xs={12} sm={6} md={4} sx={{ width: '45%'}}>
               <InfoCard
                 icon={<PhoneIcon />}
                 label="Phone"
@@ -390,7 +443,7 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
                 color="linear-gradient(135deg, #fa709a 0%, #fee140 100%)"
               />
             </Grid>
-            <Grid item xs={12} sm={6} md={4}>
+            <Grid item xs={12} sm={6} md={4} sx={{ width: '45%'}}>
               <InfoCard
                 icon={<CakeIcon />}
                 label="Date of Birth"
