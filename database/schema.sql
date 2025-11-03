@@ -421,3 +421,27 @@ $$ language 'plpgsql' STABLE SET search_path = 'public';
 -- Add triggers for updated_at
 CREATE TRIGGER update_courses_updated_at BEFORE UPDATE ON courses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 CREATE TRIGGER update_rounds_updated_at BEFORE UPDATE ON rounds FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
+
+-- Function to create a user profile when a new user signs up
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER
+LANGUAGE plpgsql
+SECURITY DEFINER -- This is important for accessing the auth.users table
+AS $$
+BEGIN
+  INSERT INTO public.user_profiles (user_id, email, full_name, role, status)
+  VALUES (
+    new.id,
+    new.email,
+    new.raw_user_meta_data ->> 'full_name', -- Extracts full_name from user metadata
+    'user', -- Default role
+    'active'  -- Set status to active for new sign-ups
+  );
+  RETURN new;
+END;
+$$;
+
+-- Trigger to call the function after a new user is created
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
