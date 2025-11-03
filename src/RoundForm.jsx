@@ -9,12 +9,20 @@ import {
   Paper,
   CircularProgress,
   Snackbar,
-  Alert
+  Alert,
+  ToggleButtonGroup,
+  ToggleButton,
+  Tooltip,
+  useTheme,
+  useMediaQuery,
 } from '@mui/material';
 
 // Import the child components
 import CourseDetailsForm from './components/CourseDetailsForm';
 import HoleDetailsForm from './components/HoleDetailsForm';
+import MobileHoleEntry from './components/MobileHoleEntry';
+import ViewListIcon from '@mui/icons-material/ViewList';
+import PhoneIphoneIcon from '@mui/icons-material/PhoneIphone';
 import RoundInsights from './components/RoundInsights';
 import SectionHeader from './components/SectionHeader';
 import { elevatedCardStyles } from './styles/commonStyles';
@@ -35,6 +43,8 @@ const initialHoleState = {
 };
 
 const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [loading, setLoading] = useState(false);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const [courseDetails, setCourseDetails] = useState({
@@ -53,6 +63,15 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
       hole_number: i + 1,
     }))
   );
+  const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
+  const [viewMode, setViewMode] = useState(isMobile ? 'mobile' : 'desktop');
+
+  const handleViewChange = (event, newViewMode) => {
+    if (newViewMode !== null) {
+      setViewMode(newViewMode);
+    }
+  };
+
 
   useEffect(() => {
     // Set country from user profile once it's loaded, but only on initial form load.
@@ -328,6 +347,34 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
     setSnackbar({ ...snackbar, open: false });
   };
 
+  const renderViewSwitcher = () => {
+    if (isMobile) return null;
+
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <ToggleButtonGroup
+          value={viewMode}
+          exclusive
+          onChange={handleViewChange}
+          aria-label="view mode"
+          size="small"
+        >
+          <Tooltip title="Desktop View">
+            <ToggleButton value="desktop" aria-label="desktop view">
+              <ViewListIcon />
+            </ToggleButton>
+          </Tooltip>
+          <Tooltip title="Mobile View">
+            <ToggleButton value="mobile" aria-label="mobile view">
+              <PhoneIphoneIcon />
+            </ToggleButton>
+          </Tooltip>
+        </ToggleButtonGroup>
+      </Box>
+    );
+  };
+
+
   return (
     <Container maxWidth="lg" sx={{ my: 4 }}>
       <Paper {...elevatedCardStyles}>
@@ -356,13 +403,24 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
             step={2}
             totalSteps={2}
           />
-          <HoleDetailsForm 
-            holes={holes} 
-            handleHoleChange={handleHoleChange} 
-            roundType={courseDetails.round_type}
-            isEditMode={!!roundIdToEdit}
-            distanceUnit={courseDetails.yards_or_meters_unit}
-          />
+          {renderViewSwitcher()}
+          {viewMode === 'mobile' ? (
+            <MobileHoleEntry
+              holes={holes}
+              currentHoleIndex={currentHoleIndex}
+              setCurrentHoleIndex={setCurrentHoleIndex}
+              handleHoleChange={handleHoleChange}
+              isEditMode={!!roundIdToEdit}
+              distanceUnit={courseDetails.yards_or_meters_unit}
+            />
+          ) : (
+            <HoleDetailsForm 
+              holes={holes} 
+              handleHoleChange={handleHoleChange} 
+              roundType={courseDetails.round_type}
+              isEditMode={!!roundIdToEdit}
+            />
+          )}
           
           <SectionHeader 
             title="Round Insights" 

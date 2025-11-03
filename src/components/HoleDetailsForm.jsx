@@ -11,21 +11,16 @@ import {
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 import { cardStyles, hoverEffects } from "../styles/commonStyles";
 import DesktopHoleTable from './DesktopHoleTable';
-import MobileHoleEntry from './MobileHoleEntry';
 
-
-const HoleDetailsForm = ({ holes, handleHoleChange, roundType = '18_holes', isEditMode, distanceUnit }) => {
+const HoleDetailsForm = ({ holes, handleHoleChange, roundType = '18_holes', isEditMode }) => {
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
   // Always show both tables. The played status is controlled in the parent RoundForm.
   const tablesData = [
     { holes: holes.slice(0, 9), startIndex: 0, title: "Front 9 - Score Card", panelId: "front9" },
     { holes: holes.slice(9, 18), startIndex: 9, title: "Back 9 - Score Card", panelId: "back9" },
   ];
-
-  const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
-
+  
   const getInitialExpanded = () => {
     const panelIds = tablesData.map(table => table.panelId);
     return panelIds; // Expand all visible tables
@@ -46,20 +41,6 @@ const HoleDetailsForm = ({ holes, handleHoleChange, roundType = '18_holes', isEd
   React.useEffect(() => {
     setExpanded(getInitialExpanded());
   }, [roundType]);
-
-  // For mobile view, we don't use the accordions, we just show the single entry form.
-  if (isMobile) {
-    return (
-      <MobileHoleEntry
-        holes={holes}
-        currentHoleIndex={currentHoleIndex}
-        setCurrentHoleIndex={setCurrentHoleIndex}
-        handleHoleChange={handleHoleChange}
-        isEditMode={isEditMode}
-        distanceUnit={distanceUnit}
-      />
-    );
-  }
 
   return (
     <Box sx={cardStyles.sx}>
