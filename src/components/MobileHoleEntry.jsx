@@ -303,10 +303,12 @@ const MobileHoleEntry = ({
   handleHoleChange,
   isEditMode,
   distanceUnit = "meters",
+  roundType = "18_holes",
+  isMobile,
 }) => {
   const currentHoleData = holes[currentHoleIndex];
   const [showExtendedParOptions, setShowExtendedParOptions] = useState(false);
-
+  
   // Wrapper to inject the current hole index into the parent handler
   const onHoleChange = (e) => {
     handleHoleChange(currentHoleIndex, e);
@@ -349,12 +351,34 @@ const MobileHoleEntry = ({
   );
   const playerStats = traditional.filter(
     (s) => !["par", "distance"].includes(s.name)
-  );
+  );  
+  
+  // Determine which holes to show in the quick selector
+  let holesToDisplay, startIndex, gridItemSize;
+  if (isMobile) {
+    const activeNine = currentHoleIndex < 9 ? "front" : "back";
+    startIndex = activeNine === "front" ? 0 : 9;
+    holesToDisplay = Array.from({ length: 9 });
+    gridItemSize = 1.33;
+  } else {
+    if (roundType === 'front_9') {
+      startIndex = 0;
+      holesToDisplay = Array.from({ length: 9 });
+    } else if (roundType === 'back_9') {
+      startIndex = 9;
+      holesToDisplay = Array.from({ length: 9 });
+    } else { // 18_holes
+      startIndex = 0;
+      holesToDisplay = Array.from({ length: 18 });
+    }
+    gridItemSize = 12 / holesToDisplay.length;
+  }
 
   return (
     <Box sx={{ p: { xs: 1, sm: 2 } }}>
       {/* Nine Selector */}
-      <Box display="flex" justifyContent="center" sx={{ mb: 2 }}>
+      {isMobile && roundType === '18_holes' && (
+        <Box display="flex" justifyContent="center" sx={{ mb: 2 }}>
         <Button
           variant={activeNine === "front" ? "contained" : "outlined"}
           onClick={() => goToHole(0)}
@@ -375,16 +399,17 @@ const MobileHoleEntry = ({
         >
           Back 9
         </Button>
-      </Box>
+        </Box>
+      )}
 
       {/* Hole Quick Selector */}
       <Grid container spacing={1} sx={{ mb: 2 }}>
-        {Array.from({ length: 9 }).map((_, idx) => {
+        {holesToDisplay.map((_, idx) => {
           const holeNum = nineStartIndex + idx;
           const isActive = currentHoleIndex === holeNum;
           const hasScore = holes[holeNum].hole_score > 0;
           return (
-            <Grid xs={1.33} key={holeNum}>
+            <Grid item xs={gridItemSize} key={holeNum}>
               <Button
                 variant={isActive ? "contained" : "outlined"}
                 onClick={() => goToHole(holeNum)}

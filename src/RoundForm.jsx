@@ -22,7 +22,7 @@ import CourseDetailsForm from './components/CourseDetailsForm';
 import HoleDetailsForm from './components/HoleDetailsForm';
 import MobileHoleEntry from './components/MobileHoleEntry';
 import ViewListIcon from '@mui/icons-material/ViewList';
-import PhoneIphoneIcon from '@mui/icons-material/PhoneIphone';
+import SportsGolfIcon from '@mui/icons-material/SportsGolf';
 import RoundInsights from './components/RoundInsights';
 import SectionHeader from './components/SectionHeader';
 import { elevatedCardStyles } from './styles/commonStyles';
@@ -64,7 +64,7 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
     }))
   );
   const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
-  const [viewMode, setViewMode] = useState(isMobile ? 'mobile' : 'desktop');
+  const [viewMode, setViewMode] = useState('hole-by-hole');
 
   const handleViewChange = (event, newViewMode) => {
     if (newViewMode !== null) {
@@ -359,16 +359,17 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
           aria-label="view mode"
           size="small"
         >
-          <Tooltip title="Desktop View">
-            <ToggleButton value="desktop" aria-label="desktop view">
+          <Tooltip title="Hole-by-Hole View">
+            <ToggleButton value="hole-by-hole" aria-label="hole-by-hole view">
+              <SportsGolfIcon />
+            </ToggleButton>
+          </Tooltip>
+          <Tooltip title="Scorecard View">
+            <ToggleButton value="scorecard" aria-label="scorecard view">
               <ViewListIcon />
             </ToggleButton>
           </Tooltip>
-          <Tooltip title="Mobile View">
-            <ToggleButton value="mobile" aria-label="mobile view">
-              <PhoneIphoneIcon />
-            </ToggleButton>
-          </Tooltip>
+          
         </ToggleButtonGroup>
       </Box>
     );
@@ -404,14 +405,16 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
             totalSteps={2}
           />
           {renderViewSwitcher()}
-          {viewMode === 'mobile' ? (
+          {viewMode === 'hole-by-hole' ? (
             <MobileHoleEntry
               holes={holes}
               currentHoleIndex={currentHoleIndex}
               setCurrentHoleIndex={setCurrentHoleIndex}
               handleHoleChange={handleHoleChange}
               isEditMode={!!roundIdToEdit}
+              roundType={courseDetails.round_type}
               distanceUnit={courseDetails.yards_or_meters_unit}
+              isMobile={isMobile}
             />
           ) : (
             <HoleDetailsForm 
