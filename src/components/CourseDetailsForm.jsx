@@ -148,7 +148,12 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
                 label="Date Played"
                 value={formData.round_date ? new Date(formData.round_date) : null}
                 onChange={(newValue) => handleCourseChange({ target: { name: 'round_date', value: newValue.toISOString().split('T')[0] } })}
-                renderInput={(params) => <TextField {...params} fullWidth required />}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    required: true,
+                  },
+                }}
               />
             </LocalizationProvider>
           </Box>

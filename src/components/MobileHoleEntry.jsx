@@ -307,7 +307,7 @@ const MobileHoleEntry = ({
           const isActive = currentHoleIndex === holeNum;
           const hasScore = holes[holeNum].hole_score > 0;
           return (
-            <Grid item xs={1.33} key={holeNum}>
+            <Grid xs={1.33} key={holeNum}>
               <Button
                 variant={isActive ? "contained" : "outlined"}
                 onClick={() => goToHole(holeNum)}
@@ -487,7 +487,7 @@ const MobileHoleEntry = ({
 
               <Grid container spacing={2}>
                 {playerStats.map((stat) => (
-                  <Grid item xs={6} key={stat.name}>
+                  <Grid xs={6} key={stat.name}>
                     <StatInput
                       stat={stat}
                       holeData={currentHoleData}
