@@ -48,7 +48,7 @@ export const statDefinitions = {
       inputMode: "numeric",
       pattern: "(0|[1-20])",
       patternDescription: "Valid range: 0-20",
-      placeholder: "e.g. 0",
+      placeholder: "Harzards, OB e.g. 0",
       tooltip: "The number of penalty shots taken on the hole.",
     },
   ],
@@ -91,11 +91,11 @@ export const statDefinitions = {
       tooltip: "The number of putts made from within 4 feet of the hole.",
     },
     {
-      label: "Luck",
+      label: "Strokes Gained",
       name: "holeout_from_outside_4ft",
       type: "switch",
       tooltip:
-        "Holed out from a distance greater than 4 feet. A great result that involves both skill and a bit of luck.",
+        "Strokes Gained! Holed out from a distance greater than 4 feet.",
     },
   ],
 };

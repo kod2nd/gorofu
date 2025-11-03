@@ -22,6 +22,59 @@ import {
   textFieldStyles,
 } from "./holeDetailsTableHelper";
 
+const QuickSelector = ({ stat, holeData, onHoleChange, primaryOptions, extendedOptions }) => {
+  const [showExtended, setShowExtended] = useState(false);
+
+  const handleChange = (value) => {
+    onHoleChange({
+      target: { name: stat.name, value: value },
+    });
+  };
+
+  return (
+    <Box>
+      <Tooltip title={stat.tooltip} placement="top-start">
+        <Typography variant="body2" color="text.secondary" mb={1}>
+          {stat.label}
+        </Typography>
+      </Tooltip>
+      <ButtonGroup fullWidth>
+        {primaryOptions.map((option) => (
+          <Button
+            key={option}
+            variant={holeData[stat.name] === option ? "contained" : "outlined"}
+            onClick={() => handleChange(option)}
+            disabled={!holeData.played}
+          >
+            {option}
+          </Button>
+        ))}
+      </ButtonGroup>
+      {extendedOptions && showExtended && (
+        <ButtonGroup fullWidth sx={{ mt: 1 }}>
+          {extendedOptions.map((option) => (
+            <Button
+              key={option}
+              variant={holeData[stat.name] === option ? "contained" : "outlined"}
+              onClick={() => handleChange(option)}
+              disabled={!holeData.played}
+            >
+              {option}
+            </Button>
+          ))}
+        </ButtonGroup>
+      )}
+      {extendedOptions && (
+        <Box sx={{ textAlign: "right" }}>
+          <Button onClick={() => setShowExtended((prev) => !prev)} variant="text" size="small" sx={{ color: "text.secondary", textTransform: "none", mt: 0.5, p: 0.5 }}>
+            {showExtended ? "less..." : "more..."}
+          </Button>
+        </Box>
+      )}
+    </Box>
+  );
+};
+
 const PuttSelector = ({ stat, holeData, onHoleChange }) => {
   const [showExtended, setShowExtended] = useState(false);
   const primaryOptions = [0, 1, 2, 3, 4];
@@ -95,6 +148,30 @@ const StatInput = ({ stat, holeData, onHoleChange, isEditMode }) => {
     // The parent `HoleDetailsForm` will need to wrap this to provide the index.
     onHoleChange(e);
   };
+
+  if (stat.name === "hole_score") {
+    return (
+      <QuickSelector
+        stat={stat}
+        holeData={holeData}
+        onHoleChange={onHoleChange}
+        primaryOptions={[2, 3, 4, 5, 6, 7]}
+        extendedOptions={[1, 8, 9, 10, 11, 12]}
+      />
+    );
+  }
+
+  if (stat.name === "penalty_shots") {
+    return (
+      <QuickSelector
+        stat={stat}
+        holeData={holeData}
+        onHoleChange={onHoleChange}
+        primaryOptions={[0, 1, 2, 3, 4]}
+        extendedOptions={[5, 6, 7, 8, 9]}
+      />
+    );
+  }
 
   if (stat.name === "putts" || stat.name === "putts_within4ft") {
     return (

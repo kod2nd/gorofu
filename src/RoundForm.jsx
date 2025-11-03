@@ -26,7 +26,7 @@ const initialHoleState = {
   distance: '',
   putts: '',
   putts_within4ft: '',
-  penalty_shots: '',
+  penalty_shots: 0,
   hole_score: '',
   hole_outside_scoring_zone: false,
   scoring_zone_in_regulation: false,
@@ -174,7 +174,7 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
       ...(name === 'played' && !checked && { // `checked` is the new `played` value
         hole_score: '',
         putts: '',
-        penalty_shots: '',
+        penalty_shots: 0,
       }),
       [name]: type === 'checkbox' ? checked : value,
     };
