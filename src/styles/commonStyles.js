@@ -114,7 +114,7 @@ export const textFieldStyles = {
   textAlign: "center",
   "& .MuiInputBase-input::placeholder": {
             fontStyle: "italic",
-            opacity: 0.8,
+            opacity: 0.6,
             color: "text.secondary",
   },
   "& .MuiOutlinedInput-root": {

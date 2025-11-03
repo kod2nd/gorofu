@@ -22,6 +22,69 @@ import {
   textFieldStyles,
 } from "./holeDetailsTableHelper";
 
+const PuttSelector = ({ stat, holeData, onHoleChange }) => {
+  const [showExtended, setShowExtended] = useState(false);
+  const primaryOptions = [0, 1, 2, 3, 4];
+  const extendedOptions = [5, 6, 7, 8, 9];
+
+  const handlePuttChange = (puttCount) => {
+    onHoleChange({
+      target: { name: stat.name, value: puttCount },
+    });
+  };
+
+  return (
+    <Box>
+      <Tooltip title={stat.tooltip} placement="top-start">
+        <Typography variant="body2" color="text.secondary" mb={1}>
+          {stat.label}
+        </Typography>
+      </Tooltip>
+      <ButtonGroup fullWidth>
+        {primaryOptions.map((putt) => (
+          <Button
+            key={putt}
+            variant={holeData[stat.name] === putt ? "contained" : "outlined"}
+            onClick={() => handlePuttChange(putt)}
+            disabled={!holeData.played}
+          >
+            {putt}
+          </Button>
+        ))}
+      </ButtonGroup>
+      {showExtended && (
+        <ButtonGroup fullWidth sx={{ mt: 1 }}>
+          {extendedOptions.map((putt) => (
+            <Button
+              key={putt}
+              variant={holeData[stat.name] === putt ? "contained" : "outlined"}
+              onClick={() => handlePuttChange(putt)}
+              disabled={!holeData.played}
+            >
+              {putt}
+            </Button>
+          ))}
+        </ButtonGroup>
+      )}
+      <Box sx={{ textAlign: "right" }}>
+        <Button
+          onClick={() => setShowExtended((prev) => !prev)}
+          variant="text"
+          size="small"
+          sx={{
+            color: "text.secondary",
+            textTransform: "none",
+            mt: 0.5,
+            p: 0.5,
+          }}
+        >
+          {showExtended ? "less..." : "more..."}
+        </Button>
+      </Box>
+    </Box>
+  );
+};
+
 const StatInput = ({ stat, holeData, onHoleChange, isEditMode }) => {
   const isDNP = !holeData.played;
   const shouldBeRed =
@@ -31,6 +94,16 @@ const StatInput = ({ stat, holeData, onHoleChange, isEditMode }) => {
     // The parent expects the hole index and the event, but here we only have the event.
     // The parent `HoleDetailsForm` will need to wrap this to provide the index.
     onHoleChange(e);
+  };
+
+  if (stat.name === "putts" || stat.name === "putts_within4ft") {
+    return (
+      <PuttSelector
+        stat={stat}
+        holeData={holeData}
+        onHoleChange={onHoleChange}
+      />
+    );
   };
 
   if (stat.type === "switch") {
@@ -135,8 +208,10 @@ const StatInput = ({ stat, holeData, onHoleChange, isEditMode }) => {
         }
         onChange={createChangeHandler}
         required={["par", "hole_score"].includes(stat.name)}
-        sx={{ ...textFieldStyles }}
-        inputProps={{
+        sx={textFieldStyles}
+        slotProps={{
+          // Use slotProps.input for props passed to the underlying Input component
+          // and slotProps.htmlInput for props passed to the <input> element.
           style: { textAlign: "left", ...boldTextStyles, fontSize: "0.8rem" },
         }}
       />
@@ -331,10 +406,9 @@ const MobileHoleEntry = ({
         </Box>
 
         <Box sx={{ p: 2 }}>
-          <Grid container spacing={2}>
+          
             {/* Hole Details Section */}
             <Box sx={{ mb: 3 }}>
-              <Divider sx={{ mb: 2 }} />
               <Typography
                 variant="overline"
                 sx={{
@@ -494,7 +568,7 @@ const MobileHoleEntry = ({
                 ))}
               </Box>
             </Box>
-          </Grid>
+        
         </Box>
       </Paper>
     </Box>
