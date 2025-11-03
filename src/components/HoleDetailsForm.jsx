@@ -14,7 +14,7 @@ import DesktopHoleTable from './DesktopHoleTable';
 import MobileHoleEntry from './MobileHoleEntry';
 
 
-const HoleDetailsForm = ({ holes, handleHoleChange, roundType = '18_holes', isEditMode }) => {
+const HoleDetailsForm = ({ holes, handleHoleChange, roundType = '18_holes', isEditMode, distanceUnit }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -56,8 +56,7 @@ const HoleDetailsForm = ({ holes, handleHoleChange, roundType = '18_holes', isEd
         setCurrentHoleIndex={setCurrentHoleIndex}
         handleHoleChange={handleHoleChange}
         isEditMode={isEditMode}
-        // TODO: Pass this prop from the parent RoundForm based on course data
-        distanceUnit="meters"
+        distanceUnit={distanceUnit}
       />
     );
   }

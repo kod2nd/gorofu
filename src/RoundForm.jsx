@@ -349,6 +349,7 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
             handleHoleChange={handleHoleChange} 
             roundType={courseDetails.round_type}
             isEditMode={!!roundIdToEdit}
+            distanceUnit={courseDetails.yards_or_meters_unit}
           />
           
           <SectionHeader 
