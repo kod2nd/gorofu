@@ -167,18 +167,30 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
 
   const handleHoleChange = (index, e) => {
     const { name, value, type, checked } = e.target;
-    const updatedHoles = [...holes];
-    updatedHoles[index] = {
-      ...updatedHoles[index],
-      // If a hole is marked as not played, clear its data.
-      ...(name === 'played' && !checked && { // `checked` is the new `played` value
+    const newHoles = [...holes];
+    const currentHole = newHoles[index];
+
+    let updatedHole = {
+      ...currentHole,
+      [name]: type === 'checkbox' ? checked : value,
+    };
+
+    // If par is changed and score hasn't been set, default score to par.
+    if (name === 'par' && !currentHole.hole_score) {
+      updatedHole.hole_score = value;
+    }
+
+    // If a hole is marked as not played, clear its data.
+    if (name === 'played' && !checked) {
+      updatedHole = { ...updatedHole,
         hole_score: '',
         putts: '',
         penalty_shots: 0,
-      }),
-      [name]: type === 'checkbox' ? checked : value,
-    };
-    setHoles(updatedHoles);
+      };
+    }
+
+    newHoles[index] = updatedHole;
+    setHoles(newHoles);
   };
 
   // Calculate insights in the parent component
