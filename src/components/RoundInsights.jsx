@@ -1,4 +1,4 @@
-import { Typography, Paper, Box, Grid, Tooltip } from "@mui/material";
+import { Typography, Paper, Box, Tooltip } from "@mui/material";
 import { cardStyles, sectionHeaderStyles, hoverEffects } from "../styles/commonStyles";
 
 const StatCard = ({ label, value, percentage, tooltip }) => (
@@ -54,77 +54,77 @@ const RoundInsights = ({ insightsData }) => {
         <Typography {...sectionHeaderStyles}>
           📊 Traditional Stats
         </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={6} sm={3} sx={{ width: '45%'}}>
-            <StatCard label="Scoring Holes" value={totalHolesPlayed} tooltip="Total number of holes with hole-by-hole data." />
-          </Grid>
-          <Grid item xs={6} sm={3} sx={{ width: '45%'}}>
-            <StatCard label="Total Strokes" value={totalScore} tooltip="Sum of all strokes for the round(s)." />
-          </Grid>
-          <Grid item xs={6} sm={3} sx={{ width: '45%'}}>
-            <StatCard label="Total Penalties" value={totalPenalties} tooltip="Total penalty strokes recorded." />
-          </Grid>
-          <Grid item xs={6} sm={3} sx={{ width: '45%'}}>
-            <StatCard label="Avg Penalties/Hole" value={avgPenaltiesPerHole} tooltip="Average number of penalty strokes per hole." />
-          </Grid>
-        </Grid>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+          <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: { xs: 'calc(50% - 8px)', sm: 'calc(25% - 12px)' } }}>
+            <StatCard label="Scoring Holes" value={totalHolesPlayed} tooltip="Total number of holes with hole-by-hole data."/>
+          </Box>
+          <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: { xs: 'calc(50% - 8px)', sm: 'calc(25% - 12px)' } }}>
+            <StatCard label="Total Strokes" value={totalScore} tooltip="Sum of all strokes for the round(s)."/>
+          </Box>
+          <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: { xs: 'calc(50% - 8px)', sm: 'calc(25% - 12px)' } }}>
+            <StatCard label="Total Penalties" value={totalPenalties} tooltip="Total penalty strokes recorded."/>
+          </Box>
+          <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: { xs: 'calc(50% - 8px)', sm: 'calc(25% - 12px)' } }}>
+            <StatCard label="Avg Penalties/Hole" value={avgPenaltiesPerHole} tooltip="Average number of penalty strokes per hole."/>
+          </Box>
+        </Box>
       </Box>
 
       <Box sx={{ mb: 4 }}>
         <Typography {...sectionHeaderStyles}>
           ⛳ Long Game
         </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={12} sm={6} sx={{ width: '45%'}}>
-            <StatCard 
-              label="Scoring Zone in Regulation (SZIR)" 
-              value={`${totalSZIR} / ${totalHolesPlayed}`}
-              percentage={SZIRPercentage} 
-              tooltip="Getting inside the Scoring Zone within Par-2 shots. This shows you the number of times you have given yourself a change to score"
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+          <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: { xs: '100%', sm: 'calc(50% - 8px)' } }}>
+            <StatCard
+                label="Scoring Zone in Regulation (SZIR)"
+                value={`${totalSZIR} / ${totalHolesPlayed}`}
+                percentage={SZIRPercentage}
+                tooltip="Getting inside the Scoring Zone within Par-2 shots. This shows you the number of times you have given yourself a change to score"
             />
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </Box>
 
       <Box sx={{ mb: 2 }}>
         <Typography {...sectionHeaderStyles}>
           🏌️ Short Game
         </Typography>
-        <Grid container spacing={2}>
-          <Grid item xs={6} sm={4} sx={{ width: '45%'}}>
-            <StatCard label="Total Putts" value={totalPutts} tooltip="Total number of putts." />
-          </Grid>
-          <Grid item xs={6} sm={4} sx={{ width: '45%'}}>
-            <StatCard label="Avg Putts/Hole" value={avgPuttsPerHole} tooltip="Average number of putts per hole." />
-          </Grid>
-          <Grid item xs={6} sm={4} sx={{ width: '45%'}}>
-            <StatCard label="Putts within 4ft" value={totalPuttsWithin4ft} tooltip="Total number of putts taken from within 4 feet of the hole." />
-          </Grid>
-          <Grid item xs={6} sm={4} sx={{ width: '45%'}}>
-            <StatCard 
-              label="SZ Par (Holeout in 3)" 
-              value={`${totalHoleoutWithin3Shots} / ${totalSZIR}`} 
-              percentage={holeoutWithin3ShotsPercentage} 
-              tooltip="Holing out in 3 or fewer shots once inside the Scoring Zone. This is your conversion rate for scoring opportunities."
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+          <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: { xs: 'calc(50% - 8px)', sm: 'calc(33.33% - 11px)' } }}>
+            <StatCard label="Total Putts" value={totalPutts} tooltip="Total number of putts."/>
+          </Box>
+          <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: { xs: 'calc(50% - 8px)', sm: 'calc(33.33% - 11px)' } }}>
+            <StatCard label="Avg Putts/Hole" value={avgPuttsPerHole} tooltip="Average number of putts per hole."/>
+          </Box>
+          <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: { xs: 'calc(50% - 8px)', sm: 'calc(33.33% - 11px)' } }}>
+            <StatCard label="Putts within 4ft" value={totalPuttsWithin4ft} tooltip="Total number of putts taken from within 4 feet of the hole."/>
+          </Box>
+          <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: { xs: 'calc(50% - 8px)', sm: 'calc(33.33% - 11px)' } }}>
+            <StatCard
+                label="SZ Par (Holeout in 3)"
+                value={`${totalHoleoutWithin3Shots} / ${totalSZIR}`}
+                percentage={holeoutWithin3ShotsPercentage}
+                tooltip="Holing out in 3 or fewer shots once inside the Scoring Zone. This is your conversion rate for scoring opportunities."
             />
-          </Grid>
-          <Grid item xs={6} sm={4} sx={{ width: '45%'}}>
-            <StatCard 
-              label="Holes w/ Short Misses (<4ft)" 
-              value={holesWithMoreThanOnePuttWithin4ft} 
-              percentage={multiPuttRatio}
-              tooltip="Number of holes where you took more than one putt from inside 4 feet."
+          </Box>
+          <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: { xs: 'calc(50% - 8px)', sm: 'calc(33.33% - 11px)' } }}>
+            <StatCard
+                label="Holes w/ Short Misses (<4ft)"
+                value={holesWithMoreThanOnePuttWithin4ft}
+                percentage={multiPuttRatio}
+                tooltip="Number of holes where you took more than one putt from inside 4 feet."
             />
-          </Grid>
-          <Grid item xs={6} sm={4} sx={{ width: '45%'}}>
-            <StatCard 
-              label="Luck / Strokes Gained (Holeout >4ft)" 
-              value={totalHoleoutFromOutside4ft} 
-              percentage={holeoutFromOutside4ftPercentage} 
-              tooltip="Number of times you holed out from outside 4 feet!"
+          </Box>
+          <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: { xs: 'calc(50% - 8px)', sm: 'calc(33.33% - 11px)' } }}>
+            <StatCard
+                label="Luck / Strokes Gained (Holeout >4ft)"
+                value={totalHoleoutFromOutside4ft}
+                percentage={holeoutFromOutside4ftPercentage}
+                tooltip="Number of times you holed out from outside 4 feet!"
             />
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </Box>
     </Paper>
   );
