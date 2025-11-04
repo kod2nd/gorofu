@@ -92,48 +92,47 @@ const ProfileDisplay = ({ userProfile }) => {
       <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mb: 4, px: 1 }}>
         Personal Information
       </Typography>
-      <Grid container spacing={4}>
-        <Grid item xs={12} sm={6} md={4} sx={{ width: '45%'}}>
+      <Box
+        sx={{
+          display: 'flex',
+          flexWrap: 'wrap',
+          gap: 3, // Consistent gap
+          '& > *': {
+            // Responsive width calculation
+            flexBasis: { xs: '100%', sm: 'calc(50% - 12px)', md: 'calc(33.333% - 16px)' },
+          }
+        }}
+      >
           <InfoCard
             icon={<PersonIcon />}
             label="Display Name"
             value={userProfile.full_name}
             color="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
           />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4} sx={{ width: '45%'}}>
           <InfoCard
             icon={<EmailIcon />}
             label="Email"
             value={userProfile.email}
             color="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
           />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4} sx={{ width: '45%'}}>
           <InfoCard
             icon={<PublicIcon />}
             label="Country"
             value={userProfile.country}
             color="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
           />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4} sx={{ width: '45%'}}>
           <InfoCard
             icon={<SportsGolfIcon />}
             label="Handicap"
             value={userProfile.handicap != null ? Number(userProfile.handicap).toFixed(1) : null}
             color="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
           />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4} sx={{ width: '45%'}}>
           <InfoCard
             icon={<PhoneIcon />}
             label="Phone"
             value={userProfile.phone}
             color="linear-gradient(135deg, #fa709a 0%, #fee140 100%)"
           />
-        </Grid>
-        <Grid item xs={12} sm={6} md={4} sx={{ width: '45%'}}>
           <InfoCard
             icon={<CakeIcon />}
             label="Date of Birth"
@@ -144,8 +143,7 @@ const ProfileDisplay = ({ userProfile }) => {
             }
             color="linear-gradient(135deg, #30cfd0 0%, #330867 100%)"
           />
-        </Grid>
-      </Grid>
+      </Box>
     </>
   );
 };
