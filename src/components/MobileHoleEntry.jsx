@@ -403,36 +403,45 @@ const MobileHoleEntry = ({
       )}
 
       {/* Hole Quick Selector */}
-      <Grid container spacing={1} sx={{ mb: 2 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 1,
+          mb: 2,
+        }}
+      >
         {holesToDisplay.map((_, idx) => {
           const holeNum = nineStartIndex + idx;
           const isActive = currentHoleIndex === holeNum;
           const hasScore = holes[holeNum].hole_score > 0;
           return (
-            <Grid item xs={gridItemSize} key={holeNum}>
-              <Button
+            <Button
+                key={holeNum}
                 variant={isActive ? "contained" : "outlined"}
                 onClick={() => goToHole(holeNum)}
                 sx={{
                   p: 1,
-                  minWidth: "auto",
+                  width: { xs: 36, sm: 40 }, // Fixed width
+                  height: { xs: 36, sm: 40 }, // Fixed height
+                  minWidth: 0, // Override default minWidth
                   fontWeight: "bold",
                   backgroundColor: isActive
-                    ? "primary.main"
+                    ? "primary.dark"
                     : hasScore
                     ? "success.light"
                     : "background.paper",
                   borderColor: "divider",
                   transform: isActive ? "scale(1.1)" : "none",
                   transition: "transform 0.2s",
+                  flex: { xs: '1 1 9%', sm: '0 0 auto' }, // Adjust flex behavior
                 }}
               >
                 {holeNum + 1}
               </Button>
-            </Grid>
           );
         })}
-      </Grid>
+      </Box>
 
       {/* Main Card */}
       <Paper elevation={3} sx={{ borderRadius: 3, overflow: "hidden" }}>
@@ -587,18 +596,18 @@ const MobileHoleEntry = ({
                 YOUR STATS
               </Typography>
 
-              <Grid container spacing={2}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                 {playerStats.map((stat) => (
-                  <Grid xs={6} key={stat.name}>
+                  <Box key={stat.name} sx={{ flex: '1 1 calc(50% - 8px)' }}>
                     <StatInput
                       stat={stat}
                       holeData={currentHoleData}
                       onHoleChange={onHoleChange}
                       isEditMode={isEditMode}
                     />
-                  </Grid>
+                  </Box>
                 ))}
-              </Grid>
+              </Box>
             </Box>
 
             {/* Long Game Stats */}
