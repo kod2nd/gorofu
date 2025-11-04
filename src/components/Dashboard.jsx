@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Paper,
-  Grid,
   Alert,
   Divider,
 } from '@mui/material';
@@ -109,42 +108,34 @@ const Dashboard = ({ user, onViewRound, isActive }) => {
   if (error) return <Alert severity="error">{error}</Alert>;
 
   return (
-    <Grid container spacing={3}>
-      <Grid item xs={12} sx={{ width: '100%'}}>
-        <AllTimeStats
-          cumulativeStats={cumulativeStats}
-          szirStreak={szirStreak}
-          szParStreak={szParStreak}
+    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+      <AllTimeStats
+        cumulativeStats={cumulativeStats}
+        szirStreak={szirStreak}
+        szParStreak={szParStreak}
+      />
+
+      <Divider />
+
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <DashboardFilters
+          roundLimit={roundLimit}
+          setRoundLimit={setRoundLimit}
+          showEligibleRoundsOnly={showEligibleRoundsOnly}
+          setShowEligibleRoundsOnly={setShowEligibleRoundsOnly}
+          isFiltering={isFiltering}
         />
-      </Grid>
+        {isFiltering ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
+            <FlippingGolfIcon size={60} />
+          </Box>
+        ) : (
+          <RecentInsights recentStats={recentStats} isFiltering={isFiltering} />
+        )}
+      </Box>
 
-      <Grid item xs={12}><Divider /></Grid>
-
-      <Grid item xs={12} sx={{ width: '100%'}}>
-        <Grid container spacing={3}>
-          <Grid item xs={12} sx={{ width: '100%'}}>
-            <DashboardFilters
-              roundLimit={roundLimit}
-              setRoundLimit={setRoundLimit}
-              showEligibleRoundsOnly={showEligibleRoundsOnly}
-              setShowEligibleRoundsOnly={setShowEligibleRoundsOnly}
-              isFiltering={isFiltering}
-            />
-          </Grid>
-          <Grid item xs={12} sx={{ width: '100%'}}>
-            {isFiltering ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
-                <FlippingGolfIcon size={60} />
-              </Box>
-            ) : (
-              <RecentInsights recentStats={recentStats} isFiltering={isFiltering} />
-            )}
-          </Grid>
-        </Grid>
-      </Grid>
-
-      <Grid item xs={12} sx={{ width: '100%'}}>
-        <Paper {...elevatedCardStyles} sx={{ mb: 3, width: '100%'}}>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        <Paper {...elevatedCardStyles}>
           <Typography variant="h6" component="h2" sx={{ p: 2, fontWeight: 'bold' }}>
             Recent Rounds
           </Typography>
@@ -164,8 +155,8 @@ const Dashboard = ({ user, onViewRound, isActive }) => {
         ) : (
           <Analytics recentRounds={recentRounds} recentStats={recentStats} />
         )}
-      </Grid>
-    </Grid>
+      </Box>
+    </Box>
   );
 };
 
