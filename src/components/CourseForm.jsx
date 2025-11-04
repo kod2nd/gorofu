@@ -5,7 +5,6 @@ import {
   TextField,
   Button,
   Paper,
-  Grid,
   Accordion,
   AccordionSummary,
   AccordionDetails,
@@ -153,18 +152,31 @@ const CourseForm = ({ course: initialCourse, onSave, onCancel }) => {
       </Typography>
       <form onSubmit={handleSubmit}>
         {/* Course Details */}
-        <Grid container spacing={2} sx={{ mb: 2 }}>
-          <Grid item xs={12} sm={6}><TextField name="name" label="Course Name" value={course.name} onChange={handleCourseChange} fullWidth required /></Grid>
-          <Grid item xs={12} sm={3}><TextField name="country" label="Country" value={course.country} onChange={handleCourseChange} fullWidth /></Grid>
-          <Grid item xs={12} sm={3}><TextField name="city" label="City" value={course.city} onChange={handleCourseChange} fullWidth /></Grid>
-        </Grid>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
+          <Box sx={{ flex: '1 1 100%', '@media (min-width:600px)': { flex: '1 1 calc(50% - 8px)' } }}>
+            <TextField name="name" label="Course Name" value={course.name} onChange={handleCourseChange} fullWidth required />
+          </Box>
+          <Box sx={{ flex: '1 1 calc(50% - 8px)', '@media (min-width:600px)': { flex: '1 1 calc(25% - 12px)' } }}>
+            <TextField name="country" label="Country" value={course.country} onChange={handleCourseChange} fullWidth />
+          </Box>
+          <Box sx={{ flex: '1 1 calc(50% - 8px)', '@media (min-width:600px)': { flex: '1 1 calc(25% - 12px)' } }}>
+            <TextField name="city" label="City" value={course.city} onChange={handleCourseChange} fullWidth />
+          </Box>
+        </Box>
 
         {/* Tee Box Management */}
         <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
           <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>Tee Boxes</Typography>
-          <Grid container spacing={2}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
             {course.tee_boxes.map((teeBox, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
+              <Box
+                key={index}
+                sx={{
+                  flex: '1 1 100%',
+                  '@media (min-width:600px)': { flex: '1 1 calc(50% - 8px)' },
+                  '@media (min-width:900px)': { flex: '1 1 calc(33.33% - 11px)' },
+                }}
+              >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                   <TextField 
                     label={`Tee ${index + 1} Name`} 
@@ -176,12 +188,18 @@ const CourseForm = ({ course: initialCourse, onSave, onCancel }) => {
                   />
                   <IconButton onClick={() => removeTeeBox(index)} color="error"><DeleteIcon /></IconButton>
                 </Box>
-              </Grid>
+              </Box>
             ))}
-            <Grid item xs={12} sm={4} md={3}>
+            <Box
+              sx={{
+                flex: '1 1 100%',
+                '@media (min-width:600px)': { flex: '1 1 calc(33.33% - 11px)' },
+                '@media (min-width:900px)': { flex: '1 1 calc(25% - 12px)' },
+              }}
+            >
               <Button startIcon={<AddCircleOutlineIcon />} onClick={addTeeBox} variant="outlined" fullWidth>Add Tee Box</Button>
-            </Grid>
-          </Grid>
+            </Box>
+          </Box>
         </Paper>
 
         {/* Hole-by-Hole Data Entry */}
@@ -203,9 +221,15 @@ const CourseForm = ({ course: initialCourse, onSave, onCancel }) => {
             <AccordionDetails>
               <Box>
                 <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>Distance</Typography>
-                <Grid container spacing={2}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                   {course.tee_boxes.map((teeBox) => (
-                    <Grid item xs={6} sm={4} md={3} key={teeBox.name}>
+                    <Box
+                      key={teeBox.name}
+                      sx={{
+                        flex: '1 1 calc(50% - 8px)',
+                        '@media (min-width:900px)': { flex: '1 1 calc(25% - 12px)' },
+                      }}
+                    >
                       <TextField
                         label={`${teeBox.name} Distance`}
                         type="number"
@@ -213,15 +237,21 @@ const CourseForm = ({ course: initialCourse, onSave, onCancel }) => {
                         onChange={(e) => handleDistanceChange(holeIndex, teeBox.name, e.target.value)}
                         fullWidth
                       />
-                    </Grid>
+                    </Box>
                   ))}
-                </Grid>
+                </Box>
               </Box>
               <Box sx={{ mt: 3 }}>
                 <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>Hole Par Override <Typography variant="caption" color="text.secondary">(Optional)</Typography></Typography>
-                <Grid container spacing={2}>
+                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                   {course.tee_boxes.map((teeBox) => (
-                    <Grid item xs={6} sm={4} md={3} key={`${teeBox.name}-par`}>
+                    <Box
+                      key={`${teeBox.name}-par`}
+                      sx={{
+                        flex: '1 1 calc(50% - 8px)',
+                        '@media (min-width:900px)': { flex: '1 1 calc(25% - 12px)' },
+                      }}
+                    >
                       <TextField
                         label={`${teeBox.name} Par`}
                         type="number"
@@ -229,9 +259,9 @@ const CourseForm = ({ course: initialCourse, onSave, onCancel }) => {
                         onChange={(e) => handleParOverrideChange(holeIndex, teeBox.name, e.target.value)}
                         fullWidth
                       />
-                    </Grid>
+                    </Box>
                   ))}
-                </Grid>
+                </Box>
               </Box>
             </AccordionDetails>
           </Accordion>
