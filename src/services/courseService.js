@@ -2,15 +2,19 @@
 import { supabase } from '../supabaseClient';
 
 export const courseService = {
-  // Search courses by country and name (fuzzy matching)
-  async searchCourses(searchTerm = '', country = 'Singapore') {
-    const { data, error } = await supabase
+  // Search courses by name (fuzzy matching), with an optional country filter.
+  async searchCourses(searchTerm = '', country = null) {
+    let query = supabase
       .from('courses')
       .select('*')
-      .eq('country', country)
       .or(`name.ilike.%${searchTerm}%,city.ilike.%${searchTerm}%`)
       .order('name');
     
+    // Only apply the country filter if a country is provided.
+    if (country) {
+      query = query.eq('country', country);
+    }
+    const { data, error } = await query;
     if (error) throw error;
     return data;
   },
@@ -149,7 +153,7 @@ export const courseService = {
       return { hole_number, par: defaultPar, distances, par_overrides };
     });
 
-    return { ...course, tee_boxes, holes };
+    return { ...course, tee_boxes, holes: holes };
   },
 
   // Create tee box data for a course
@@ -246,5 +250,16 @@ export const courseService = {
     if (holesError) throw holesError;
 
     return savedCourse;
+  },
+
+  // Delete a course
+  async deleteCourse(courseId, adminEmail) {
+    // The 'rounds' table has a foreign key to 'courses'. Deleting a course
+    // that has associated rounds will fail unless cascading deletes are enabled
+    // or the rounds are deleted first. The database schema has been updated
+    // to handle this with ON DELETE CASCADE.
+    const { error } = await supabase.from('courses').delete().eq('id', courseId);
+
+    if (error) throw error;
   },
 };

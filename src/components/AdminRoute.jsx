@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress, Alert } from '@mui/material';
 import { userService } from '../services/userService';
 
-const AdminRoute = ({ children, requireSuperAdmin = false }) => {
+const AdminRoute = ({ children, requireSuperAdmin = false, ...rest }) => {
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
@@ -55,7 +55,7 @@ const AdminRoute = ({ children, requireSuperAdmin = false }) => {
     );
   }
 
-  return React.cloneElement(children, { currentUser: userProfile });
+  return React.cloneElement(children, { ...rest, currentUser: userProfile });
 };
 
 export default AdminRoute;

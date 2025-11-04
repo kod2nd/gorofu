@@ -1,8 +1,9 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Box,
   Typography,
   TextField,
+  Autocomplete,
   Button,
   Paper,
   Accordion,
@@ -16,8 +17,9 @@ import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
 import { elevatedCardStyles } from '../styles/commonStyles';
+import { countries } from './countries';
 
-const CourseForm = ({ course: initialCourse, onSave, onCancel }) => {
+const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
   const [course, setCourse] = useState(
     initialCourse || {
       name: '',
@@ -34,9 +36,38 @@ const CourseForm = ({ course: initialCourse, onSave, onCancel }) => {
         { name: 'Red', yards_or_meters_unit: 'meters' },
         { name: 'White', yards_or_meters_unit: 'meters' },
         { name: 'Blue', yards_or_meters_unit: 'meters' },
+        { name: 'Black', yards_or_meters_unit: 'meters' },
       ],
     }
   );
+
+  useEffect(() => {
+    if (initialCourse) {
+      // Transform the incoming course data to match the form's state structure
+      const teeBoxes = initialCourse.tee_boxes.map(tb => ({
+        name: tb.name,
+        yards_or_meters_unit: tb.yards_or_meters_unit || 'meters'
+      }));
+
+      const holes = Array.from({ length: 18 }, (_, i) => {
+        const holeNumber = i + 1;
+        const distances = {};
+        const par_overrides = {};
+        let defaultPar = '';
+
+        initialCourse.tee_boxes.forEach(tb => {
+          const holeData = tb.holes.find(h => h.hole_number === holeNumber);
+          if (holeData) {
+            distances[tb.name] = holeData.distance || '';
+            par_overrides[tb.name] = holeData.par || '';
+            if (!defaultPar) defaultPar = holeData.par || '';
+          }
+        });
+        return { hole_number: holeNumber, par: defaultPar, distances, par_overrides };
+      });
+      setCourse({ ...initialCourse, tee_boxes: teeBoxes, holes });
+    }
+  }, [initialCourse]);
 
   const handleCourseChange = (e) => {
     setCourse({ ...course, [e.target.name]: e.target.value });
@@ -157,7 +188,39 @@ const CourseForm = ({ course: initialCourse, onSave, onCancel }) => {
             <TextField name="name" label="Course Name" value={course.name} onChange={handleCourseChange} fullWidth required />
           </Box>
           <Box sx={{ flex: '1 1 calc(50% - 8px)', '@media (min-width:600px)': { flex: '1 1 calc(25% - 12px)' } }}>
-            <TextField name="country" label="Country" value={course.country} onChange={handleCourseChange} fullWidth />
+            <Autocomplete
+              options={countries}
+              getOptionLabel={(option) => option.label}
+              value={countries.find(c => c.label === course.country) || null}
+              onChange={(event, newValue) => {
+                handleCourseChange({ target: { name: 'country', value: newValue ? newValue.label : '' } });
+              }}
+              renderOption={(props, option) => (
+                <Box component="li" {...props}>
+                  <img
+                    loading="lazy"
+                    width="20"
+                    src={`https://flagcdn.com/w20/${option.code.toLowerCase()}.png`}
+                    srcSet={`https://flagcdn.com/w40/${option.code.toLowerCase()}.png 2x`}
+                    alt=""
+                    style={{ marginRight: '10px' }}
+                  />
+                  {option.label}
+                </Box>
+              )}
+              renderInput={(params) => (
+                <TextField
+                  {...params}
+                  label="Country"
+                  fullWidth
+                  required
+                  inputProps={{
+                    ...params.inputProps,
+                    autoComplete: 'new-password', // disable autocomplete and autofill
+                  }}
+                />
+              )}
+            />
           </Box>
           <Box sx={{ flex: '1 1 calc(50% - 8px)', '@media (min-width:600px)': { flex: '1 1 calc(25% - 12px)' } }}>
             <TextField name="city" label="City" value={course.city} onChange={handleCourseChange} fullWidth />
@@ -166,15 +229,20 @@ const CourseForm = ({ course: initialCourse, onSave, onCancel }) => {
 
         {/* Tee Box Management */}
         <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-          <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>Tee Boxes</Typography>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Tee Boxes</Typography>
+            <Button startIcon={<AddCircleOutlineIcon />} onClick={addTeeBox} variant="outlined">
+              Add Tee Box
+            </Button>
+          </Box>
           <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
             {course.tee_boxes.map((teeBox, index) => (
               <Box
                 key={index}
                 sx={{
-                  flex: '1 1 100%',
-                  '@media (min-width:600px)': { flex: '1 1 calc(50% - 8px)' },
-                  '@media (min-width:900px)': { flex: '1 1 calc(33.33% - 11px)' },
+                  flexBasis: '100%',
+                  '@media (min-width:600px)': { flexBasis: 'calc(50% - 8px)' },
+                  '@media (min-width:900px)': { flexBasis: 'calc(33.33% - 11px)' },
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
@@ -190,15 +258,6 @@ const CourseForm = ({ course: initialCourse, onSave, onCancel }) => {
                 </Box>
               </Box>
             ))}
-            <Box
-              sx={{
-                flex: '1 1 100%',
-                '@media (min-width:600px)': { flex: '1 1 calc(33.33% - 11px)' },
-                '@media (min-width:900px)': { flex: '1 1 calc(25% - 12px)' },
-              }}
-            >
-              <Button startIcon={<AddCircleOutlineIcon />} onClick={addTeeBox} variant="outlined" fullWidth>Add Tee Box</Button>
-            </Box>
           </Box>
         </Paper>
 
@@ -267,13 +326,20 @@ const CourseForm = ({ course: initialCourse, onSave, onCancel }) => {
           </Accordion>
         ))}
 
-        <Box sx={{ mt: 3, display: 'flex', gap: 2 }}>
+        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <Box sx={{ display: 'flex', gap: 2 }}>
           <Button type="submit" variant="contained" color="primary" disabled={hasDuplicateTeeBoxes}>
             Save Course
           </Button>
           <Button variant="outlined" onClick={onCancel}>
             Cancel
           </Button>
+          </Box>
+          {initialCourse && (
+            <Button variant="text" color="error" onClick={() => onDelete(course)}>
+              Delete Course
+            </Button>
+          )}
         </Box>
       </form>
     </Paper>

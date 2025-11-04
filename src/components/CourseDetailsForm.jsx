@@ -205,22 +205,21 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
             <Autocomplete
               value={courses.find(c => c.id === formData.course_id) || formData.course_name || null}
               options={courses}
+              isOptionEqualToValue={(option, value) => option.id === value.id || option.name === value}
               onChange={handleCourseSelect}
-              getOptionLabel={(option) => option.name || option}
+              getOptionLabel={(option) => typeof option === 'string' ? option : option.name || ''}
               filterOptions={handleFilterOptions}
               noOptionsText="No course found"
-              renderOption={({ key, ...props }, option) => {
+              renderOption={(props, option) => {
                 if (typeof option === 'string' && option.startsWith('Add new course:')) {
                   return (
-                    <li key={key} {...props} style={{ color: 'primary.main', fontWeight: 'bold' }}>
+                    <li {...props} style={{ color: 'primary.main', fontWeight: 'bold' }}>
                       <AddCircleOutlineIcon sx={{ mr: 1 }} />
                       {option}
                     </li>
                   );
                 }
-                return (
-                  <li key={key} {...props}>{option.name || option}</li>
-                );
+                return <li {...props}>{option.name}</li>;
               }}
               renderInput={(params) => (
                 <TextField

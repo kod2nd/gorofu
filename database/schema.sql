@@ -101,7 +101,7 @@ CREATE TABLE course_change_requests (
 CREATE TABLE rounds (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   user_email TEXT NOT NULL,
-  course_id UUID NOT NULL REFERENCES courses(id),
+  course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
   tee_box TEXT NOT NULL,
   round_date DATE NOT NULL,
   round_type TEXT DEFAULT '18_holes' CHECK (round_type IN ('front_9', 'back_9', '18_holes')),
@@ -365,6 +365,7 @@ CREATE POLICY "System can create audit logs" ON user_audit_log FOR INSERT WITH C
 CREATE POLICY "Anyone can view courses" ON courses FOR SELECT USING (true);
 CREATE POLICY "Authenticated users can create courses" ON courses FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Course creators can update their courses" ON courses FOR UPDATE USING (created_by = auth.jwt() ->> 'email');
+CREATE POLICY "Admins can delete courses" ON courses FOR DELETE USING (get_my_role() IN ('admin', 'super_admin'));
 
 -- Course tee boxes: Everyone can read, authenticated users can create/update
 CREATE POLICY "Anyone can view course tee boxes" ON course_tee_boxes FOR SELECT USING (true);
