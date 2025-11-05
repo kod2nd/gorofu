@@ -180,12 +180,7 @@ const ScorecardTable = ({ holes }) => {
                   key={i}
                   align="center"
                   sx={{
-                    minWidth: 52,
-                    backgroundColor: theme.palette.grey[100],
-                    color: theme.palette.text.primary,
-                    fontWeight: "bold",
-                    borderRight: `1px solid ${theme.palette.divider}`,
-                    background: `linear-gradient(135deg, ${theme.palette.grey[200]} 0%, ${theme.palette.grey[100]} 100%)`,
+                    minWidth: 52, // Keep minWidth for alignment
                   }}
                 >
                   <Box
@@ -225,12 +220,7 @@ const ScorecardTable = ({ holes }) => {
                   key={i + 9}
                   align="center"
                   sx={{
-                    minWidth: 52,
-                    backgroundColor: theme.palette.grey[100],
-                    color: theme.palette.text.primary,
-                    fontWeight: "bold",
-                    borderRight: `1px solid ${theme.palette.divider}`,
-                    background: `linear-gradient(135deg, ${theme.palette.grey[200]} 0%, ${theme.palette.grey[100]} 100%)`,
+                    minWidth: 52, // Keep minWidth for alignment
                   }}
                 >
                   <Box
@@ -393,7 +383,7 @@ const ScorecardTable = ({ holes }) => {
                   </TableCell>
                 ))}
                 {/* OUT Total */}
-                <TableCell align="center" sx={{ fontWeight: 'bold', backgroundColor: theme.palette.warning.light, borderRight: `2px solid ${theme.palette.warning.main}` }}>
+                <TableCell align="center" sx={{ fontWeight: 'bold', backgroundColor: theme.palette.grey[400], borderRight: `2px solid ${theme.palette.warning.main}` }}>
                   {
                     (() => {
                       const total = totals.out.find(t => t.key === rowDef.key)?.value;
@@ -454,7 +444,7 @@ const ScorecardTable = ({ holes }) => {
                   </TableCell>
                 ))}
                 {/* IN Total */}
-                <TableCell align="center" sx={{ fontWeight: 'bold', backgroundColor: theme.palette.info.light, borderRight: `2px solid ${theme.palette.info.main}` }}>
+                <TableCell align="center" sx={{ fontWeight: 'bold', backgroundColor: theme.palette.grey[500], borderRight: `2px solid ${theme.palette.info.main}` }}>
                   {
                     (() => {
                       const total = totals.in.find(t => t.key === rowDef.key)?.value;
@@ -465,8 +455,20 @@ const ScorecardTable = ({ holes }) => {
                     })()
                   }
                 </TableCell>
-                {/* GRAND Total Cell */}
-                <TableCell align="center" sx={{ fontWeight: 'bold', color: 'white', backgroundColor: theme.palette.success.main }}>
+                {/* Second OUT Total Cell */}
+                <TableCell align="center" sx={{ fontWeight: 'bold', backgroundColor: theme.palette.grey[400], borderRight: `2px solid ${theme.palette.warning.main}` }}>
+                  {
+                    (() => {
+                      const total = totals.out.find(t => t.key === rowDef.key)?.value;
+                      if (['scoring_zone_in_regulation', 'holeout_within_3_shots_scoring_zone', 'holeout_from_outside_4ft'].includes(rowDef.key)) {
+                        return total > 0 ? total : '-';
+                      }
+                      return total ?? '-';
+                    })()
+                  }
+                </TableCell>
+                {/* GRAND Total (TOT) Cell */}
+                <TableCell align="center" sx={{ fontWeight: 'bold', color: 'white', backgroundColor: theme.palette.grey[700] }}>
                   {
                     (() => {
                       const total = totals.total.find(t => t.key === rowDef.key)?.value;
