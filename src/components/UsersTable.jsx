@@ -53,6 +53,11 @@ const roleOrder = {
   'user': 4,
 };
 
+const toProperCase = (str) => {
+  if (!str) return '';
+  return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+};
+
 const UsersTable = ({ users, onEditUser, onChangeUserStatus, onViewAuditLog, onImpersonate, currentUser }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -67,7 +72,7 @@ const UsersTable = ({ users, onEditUser, onChangeUserStatus, onViewAuditLog, onI
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
               <Box>
                 <Typography variant="h6" gutterBottom>
-                  {user.full_name || 'N/A'}
+                  {toProperCase(user.full_name) || 'N/A'}
                 </Typography>
                 <Typography variant="body2" color="text.secondary">
                   {user.email}
@@ -144,7 +149,7 @@ const UsersTable = ({ users, onEditUser, onChangeUserStatus, onViewAuditLog, onI
           <TableBody>
             {users.map((user) => (
               <TableRow key={user.id} hover>
-                <TableCell>{user.full_name || 'N/A'}</TableCell>
+                <TableCell>{toProperCase(user.full_name) || 'N/A'}</TableCell>
                 <TableCell>{user.email}</TableCell>
                 <TableCell>
                   <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>

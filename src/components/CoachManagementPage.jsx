@@ -18,23 +18,19 @@ import {
   DialogContent,
   DialogActions,
   FormControl,
-  InputLabel,
-  Select,
-  OutlinedInput,
-  MenuItem,
   Chip,
   useTheme,
   useMediaQuery,
-  Grid,
   Card,
   CardContent,
   CardActions,
+  AvatarGroup,
   Stack,
   Fab,
   AppBar,
   Toolbar,
   InputAdornment,
-  TextField,
+  Tooltip,
 } from '@mui/material';
 import {
   Edit as EditIcon,
@@ -45,8 +41,15 @@ import {
   Close,
   Add,
 } from '@mui/icons-material';
+import Autocomplete from '@mui/material/Autocomplete';
+import TextField from '@mui/material/TextField';
 import { userService } from '../services/userService';
 import { elevatedCardStyles } from '../styles/commonStyles';
+
+const toProperCase = (str) => {
+  if (!str) return '';
+  return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+};
 
 const CoachManagementPage = ({ currentUser, isActive }) => {
   const theme = useTheme();
@@ -55,12 +58,12 @@ const CoachManagementPage = ({ currentUser, isActive }) => {
 
   const [coaches, setCoaches] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
+  const [allMappings, setAllMappings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [selectedCoach, setSelectedCoach] = useState(null);
   const [assignedStudentIds, setAssignedStudentIds] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
     if (isActive) {
@@ -71,11 +74,13 @@ const CoachManagementPage = ({ currentUser, isActive }) => {
   const loadData = async () => {
     try {
       setLoading(true);
-      const [coachesData, usersData] = await Promise.all([
+      const [coachesData, usersData, mappingsData] = await Promise.all([
         userService.getUsersByRole('coach'),
         userService.getAllUsers(),
+        userService.getAllCoachStudentMappings(),
       ]);
       setCoaches(coachesData);
+      setAllMappings(mappingsData);
       setAllUsers(usersData);
     } catch (err) {
       setError('Failed to load data: ' + err.message);
@@ -112,11 +117,16 @@ const CoachManagementPage = ({ currentUser, isActive }) => {
     }
   };
 
-  // Filter potential students based on search
+  const handleStudentChipDelete = (studentIdToDelete) => {
+    setAssignedStudentIds((prevIds) =>
+      // Filter out the student ID that was clicked for deletion
+      prevIds.filter((id) => id !== studentIdToDelete)
+    );
+  };
+
+  // Filter potential students to exclude the coach themselves
   const potentialStudents = allUsers.filter(u => 
-    u.user_id !== selectedCoach?.user_id && // A coach cannot be their own student
-    (u.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-     u.email?.toLowerCase().includes(searchTerm.toLowerCase()))
+    u.user_id !== selectedCoach?.user_id // A coach cannot be their own student
   );
 
   if (loading) {
@@ -193,12 +203,20 @@ const CoachManagementPage = ({ currentUser, isActive }) => {
           </Typography>
         </Paper>
       ) : (
-        <Grid container spacing={2}>
-          {coaches.map((coach) => (
-            <Grid item xs={12} sm={6} md={4} key={coach.user_id}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+          {coaches.map((coach) => {
+            const studentsOfCoach = allMappings
+              .filter(m => m.coach_user_id === coach.user_id)
+              .map(m => allUsers.find(u => u.user_id === m.student_user_id))
+              .filter(Boolean); // Filter out any undefined users
+
+            return (
+            <Box key={coach.user_id} sx={{ flexBasis: { xs: '100%', sm: 'calc(50% - 8px)', md: 'calc(33.33% - 11px)' } }}>
               <Card 
                 sx={{ 
                   height: '100%',
+                  display: 'flex',
+                  flexDirection: 'column',
                   transition: 'all 0.2s ease-in-out',
                   '&:hover': {
                     transform: 'translateY(-2px)',
@@ -206,7 +224,10 @@ const CoachManagementPage = ({ currentUser, isActive }) => {
                   }
                 }}
               >
-                <CardContent sx={{ p: isMobile ? 2 : 3 }}>
+                <CardContent sx={{ 
+                  p: isMobile ? 2 : 3,
+                  flexGrow: 1 // Allow content to grow and fill space
+                }}>
                   <Box sx={{ display: 'flex', alignItems: 'flex-start', mb: 2 }}>
                     <Avatar
                       sx={{ 
@@ -224,7 +245,7 @@ const CoachManagementPage = ({ currentUser, isActive }) => {
                         fontWeight="600"
                         noWrap
                       >
-                        {coach.full_name || 'Unnamed Coach'}
+                        {toProperCase(coach.full_name) || 'Unnamed Coach'}
                       </Typography>
                       <Typography 
                         variant="body2" 
@@ -237,6 +258,32 @@ const CoachManagementPage = ({ currentUser, isActive }) => {
                     </Box>
                   </Box>
 
+                  <Divider sx={{ my: 2 }} />
+
+                  <Typography variant="overline" color="text.secondary">
+                    Assigned Students ({studentsOfCoach.length})
+                  </Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', mt: 1, minHeight: 40 }}>
+                    {studentsOfCoach.length > 0 ? (
+                      <Box>
+                        {studentsOfCoach.slice(0, 3).map((student, index) => (
+                          <Typography key={student.user_id} variant="body2" color="text.secondary" noWrap>
+                            {index + 1}. {toProperCase(student.full_name || student.email)}
+                          </Typography>
+                        ))}
+                        {studentsOfCoach.length > 3 && (
+                          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                            + {studentsOfCoach.length - 3} more...
+                          </Typography>
+                        )}
+                      </Box>
+                    ) : (
+                      <Typography variant="body2" color="text.secondary">
+                        No students assigned.
+                      </Typography>
+                    )}
+                  </Box>
+
                   {coach.phone && (
                     <Box sx={{ display: 'flex', alignItems: 'center', mb: 1 }}>
                       <Phone sx={{ fontSize: 16, color: 'text.secondary', mr: 1 }} />
@@ -245,14 +292,6 @@ const CoachManagementPage = ({ currentUser, isActive }) => {
                       </Typography>
                     </Box>
                   )}
-
-                  <Chip
-                    label="Coach"
-                    size="small"
-                    color="primary"
-                    variant="outlined"
-                    sx={{ mt: 1 }}
-                  />
                 </CardContent>
                 <CardActions sx={{ p: isMobile ? 2 : 3, pt: 0 }}>
                   <Button
@@ -266,9 +305,10 @@ const CoachManagementPage = ({ currentUser, isActive }) => {
                   </Button>
                 </CardActions>
               </Card>
-            </Grid>
-          ))}
-        </Grid>
+            </Box>
+            );
+          })}
+        </Box>
       )}
 
       {/* Edit Assignments Dialog - Responsive */}
@@ -314,81 +354,48 @@ const CoachManagementPage = ({ currentUser, isActive }) => {
         )}
 
         <DialogContent sx={{ p: isSmallMobile ? 2 : 3 }}>
-          {/* Search for students on mobile */}
-          {isMobile && (
-            <TextField
-              fullWidth
-              placeholder="Search students..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search />
-                  </InputAdornment>
-                ),
-              }}
-              sx={{ mb: 2 }}
-              size="small"
-            />
-          )}
-
-          <FormControl fullWidth>
-            <InputLabel shrink={assignedStudentIds.length > 0}>
-              Assign Students
-            </InputLabel>
-            <Select
-              multiple
-              value={assignedStudentIds}
-              onChange={(e) => setAssignedStudentIds(e.target.value)}
-              input={<OutlinedInput label="Assign Students" notched />}
-              renderValue={(selected) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map((userId) => {
-                    const user = allUsers.find(u => u.user_id === userId);
-                    return (
-                      <Chip 
-                        key={userId} 
-                        label={user?.full_name || 'Unknown'} 
-                        size="small"
-                        onDelete={() => {
-                          setAssignedStudentIds(prev => 
-                            prev.filter(id => id !== userId)
-                          );
-                        }}
-                      />
-                    );
-                  })}
+          <Autocomplete
+            multiple
+            fullWidth
+            sx={{ mt: 2 }}
+            options={potentialStudents}
+            getOptionLabel={(option) => toProperCase(option.full_name) || option.email}
+            value={assignedStudentIds.map(id => allUsers.find(u => u.user_id === id)).filter(Boolean)}
+            onChange={(event, newValue) => {
+              setAssignedStudentIds(newValue.map(user => user.user_id));
+            }}
+            isOptionEqualToValue={(option, value) => option.user_id === value.user_id}
+            renderTags={(value, getTagProps) =>
+              value.map((option, index) => (
+                <Chip
+                  key={option.user_id}
+                  label={toProperCase(option.full_name)}
+                  {...getTagProps({ index })}
+                  onDelete={() => handleStudentChipDelete(option.user_id)}
+                />
+              ))
+            }
+            renderInput={(params) => (
+              <TextField
+                {...params}
+                variant="outlined"
+                label="Assign Students"
+                placeholder="Search by name or email"
+              />
+            )}
+            renderOption={(props, option) => (
+              <li {...props}>
+                <Box>
+                  <Typography variant="body2" fontWeight="medium">
+                    {toProperCase(option.full_name) || 'Unnamed Student'}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {option.email}
+                  </Typography>
                 </Box>
-              )}
-              MenuProps={{
-                PaperProps: {
-                  sx: {
-                    maxHeight: 300
-                  }
-                }
-              }}
-            >
-              {potentialStudents.length === 0 ? (
-                <MenuItem disabled>
-                  No students found
-                </MenuItem>
-              ) : (
-                potentialStudents.map((student) => (
-                  <MenuItem key={student.user_id} value={student.user_id}>
-                    <Box>
-                      <Typography variant="body2" fontWeight="medium">
-                        {student.full_name || 'Unnamed Student'}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {student.email}
-                      </Typography>
-                    </Box>
-                  </MenuItem>
-                ))
-              )}
-            </Select>
-          </FormControl>
+              </li>
+            )}
+          />
 
           {assignedStudentIds.length > 0 && (
             <Typography variant="body2" color="text.secondary" sx={{ mt: 2 }}>

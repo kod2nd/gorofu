@@ -18,6 +18,11 @@ import { Visibility as VisibilityIcon, Person as PersonIcon } from '@mui/icons-m
 import { userService } from '../services/userService';
 import { elevatedCardStyles } from '../styles/commonStyles';
 
+const toProperCase = (str) => {
+  if (!str) return '';
+  return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
+};
+
 const MyStudentsPage = ({ currentUser, onImpersonate, isActive }) => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -77,7 +82,7 @@ const MyStudentsPage = ({ currentUser, onImpersonate, isActive }) => {
                   </Avatar>
                 </ListItemAvatar>
                 <ListItemText
-                  primary={student.full_name || 'N/A'}
+                  primary={toProperCase(student.full_name) || 'N/A'}
                   secondary={student.email}
                 />
               </ListItem>

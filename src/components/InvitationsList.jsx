@@ -3,7 +3,6 @@ import {
   Box,
   Typography,
   Paper,
-  Grid,
   Card,
   CardContent,
   CardActions,
@@ -40,33 +39,31 @@ const InvitationsList = ({ invitations }) => {
   }
 
   return (
-    <Box sx={{ mt: 2 }}>
-      <Grid container spacing={2}>
-        {invitations.map((invitation) => (
-          <Grid item xs={12} sm={6} key={invitation.id}>
-            <Card>
-              <CardContent>
-                <Typography variant={isMobile ? "subtitle1" : "h6"} gutterBottom>{invitation.email}</Typography>
-                <Typography color="text.secondary" gutterBottom>Role: {invitation.role}</Typography>
-                <Typography variant="body2">Invited by: {invitation.invited_by}</Typography>
-                <Typography variant="body2">Expires: {new Date(invitation.expires_at).toLocaleDateString()}</Typography>
-              </CardContent>
-              <CardActions>
-                <Button
-                  size="small"
-                  startIcon={copiedId === invitation.id ? <CheckIcon /> : <ContentCopyIcon />}
-                  onClick={() => handleCopyLink(invitation)}
-                  disabled={copiedId === invitation.id}
-                  color={copiedId === invitation.id ? 'success' : 'primary'}
-                >
-                  {copiedId === invitation.id ? 'Copied!' : 'Copy Link'}
-                </Button>
-                <Button size="small" color="error" disabled>Cancel</Button>
-              </CardActions>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+    <Box sx={{ mt: 2, display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+      {invitations.map((invitation) => (
+        <Box key={invitation.id} sx={{ flexBasis: { xs: '100%', sm: 'calc(50% - 8px)' } }}>
+          <Card sx={{ height: '100%' }}>
+            <CardContent>
+              <Typography variant={isMobile ? "subtitle1" : "h6"} gutterBottom>{invitation.email}</Typography>
+              <Typography color="text.secondary" gutterBottom>Role: {invitation.role}</Typography>
+              <Typography variant="body2">Invited by: {invitation.invited_by}</Typography>
+              <Typography variant="body2">Expires: {new Date(invitation.expires_at).toLocaleDateString()}</Typography>
+            </CardContent>
+            <CardActions>
+              <Button
+                size="small"
+                startIcon={copiedId === invitation.id ? <CheckIcon /> : <ContentCopyIcon />}
+                onClick={() => handleCopyLink(invitation)}
+                disabled={copiedId === invitation.id}
+                color={copiedId === invitation.id ? 'success' : 'primary'}
+              >
+                {copiedId === invitation.id ? 'Copied!' : 'Copy Link'}
+              </Button>
+              <Button size="small" color="error" disabled>Cancel</Button>
+            </CardActions>
+          </Card>
+        </Box>
+      ))}
     </Box>
   );
 };

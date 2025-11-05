@@ -355,4 +355,14 @@ export const userService = {
       new_values: { assigned_student_ids: studentIds },
     });
   },
+
+  // Admin: Get all coach-student mappings
+  async getAllCoachStudentMappings() {
+    const { data, error } = await supabase
+      .from('coach_student_mappings')
+      .select('coach_user_id, student_user_id');
+
+    if (error) throw error;
+    return data;
+  },
 };
