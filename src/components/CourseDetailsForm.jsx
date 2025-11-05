@@ -148,6 +148,7 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
 
         <FormSection title="Country">
           <Autocomplete
+            options={countries}
             getOptionLabel={(option) => option.label || option}
             value={countries.find(c => c.label === formData.country) || null}
             onChange={(event, newValue) => {
@@ -186,7 +187,7 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
             {/* Course Name with Autocomplete - ✅ FIXED */}
             <Autocomplete
               value={courses.find(c => c.id === formData.course_id) || formData.course_name || null}
-              options={courses}
+              options={courses || []}
               isOptionEqualToValue={(option, value) => option.id === value.id || option.name === value}
               onChange={handleCourseSelect}
               getOptionLabel={(option) => typeof option === 'string' ? option : option.name || ''}
@@ -220,7 +221,7 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
             {/* Tee Box as Select */}
             <Autocomplete
               value={formData.tee_box || ''}
-              options={teeBoxOptions}
+              options={teeBoxOptions || []}
               onChange={(event, newValue) => {
                 if (newValue === 'Add new tee box...') {
                   setTeeBoxDialogOpen(true);
