@@ -49,7 +49,7 @@ const AccountPage = ({ userProfile, onProfileUpdate, isImpersonating = false }) 
     );
   }
 
-  const { full_name, email, role } = userProfile;
+  const { full_name, email, roles } = userProfile;
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -97,16 +97,13 @@ const AccountPage = ({ userProfile, onProfileUpdate, isImpersonating = false }) 
 
   const getRoleColor = (role) => {
     switch (role?.toLowerCase()) {
+      case 'super_admin': return 'error';
       case 'admin': return 'error';
-      case 'premium': return 'success';
+      case 'coach': return 'info';
       default: return 'default';
     }
   };
 
-  const getRoleIcon = (role) => {
-    if (role?.toLowerCase() === 'admin') return <AdminIcon fontSize="small" />;
-    return null;
-  };
 
   return (
     <Box sx={{ maxWidth: 1200, margin: 'auto', px: { xs: 2, sm: 3 } }}>
@@ -140,19 +137,22 @@ const AccountPage = ({ userProfile, onProfileUpdate, isImpersonating = false }) 
             <Typography variant="body1" sx={{ opacity: 0.9, mb: 1, wordBreak: 'break-word' }}>
               {email}
             </Typography>
-            <Chip
-              icon={getRoleIcon(role)}
-              label={role}
-              color={getRoleColor(role)}
-              size="small"
-              sx={{
-                fontWeight: 600,
-                textTransform: 'capitalize',
-                bgcolor: isImpersonating ? 'rgba(0,0,0,0.2)' : 'rgba(255, 255, 255, 0.2)',
-                color: 'white',
-                border: '1px solid rgba(255, 255, 255, 0.3)',
-              }}
-            />
+            <Stack direction="row" spacing={1}>
+              {roles?.map(role => (
+                <Chip
+                  key={role}
+                  label={role}
+                  color={getRoleColor(role)}
+                  size="small"
+                  sx={{
+                    fontWeight: 600,
+                    textTransform: 'capitalize',
+                    bgcolor: 'rgba(255, 255, 255, 0.2)',
+                    color: 'white',
+                  }}
+                />
+              ))}
+            </Stack>
           </Box>
           {!isEditing ? (
             <Button

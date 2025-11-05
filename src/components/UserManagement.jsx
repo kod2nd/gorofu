@@ -8,6 +8,8 @@ import {
   DialogContent,
   DialogActions,
   FormControl,
+  OutlinedInput,
+  Chip,
   InputLabel,
   Select,
   MenuItem,
@@ -24,6 +26,17 @@ import { elevatedCardStyles } from '../styles/commonStyles';
 import UsersTable from './UsersTable';
 import InvitationsList from './InvitationsList';
 import AuditLog from './AuditLog';
+
+const getRoleColor = (role) => {
+  switch (role) {
+    case 'super_admin': return 'error';
+    case 'admin': return 'warning';
+    case 'coach': return 'info';
+    case 'user': return 'primary';
+    default: return 'default';
+  }
+};
+
 
 const UserManagement = ({ currentUser, isActive, onImpersonate }) => {
   const theme = useTheme();
@@ -71,13 +84,21 @@ const UserManagement = ({ currentUser, isActive, onImpersonate }) => {
   const handleEditUser = (user) => {
     setEditForm({
       full_name: user.full_name || '',
-      role: user.role,
+      roles: user.roles || ['user'], // Expect an array
       status: user.status,
       country: user.country || 'Singapore',
       handicap: user.handicap || '',
       phone: user.phone || ''
     });
     setEditUserDialog({ open: true, user });
+  };
+
+  const handleRoleDelete = (roleToDelete) => {
+    setEditForm((prevForm) => ({
+      ...prevForm,
+      // Filter out the role that was clicked for deletion
+      roles: prevForm.roles.filter((role) => role !== roleToDelete),
+    }));
   };
 
   const handleSaveUser = async () => {
@@ -174,12 +195,28 @@ const UserManagement = ({ currentUser, isActive, onImpersonate }) => {
             <FormControl fullWidth>
               <InputLabel>Role</InputLabel>
               <Select
-                value={editForm.role || 'user'}
-                label="Role"
-                onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                multiple
+                value={editForm.roles || []}
+                label="Roles"
+                onChange={(e) => setEditForm({ ...editForm, roles: e.target.value })}
+                input={<OutlinedInput label="Roles" />}
+                renderValue={(selected) => (
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                    {selected.map((value) => (
+                      <Chip
+                        key={value}
+                        label={value}
+                        color={getRoleColor(value)}
+                        onDelete={() => handleRoleDelete(value)}
+                        onMouseDown={(event) => event.stopPropagation()} // Prevent the menu from opening when deleting a chip
+                      />
+                    ))}
+                  </Box>
+                )}
               >
                 <MenuItem value="user">User</MenuItem>
                 <MenuItem value="admin">Admin</MenuItem>
+                <MenuItem value="coach">Coach</MenuItem>
                 <MenuItem value="super_admin">Super Admin</MenuItem>
               </Select>
             </FormControl>

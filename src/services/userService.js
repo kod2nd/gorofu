@@ -61,6 +61,19 @@ export const userService = {
     return data;
   },
 
+  // Admin: Get users by a specific role
+  async getUsersByRole(role) {
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .contains('roles', [role])
+      .order('full_name');
+
+    if (error) throw error;
+    return data;
+  },
+
+
   // Admin: Update user profile
   async updateUserProfile(userId, updates, adminEmail) {
     // Get current profile for audit log
@@ -111,7 +124,7 @@ export const userService = {
     const { data, error } = await supabase
       .from('user_profiles')
       .update({
-        role: newRole,
+        roles: newRole, // newRole should be an array
         updated_at: new Date().toISOString()
       })
       .eq('user_id', userId)
@@ -125,9 +138,9 @@ export const userService = {
       target_user_email: currentProfile.email,
       action: 'role_changed',
       performed_by: adminEmail,
-      old_values: { role: currentProfile.role },
-      new_values: { role: newRole },
-      notes: notes || `Role changed from ${currentProfile.role} to ${newRole}`
+      old_values: { roles: currentProfile.roles },
+      new_values: { roles: newRole },
+      notes: notes || `Role changed from ${currentProfile.roles.join(', ')} to ${newRole.join(', ')}`
     });
 
     return data;
@@ -296,5 +309,50 @@ export const userService = {
     });
     if (error) throw error;
     return data;
+  },
+
+  // Coach/Admin: Get all students for a specific coach
+  async getStudentsForCoach(coachId) {
+    const { data, error } = await supabase
+      .from('coach_student_mappings')
+      .select('...user_profiles!fk_student(*)')
+      .eq('coach_user_id', coachId);
+
+    if (error) throw error;
+    // The data is now directly on the item, so we can just return it.
+    return data;
+  },
+
+  // Admin: Assign a list of students to a coach
+  async assignStudentsToCoach(coachId, studentIds, adminEmail) {
+    // Step 1: Remove all existing assignments for this coach to ensure a clean slate.
+    const { error: deleteError } = await supabase
+      .from('coach_student_mappings')
+      .delete()
+      .eq('coach_user_id', coachId);
+
+    if (deleteError) throw deleteError;
+
+    // Step 2: If there are new students to assign, insert them.
+    if (studentIds && studentIds.length > 0) {
+      const newMappings = studentIds.map(studentId => ({
+        coach_user_id: coachId,
+        student_user_id: studentId,
+      }));
+
+      const { error: insertError } = await supabase
+        .from('coach_student_mappings')
+        .insert(newMappings);
+
+      if (insertError) throw insertError;
+    }
+
+    // Optional: Create an audit log entry
+    await this.createAuditLog({
+      target_user_email: `coach_id:${coachId}`,
+      action: 'student_assignment_changed',
+      performed_by: adminEmail,
+      new_values: { assigned_student_ids: studentIds },
+    });
   },
 };

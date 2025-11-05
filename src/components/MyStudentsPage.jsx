@@ -1,0 +1,93 @@
+import React, { useState, useEffect } from 'react';
+import {
+  Box,
+  Typography,
+  Paper,
+  List,
+  ListItem,
+  ListItemText,
+  ListItemAvatar,
+  Avatar,
+  IconButton,
+  CircularProgress,
+  Alert,
+  Divider,
+  Tooltip,
+} from '@mui/material';
+import { Visibility as VisibilityIcon, Person as PersonIcon } from '@mui/icons-material';
+import { userService } from '../services/userService';
+import { elevatedCardStyles } from '../styles/commonStyles';
+
+const MyStudentsPage = ({ currentUser, onImpersonate, isActive }) => {
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (currentUser && isActive) {
+      loadStudents();
+    }
+  }, [currentUser, isActive]);
+
+  const loadStudents = async () => {
+    try {
+      setLoading(true);
+      const studentsData = await userService.getStudentsForCoach(currentUser.user_id);
+      setStudents(studentsData);
+    } catch (err) {
+      setError('Failed to load students: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (loading) return <CircularProgress />;
+  if (error) return <Alert severity="error">{error}</Alert>;
+
+  return (
+    <Paper {...elevatedCardStyles}>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
+          My Students
+        </Typography>
+      </Box>
+      {students.length === 0 ? (
+        <Typography color="text.secondary">You have no students assigned.</Typography>
+      ) : (
+        <List>
+          {students.map((student) => (
+            <React.Fragment key={student.user_id}>
+              <ListItem
+                secondaryAction={
+                  <Tooltip title="View as Student">
+                    <IconButton
+                      edge="end"
+                      aria-label="view-as-student"
+                      onClick={() => onImpersonate(student)}
+                      color="primary"
+                    >
+                      <VisibilityIcon />
+                    </IconButton>
+                  </Tooltip>
+                }
+              >
+                <ListItemAvatar>
+                  <Avatar>
+                    <PersonIcon />
+                  </Avatar>
+                </ListItemAvatar>
+                <ListItemText
+                  primary={student.full_name || 'N/A'}
+                  secondary={student.email}
+                />
+              </ListItem>
+              <Divider />
+            </React.Fragment>
+          ))}
+        </List>
+      )}
+    </Paper>
+  );
+};
+
+export default MyStudentsPage;

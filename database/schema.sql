@@ -10,7 +10,7 @@ CREATE TABLE user_profiles (
   user_id UUID NOT NULL UNIQUE, -- References auth.users.id
   email TEXT NOT NULL UNIQUE,
   full_name TEXT,
-  role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin', 'super_admin')),
+  roles TEXT[] NOT NULL DEFAULT ARRAY['user']::TEXT[],
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'suspended', 'inactive')),
   country TEXT DEFAULT 'Singapore',
   handicap DECIMAL(3,1),
@@ -134,6 +134,21 @@ CREATE TABLE round_holes (
   CONSTRAINT unique_hole_per_round UNIQUE(round_id, hole_number)
 );
 
+-- Table to link coaches to their students
+CREATE TABLE IF NOT EXISTS public.coach_student_mappings (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  coach_user_id UUID NOT NULL,
+  student_user_id UUID NOT NULL,
+  CONSTRAINT fk_coach FOREIGN KEY (coach_user_id) REFERENCES public.user_profiles(user_id) ON DELETE CASCADE,
+  CONSTRAINT fk_student FOREIGN KEY (student_user_id) REFERENCES public.user_profiles(user_id) ON DELETE CASCADE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  CONSTRAINT unique_coach_student UNIQUE (coach_user_id, student_user_id)
+);
+
+-- Enable RLS for the new table
+ALTER TABLE public.coach_student_mappings ENABLE ROW LEVEL SECURITY;
+
+
 -- Create indexes for better performance
 CREATE INDEX idx_courses_country ON courses(country);
 CREATE INDEX idx_courses_name ON courses(name);
@@ -144,9 +159,33 @@ CREATE INDEX idx_round_holes_round_id ON round_holes(round_id);
 CREATE INDEX IF NOT EXISTS idx_course_change_requests_course_id ON course_change_requests(course_id);
 
 -- Helper function to get the role of the current user
--- This is used in RLS policies to avoid recursion
-CREATE OR REPLACE FUNCTION get_my_role()
-RETURNS TEXT
+-- This function checks if the current user has AT LEAST ONE of the specified roles.
+CREATE OR REPLACE FUNCTION has_roles(roles_to_check TEXT[])
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  user_roles_array TEXT[];
+BEGIN
+  -- Check for impersonation variable
+  IF current_setting('app.impersonated_user_email', true) IS NOT NULL AND current_setting('app.impersonated_user_email', true) <> '' THEN
+    -- If impersonating, return the role of the impersonated user
+    SELECT roles INTO user_roles_array FROM public.user_profiles WHERE email = current_setting('app.impersonated_user_email');
+  ELSE
+    -- Otherwise, get roles for the currently authenticated user
+    SELECT roles INTO user_roles_array FROM public.user_profiles WHERE user_id = auth.uid();
+  END IF;
+
+  -- Check for intersection between user's roles and the roles to check
+  RETURN user_roles_array && roles_to_check;
+END;
+$$;
+
+-- Helper function to get the roles of the current user
+CREATE OR REPLACE FUNCTION get_my_roles()
+RETURNS TEXT[]
 LANGUAGE plpgsql
 SECURITY DEFINER
 SET search_path = public
@@ -154,12 +193,39 @@ AS $$
 BEGIN
   -- Check for impersonation variable
   IF current_setting('app.impersonated_user_email', true) IS NOT NULL AND current_setting('app.impersonated_user_email', true) <> '' THEN
-    -- If impersonating, return the role of the impersonated user
-    RETURN (SELECT role FROM user_profiles WHERE email = current_setting('app.impersonated_user_email'));
+    -- If impersonating, return the roles of the impersonated user
+    RETURN (SELECT roles FROM user_profiles WHERE email = current_setting('app.impersonated_user_email'));
   ELSE
     -- Otherwise, return the role of the currently authenticated user
-    RETURN (SELECT role FROM user_profiles WHERE user_id = auth.uid());
+    RETURN (SELECT roles FROM user_profiles WHERE user_id = auth.uid());
   END IF;
+END;
+$$;
+
+-- Helper function to check if a user is a student of the current user (who must be a coach)
+CREATE OR REPLACE FUNCTION is_my_student(student_email_to_check TEXT)
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+SECURITY DEFINER
+AS $$
+DECLARE
+  current_user_id UUID := auth.uid();
+  is_student BOOLEAN;
+BEGIN
+  -- Only check if the current user is a coach
+  IF NOT (SELECT 'coach' = ANY(roles) FROM public.user_profiles WHERE user_id = current_user_id) THEN
+    RETURN FALSE;
+  END IF;
+
+  SELECT EXISTS (
+    SELECT 1
+    FROM public.coach_student_mappings csm
+    JOIN public.user_profiles sp ON csm.student_user_id = sp.user_id
+    WHERE csm.coach_user_id = current_user_id
+    AND sp.email = student_email_to_check
+  ) INTO is_student;
+
+  RETURN is_student;
 END;
 $$;
 
@@ -348,7 +414,7 @@ LANGUAGE plpgsql
 AS $$
 BEGIN
   -- Only allow super_admins to call this function
-  IF (SELECT role FROM user_profiles WHERE user_id = auth.uid()) <> 'super_admin' THEN
+  IF NOT (SELECT 'super_admin' = ANY(roles) FROM user_profiles WHERE user_id = auth.uid()) THEN
     RAISE EXCEPTION 'Only super_admins can impersonate users.';
   END IF;
 
@@ -371,28 +437,29 @@ ALTER TABLE course_tee_boxes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE course_change_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE rounds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE round_holes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE round_holes ENABLE ROW LEVEL SECURITY;
 
 -- User profiles: Users can view their own profile, admins can view all
 CREATE POLICY "Users can view their own profile" ON user_profiles FOR SELECT USING (user_id = auth.uid());
-CREATE POLICY "Admins can view all profiles" ON user_profiles FOR SELECT USING (get_my_role() IN ('admin', 'super_admin'));
+CREATE POLICY "Admins can view all profiles" ON user_profiles FOR SELECT USING (has_roles(ARRAY['admin', 'super_admin']));
 CREATE POLICY "Users can update their own profile" ON user_profiles FOR UPDATE USING (user_id = auth.uid());
-CREATE POLICY "Admins can update any profile" ON user_profiles FOR UPDATE USING (get_my_role() IN ('admin', 'super_admin'));
-CREATE POLICY "Admins can create profiles" ON user_profiles FOR INSERT WITH CHECK (get_my_role() IN ('admin', 'super_admin'));
+CREATE POLICY "Admins can update any profile" ON user_profiles FOR UPDATE USING (has_roles(ARRAY['admin', 'super_admin']));
+CREATE POLICY "Admins can create profiles" ON user_profiles FOR INSERT WITH CHECK (has_roles(ARRAY['admin', 'super_admin']));
 
 -- User invitations: Only admins can manage invitations
-CREATE POLICY "Admins can view invitations" ON user_invitations FOR SELECT USING (get_my_role() IN ('admin', 'super_admin'));
-CREATE POLICY "Admins can create invitations" ON user_invitations FOR INSERT WITH CHECK (get_my_role() IN ('admin', 'super_admin'));
-CREATE POLICY "Admins can update invitations" ON user_invitations FOR UPDATE USING (get_my_role() IN ('admin', 'super_admin'));
+CREATE POLICY "Admins can view invitations" ON user_invitations FOR SELECT USING (has_roles(ARRAY['admin', 'super_admin']));
+CREATE POLICY "Admins can create invitations" ON user_invitations FOR INSERT WITH CHECK (has_roles(ARRAY['admin', 'super_admin']));
+CREATE POLICY "Admins can update invitations" ON user_invitations FOR UPDATE USING (has_roles(ARRAY['admin', 'super_admin']));
 
 -- Audit log: Only admins can view audit logs
-CREATE POLICY "Admins can view audit logs" ON user_audit_log FOR SELECT USING (get_my_role() IN ('admin', 'super_admin'));
+CREATE POLICY "Admins can view audit logs" ON user_audit_log FOR SELECT USING (has_roles(ARRAY['admin', 'super_admin']));
 CREATE POLICY "System can create audit logs" ON user_audit_log FOR INSERT WITH CHECK (true);
 
 -- Courses: Everyone can read, authenticated users can create
 CREATE POLICY "Anyone can view courses" ON courses FOR SELECT USING (true);
 CREATE POLICY "Authenticated users can create courses" ON courses FOR INSERT WITH CHECK (auth.role() = 'authenticated');
 CREATE POLICY "Course creators can update their courses" ON courses FOR UPDATE USING (created_by = auth.jwt() ->> 'email');
-CREATE POLICY "Admins can delete courses" ON courses FOR DELETE USING (get_my_role() IN ('admin', 'super_admin'));
+CREATE POLICY "Admins can delete courses" ON courses FOR DELETE USING (has_roles(ARRAY['admin', 'super_admin']));
 
 -- Course tee boxes: Everyone can read, authenticated users can create/update
 CREATE POLICY "Anyone can view course tee boxes" ON course_tee_boxes FOR SELECT USING (true);
@@ -402,42 +469,46 @@ CREATE POLICY "Users can update tee box data they created" ON course_tee_boxes F
 -- Change requests: Users can create and view their own requests, admins can view all
 CREATE POLICY "Users can view their change requests" ON course_change_requests FOR SELECT USING (requested_by = auth.jwt() ->> 'email');
 CREATE POLICY "Users can create change requests" ON course_change_requests FOR INSERT WITH CHECK (auth.role() = 'authenticated' AND requested_by = auth.jwt() ->> 'email');
-CREATE POLICY "Admins can view all change requests" ON course_change_requests FOR SELECT USING (get_my_role() IN ('admin', 'super_admin'));
-CREATE POLICY "Admins can update change requests" ON course_change_requests FOR UPDATE USING (get_my_role() IN ('admin', 'super_admin'));
+CREATE POLICY "Admins can view all change requests" ON course_change_requests FOR SELECT USING (has_roles(ARRAY['admin', 'super_admin']));
+CREATE POLICY "Admins can update change requests" ON course_change_requests FOR UPDATE USING (has_roles(ARRAY['admin', 'super_admin']));
+
+-- Coach-student mappings policies
+CREATE POLICY "Admins can manage coach-student mappings" ON public.coach_student_mappings FOR ALL USING (has_roles(ARRAY['admin', 'super_admin']));
+CREATE POLICY "Coaches can view their own student mappings" ON public.coach_student_mappings FOR SELECT USING (coach_user_id = auth.uid());
 
 -- Rounds: Users can only access their own rounds
-CREATE POLICY "Users can view their own rounds, super admins can view all" ON rounds FOR SELECT USING (user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email'));
-CREATE POLICY "Users can create their own rounds, super admins can create for others" ON rounds FOR INSERT WITH CHECK (auth.role() = 'authenticated' AND user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email'));
-CREATE POLICY "Users can update their own rounds, super admins can update all" ON rounds FOR UPDATE USING (user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email'));
-CREATE POLICY "Users can delete their own rounds, super admins can delete all" ON rounds FOR DELETE USING (user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email'));
+CREATE POLICY "Users can view their own rounds, super admins can view all" ON rounds FOR SELECT USING (user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR is_my_student(user_email) OR has_roles(ARRAY['super_admin']));
+CREATE POLICY "Users can create their own rounds, super admins can create for others" ON rounds FOR INSERT WITH CHECK (auth.role() = 'authenticated' AND (user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR has_roles(ARRAY['super_admin'])));
+CREATE POLICY "Users can update their own rounds, super admins can update all" ON rounds FOR UPDATE USING (user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR has_roles(ARRAY['super_admin']));
+CREATE POLICY "Users can delete their own rounds, super admins can delete all" ON rounds FOR DELETE USING (user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR has_roles(ARRAY['super_admin']));
 
 -- Round holes: Users can only access holes from their own rounds
 CREATE POLICY "Users can view their own round holes" ON round_holes FOR SELECT USING (
   EXISTS (
     SELECT 1 FROM rounds 
     WHERE rounds.id = round_holes.round_id 
-    AND rounds.user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email')
+    AND (rounds.user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR is_my_student(rounds.user_email) OR has_roles(ARRAY['super_admin']))
   )
 );
 CREATE POLICY "Users can create their own round holes" ON round_holes FOR INSERT WITH CHECK (
   EXISTS (
     SELECT 1 FROM rounds 
     WHERE rounds.id = round_holes.round_id 
-    AND rounds.user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email')
+    AND (rounds.user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR has_roles(ARRAY['super_admin']))
   )
 );
 CREATE POLICY "Users can update their own round holes" ON round_holes FOR UPDATE USING (
   EXISTS (
     SELECT 1 FROM rounds 
     WHERE rounds.id = round_holes.round_id 
-    AND rounds.user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email')
+    AND (rounds.user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR has_roles(ARRAY['super_admin']))
   )
 );
 CREATE POLICY "Users can delete their own round holes" ON round_holes FOR DELETE USING (
   EXISTS (
     SELECT 1 FROM rounds 
     WHERE rounds.id = round_holes.round_id 
-    AND rounds.user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email')
+    AND (rounds.user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR has_roles(ARRAY['super_admin']))
   )
 );
 
@@ -461,12 +532,12 @@ LANGUAGE plpgsql
 SECURITY DEFINER -- This is important for accessing the auth.users table
 AS $$
 BEGIN
-  INSERT INTO public.user_profiles (user_id, email, full_name, role, status)
+  INSERT INTO public.user_profiles (user_id, email, full_name, roles, status)
   VALUES (
     new.id,
     new.email,
     new.raw_user_meta_data ->> 'full_name', -- Extracts full_name from user metadata
-    'user', -- Default role
+    ARRAY['user']::TEXT[], -- Default role as an array
     'active'  -- Set status to active for new sign-ups
   );
   RETURN new;

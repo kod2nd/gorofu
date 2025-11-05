@@ -31,6 +31,8 @@ const AccountPage = lazy(() => import('./components/AccountPage'));
 const RoundsHistoryPage = lazy(() => import('./components/RoundsHistoryPage'));
 const RoundDetailsPage = lazy(() => import('./components/RoundDetailsPage'));
 const CourseManagementPage = lazy(() => import('./components/CourseManagementPage'));
+const CoachManagementPage = lazy(() => import('./components/CoachManagementPage'));
+const MyStudentsPage = lazy(() => import('./components/MyStudentsPage'));
 
 const drawerWidth = 240;
 const collapsedWidth = 60;
@@ -171,6 +173,8 @@ function App() {
         return 'Round Details';
       case 'courseManagement':
         return 'Course Management';
+      case 'coachManagement':
+        return 'Coach Management';
       default:
         return 'GolfStat';
     }
@@ -259,7 +263,7 @@ function App() {
               isExpanded={isDrawerOpen}
               handleDrawerToggle={handleDrawerToggle}
               activePage={activePage}
-              userRole={userProfile?.role}
+              userRoles={userProfile?.roles}
               isMobile={isMobile}
             />
           </Drawer>
@@ -361,6 +365,17 @@ function App() {
                 <PageContainer active={activePage === 'courseManagement'}>
                   <AdminRoute userProfile={userProfile}>
                     <CourseManagementPage currentUser={userProfile} onBack={() => setActivePage('dashboard')} />
+                  </AdminRoute>
+                </PageContainer>
+
+                <PageContainer active={activePage === 'coachManagement'}>
+                  <AdminRoute userProfile={userProfile}>
+                    <CoachManagementPage currentUser={userProfile} isActive={activePage === 'coachManagement'} />
+                  </AdminRoute>
+                </PageContainer>
+                <PageContainer active={activePage === 'myStudents'}>
+                  <AdminRoute userProfile={userProfile} requireCoach={true}>
+                    <MyStudentsPage currentUser={userProfile} onImpersonate={handleImpersonate} />
                   </AdminRoute>
                 </PageContainer>
                 

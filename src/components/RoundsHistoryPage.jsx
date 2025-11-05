@@ -18,7 +18,7 @@ import { roundService } from "../services/roundService";
 import { elevatedCardStyles } from "../styles/commonStyles";
 import RoundsTable from "./RoundsTable";
 
-const RoundsHistoryPage = ({ user, onViewRound, onAddRound }) => {
+const RoundsHistoryPage = ({ user, onViewRound, onAddRound, isActive }) => {
   const [rounds, setRounds] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -28,10 +28,10 @@ const RoundsHistoryPage = ({ user, onViewRound, onAddRound }) => {
   });
 
   useEffect(() => {
-    if (user) {
+    if (user && isActive) {
       loadRounds();
     }
-  }, [user]);
+  }, [user, isActive]);
 
   const loadRounds = async () => {
     try {

@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Box, CircularProgress, Alert } from '@mui/material';
 import { userService } from '../services/userService';
 
-const AdminRoute = ({ children, requireSuperAdmin = false, ...rest }) => {
+const AdminRoute = ({ children, requireSuperAdmin = false, requireCoach = false, ...rest }) => {
   const [loading, setLoading] = useState(true);
   const [hasAccess, setHasAccess] = useState(false);
   const [userProfile, setUserProfile] = useState(null);
@@ -22,9 +22,11 @@ const AdminRoute = ({ children, requireSuperAdmin = false, ...rest }) => {
       }
 
       if (requireSuperAdmin) {
-        setHasAccess(profile.role === 'super_admin');
+        setHasAccess(profile.roles.includes('super_admin'));
+      } else if (requireCoach) {
+        setHasAccess(profile.roles.includes('coach'));
       } else {
-        setHasAccess(['admin', 'super_admin'].includes(profile.role));
+        setHasAccess(profile.roles.some(r => ['admin', 'super_admin'].includes(r)));
       }
     } catch (error) {
       console.error('Access check failed:', error);
@@ -48,7 +50,9 @@ const AdminRoute = ({ children, requireSuperAdmin = false, ...rest }) => {
         <Alert severity="error">
           {!userProfile 
             ? "Please complete your profile setup to access this area."
-            : `Access denied. ${requireSuperAdmin ? 'Super admin' : 'Admin'} privileges required.`
+            : `Access denied. ${
+                requireSuperAdmin ? 'Super admin' : requireCoach ? 'Coach' : 'Admin'
+              } privileges required.`
           }
         </Alert>
       </Box>

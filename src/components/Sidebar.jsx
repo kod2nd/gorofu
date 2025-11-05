@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { Box, Button, Typography, Divider, Paper, List, ListItem, ListItemButton, ListItemIcon, ListItemText, IconButton } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 import DashboardIcon from "@mui/icons-material/Dashboard";
@@ -8,34 +8,39 @@ import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import LogoutIcon from '@mui/icons-material/Logout';
 import HistoryIcon from '@mui/icons-material/History';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import GroupIcon from '@mui/icons-material/Group';
 import SportsGolfIcon from '@mui/icons-material/SportsGolf';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 
-const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, activePage, userRole, isMobile }) => {
+const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, activePage, userRoles, isMobile }) => {
   const theme = useTheme();
 
-  const menuItems = [
+  const menuItems = useMemo(() => {
+    const items = [
     { text: "Dashboard", icon: <DashboardIcon />, page: "dashboard" },
     { text: "Add Round", icon: <AddCircleIcon />, page: "addRound" },
     { text: "Rounds History", icon: <HistoryIcon />, page: "roundsHistory" },
     { text: "Account", icon: <AccountCircleIcon />, page: "account" },
     { text: "View Round", icon: <VisibilityIcon />, page: "viewRound", hidden: true }, // Hidden from main menu
-  ];
+    ];
 
-  // Add admin menu items for admin users
-  if (userRole && ['admin', 'super_admin'].includes(userRole)) {
-    menuItems.push({
-      text: "User Management",
-      icon: <AdminPanelSettingsIcon />,
-      page: "userManagement"
-    });
-    menuItems.push({
-      text: "Course Management",
-      icon: <SportsGolfIcon />,
-      page: "courseManagement"
-    });
-  }
+    const isAdmin = userRoles?.some(role => ['admin', 'super_admin'].includes(role));
+    const isCoach = userRoles?.includes('coach');
+
+    if (isAdmin) {
+      items.push(
+        { text: "User Management", icon: <AdminPanelSettingsIcon />, page: "userManagement" },
+        { text: "Course Management", icon: <SportsGolfIcon />, page: "courseManagement" },
+        { text: "Coach Management", icon: <GroupIcon />, page: "coachManagement" }
+      );
+    }
+
+    if (isCoach && !isAdmin) { // Show for coaches who are not also admins
+      items.push({ text: "My Students", icon: <GroupIcon />, page: "myStudents" });
+    }
+    return items;
+  }, [userRoles]);
 
   return (
     <Box

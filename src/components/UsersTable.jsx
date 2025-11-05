@@ -40,9 +40,17 @@ const getRoleColor = (role) => {
   switch (role) {
     case 'super_admin': return 'error';
     case 'admin': return 'warning';
+    case 'coach': return 'info';
     case 'user': return 'primary';
     default: return 'default';
   }
+};
+
+const roleOrder = {
+  'super_admin': 1,
+  'admin': 2,
+  'coach': 3,
+  'user': 4,
 };
 
 const UsersTable = ({ users, onEditUser, onChangeUserStatus, onViewAuditLog, onImpersonate, currentUser }) => {
@@ -52,7 +60,9 @@ const UsersTable = ({ users, onEditUser, onChangeUserStatus, onViewAuditLog, onI
   if (isMobile) {
     return (
       <Box sx={{ mt: 2 }}>
-        {users.map((user) => (
+        {users.map((user) => {
+          const sortedRoles = user.roles?.slice().sort((a, b) => (roleOrder[a] || 99) - (roleOrder[b] || 99));
+          return (
           <Card key={user.id} sx={{ mb: 2, p: 2 }}>
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
               <Box>
@@ -69,8 +79,8 @@ const UsersTable = ({ users, onEditUser, onChangeUserStatus, onViewAuditLog, onI
                     <EditIcon />
                   </IconButton>
                 </Tooltip>
-                {currentUser?.role === 'super_admin' && user.user_id !== currentUser.user_id && (
-                      <Tooltip title="View as User">
+                {currentUser?.roles?.includes('super_admin') && user.user_id !== currentUser.user_id && (
+                      <Tooltip title="View as User"> 
                         <IconButton size="small" color="secondary" onClick={() => onImpersonate(user)}>
                           <VisibilityIcon />
                         </IconButton>
@@ -93,7 +103,12 @@ const UsersTable = ({ users, onEditUser, onChangeUserStatus, onViewAuditLog, onI
             </Box>
 
             <Grid container spacing={1} sx={{ mb: 2 }}>
-              <Grid item xs={6}><Typography variant="body2" color="text.secondary">Role</Typography><Chip label={user.role} color={getRoleColor(user.role)} size="small" /></Grid>
+              <Grid item xs={6}>
+                <Typography variant="body2" color="text.secondary">Role</Typography>
+                {sortedRoles?.map(role => (
+                  <Chip key={role} label={role} color={getRoleColor(role)} size="small" sx={{ mr: 0.5, mb: 0.5 }} />
+                ))}
+              </Grid>
               <Grid item xs={6}><Typography variant="body2" color="text.secondary">Status</Typography><Chip label={user.status} color={getStatusColor(user.status)} size="small" /></Grid>
               <Grid item xs={6}><Typography variant="body2" color="text.secondary">Country</Typography><Typography variant="body2">{user.country}</Typography></Grid>
               <Grid item xs={6}><Typography variant="body2" color="text.secondary">Handicap</Typography><Typography variant="body2">{user.handicap || 'N/A'}</Typography></Grid>
@@ -104,7 +119,8 @@ const UsersTable = ({ users, onEditUser, onChangeUserStatus, onViewAuditLog, onI
               View Audit Log
             </Button>
           </Card>
-        ))}
+          );
+        })}
       </Box>
     );
   }
@@ -127,10 +143,17 @@ const UsersTable = ({ users, onEditUser, onChangeUserStatus, onViewAuditLog, onI
           </TableHead>
           <TableBody>
             {users.map((user) => (
-              <TableRow key={user.id}>
+              <TableRow key={user.id} hover>
                 <TableCell>{user.full_name || 'N/A'}</TableCell>
                 <TableCell>{user.email}</TableCell>
-                <TableCell><Chip label={user.role} color={getRoleColor(user.role)} size="small" /></TableCell>
+                <TableCell>
+                  <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                    {/* Sort roles by importance before mapping */}
+                    {user.roles?.slice().sort((a, b) => (roleOrder[a] || 99) - (roleOrder[b] || 99)).map(role => (
+                      <Chip key={role} label={role} color={getRoleColor(role)} size="small" />
+                    ))}
+                  </Box>
+                </TableCell>
                 <TableCell><Chip label={user.status} color={getStatusColor(user.status)} size="small" /></TableCell>
                 <TableCell>{user.country}</TableCell>
                 <TableCell>{user.handicap || 'N/A'}</TableCell>
@@ -160,7 +183,7 @@ const UsersTable = ({ users, onEditUser, onChangeUserStatus, onViewAuditLog, onI
                         <HistoryIcon />
                       </IconButton>
                     </Tooltip>
-                    {currentUser?.role === 'super_admin' && user.user_id !== currentUser.user_id && (
+                    {currentUser?.roles?.includes('super_admin') && user.user_id !== currentUser.user_id && (
                       <Tooltip title="View as User">
                         <IconButton size="small" color="secondary" onClick={() => onImpersonate(user)}>
                           <VisibilityIcon />

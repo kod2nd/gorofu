@@ -10,7 +10,7 @@ const ImpersonationBanner = ({ impersonatedUser, onExit, activePage }) => {
   const isViewingAdminPage = adminPages.includes(activePage);
   
   // Check if the impersonated user would have access to the current page
-  const canUserSeePage = !(isViewingAdminPage && !['admin', 'super_admin'].includes(impersonatedUser.role));
+  const canUserSeePage = !(isViewingAdminPage && !impersonatedUser.roles?.some(r => ['admin', 'super_admin'].includes(r)));
 
   const bannerMessage = canUserSeePage
     ? `Viewing as ${impersonatedUser.full_name || impersonatedUser.email}`
