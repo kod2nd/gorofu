@@ -24,7 +24,6 @@ import {
 import { userService } from '../services/userService';
 import { elevatedCardStyles } from '../styles/commonStyles';
 import UsersTable from './UsersTable';
-import InvitationsList from './InvitationsList';
 import AuditLog from './AuditLog';
 
 const getRoleColor = (role) => {
