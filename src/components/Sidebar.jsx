@@ -9,6 +9,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import HistoryIcon from '@mui/icons-material/History';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import GroupIcon from '@mui/icons-material/Group';
+import SupervisedUserCircleIcon from '@mui/icons-material/SupervisedUserCircle';
 import SportsGolfIcon from '@mui/icons-material/SportsGolf';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -30,9 +31,9 @@ const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, active
 
     if (isAdmin) {
       items.push(
-        { text: "User Management", icon: <AdminPanelSettingsIcon />, page: "userManagement" },
+        { text: "User Management", icon: <GroupIcon />, page: "userManagement" },
         { text: "Course Management", icon: <SportsGolfIcon />, page: "courseManagement" },
-        { text: "Coach Management", icon: <GroupIcon />, page: "coachManagement" }
+        { text: "Coach Management", icon: <SupervisedUserCircleIcon />, page: "coachManagement" }
       );
     }
 
