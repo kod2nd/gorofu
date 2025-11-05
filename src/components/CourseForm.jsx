@@ -41,34 +41,6 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
     }
   );
 
-  useEffect(() => {
-    if (initialCourse) {
-      // Transform the incoming course data to match the form's state structure
-      const teeBoxes = initialCourse.tee_boxes.map(tb => ({
-        name: tb.name,
-        yards_or_meters_unit: tb.yards_or_meters_unit || 'meters'
-      }));
-
-      const holes = Array.from({ length: 18 }, (_, i) => {
-        const holeNumber = i + 1;
-        const distances = {};
-        const par_overrides = {};
-        let defaultPar = '';
-
-        initialCourse.tee_boxes.forEach(tb => {
-          const holeData = tb.holes.find(h => h.hole_number === holeNumber);
-          if (holeData) {
-            distances[tb.name] = holeData.distance || '';
-            par_overrides[tb.name] = holeData.par || '';
-            if (!defaultPar) defaultPar = holeData.par || '';
-          }
-        });
-        return { hole_number: holeNumber, par: defaultPar, distances, par_overrides };
-      });
-      setCourse({ ...initialCourse, tee_boxes: teeBoxes, holes });
-    }
-  }, [initialCourse]);
-
   const handleCourseChange = (e) => {
     setCourse({ ...course, [e.target.name]: e.target.value });
   };
