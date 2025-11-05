@@ -37,8 +37,9 @@ const StreakBox = ({ streak, type = 'szir' }) => {
 
   return (
     <Box sx={{ 
-      width: '140px',
-      height: '160px',
+      width: '100%',
+      maxWidth: '140px', // Set a max-width to prevent it from becoming too large
+      aspectRatio: '140 / 160', // Maintain the overall shape
       position: 'relative',
       display: 'flex',
       flexDirection: 'column',
@@ -47,31 +48,31 @@ const StreakBox = ({ streak, type = 'szir' }) => {
       {/* Ribbon */}
       <Box sx={{
         position: 'absolute',
-        top: -8,
+        top: '-5%', // Use percentages for positioning
         width: '100%',
-        height: '20px',
+        height: '12.5%', // 20px is 12.5% of 160px
         background: tier.borderColor,
         borderRadius: '10px 10px 0 0',
         '&::before, &::after': {
           content: '""',
           position: 'absolute',
           bottom: 0,
-          width: '20px',
-          height: '20px',
+          width: '12.5%',
+          height: '100%',
           background: tier.borderColor,
           clipPath: 'polygon(0 0, 100% 0, 100% 100%)',
         },
-        '&::before': { left: '-10px' },
-        '&::after': { right: '-10px', transform: 'scaleX(-1)' },
+        '&::before': { left: '-6.25%' }, // Adjust based on percentage
+        '&::after': { right: '-6.25%', transform: 'scaleX(-1)' },
       }} />
       
       {/* Medal Body */}
       <Box sx={{ 
-        width: '120px',
-        height: '120px',
+        width: '85%', // 120px is ~85% of 140px
+        aspectRatio: '1 / 1', // Ensure it's always a circle
         background: tier.bgColor,
         border: `4px solid ${tier.borderColor}`,
-        borderRadius: '60px',
+        borderRadius: '50%',
         boxShadow: `
           0 8px 32px rgba(0, 0, 0, 0.3),
           inset 0 2px 0 rgba(255, 255, 255, 0.4),
@@ -83,7 +84,7 @@ const StreakBox = ({ streak, type = 'szir' }) => {
         alignItems: 'center',
         position: 'relative',
         overflow: 'hidden',
-        mt: 2,
+        mt: '12.5%', // 20px is 12.5% of 160px
         '&::before': {
           content: '""',
           position: 'absolute',
@@ -102,7 +103,7 @@ const StreakBox = ({ streak, type = 'szir' }) => {
             color: tier.textColor,
             textShadow: '2px 2px 4px rgba(0,0,0,0.3)',
             zIndex: 1,
-            fontSize: '2.2rem'
+            fontSize: 'clamp(1.5rem, 15vw, 2.2rem)', // Responsive font size
           }}
         >
           {streak}

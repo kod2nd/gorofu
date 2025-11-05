@@ -9,9 +9,7 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  IconButton,
-  MenuItem,
-  Divider,
+  IconButton
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -68,12 +66,6 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
     });
 
     setCourse({ ...course, tee_boxes: newTeeBoxes, holes: newHoles });
-  };
-
-  const handleTeeBoxUnitChange = (index, newUnit) => {
-    const newTeeBoxes = [...course.tee_boxes];
-    newTeeBoxes[index].yards_or_meters_unit = newUnit;
-    setCourse({ ...course, tee_boxes: newTeeBoxes });
   };
 
   const handleHoleDataChange = (holeIndex, field, value) => {

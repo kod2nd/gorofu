@@ -20,9 +20,10 @@ import {
 // Import the child components
 import CourseDetailsForm from './components/CourseDetailsForm';
 import HoleDetailsForm from './components/HoleDetailsForm';
-import MobileHoleEntry from './components/MobileHoleEntry';
+import MobileHoleEntry from './components/MobileHoleEntry'; 
 import ViewListIcon from '@mui/icons-material/ViewList';
 import ScorecardTable from './components/ScorecardTable';
+import PageHeader from './components/PageHeader';
 import SportsGolfIcon from '@mui/icons-material/SportsGolf';
 import RoundInsights from './components/RoundInsights';
 import SectionHeader from './components/SectionHeader';
@@ -379,23 +380,10 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
 
   return (
     <Container maxWidth="lg" sx={{ my: 4 }}>
-      <Paper
-              elevation={0}
-              sx={{
-                p: { xs: 3, sm: 4 },
-                mb: 3,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                color: 'white',
-                borderRadius: 3,
-              }}
-            >
-        <Typography variant="h4" component="h1" gutterBottom align="center" sx={{ fontWeight: 'bold' }}>
-          {roundIdToEdit ? 'Edit Round' : 'Add a New Round'}
-        </Typography>
-        <Typography variant="body1" align="center" color="white" sx={{ mb: 4 }}>
-          Log your round, including course details and hole-by-hole stats.
-        </Typography>
-            </Paper>
+      <PageHeader
+        title={roundIdToEdit ? 'Edit Round' : 'Add a New Round'}
+        subtitle="Log your round, including course details and hole-by-hole stats."
+      />
       <Paper {...elevatedCardStyles}>
 
         <form onSubmit={handleSubmit}>

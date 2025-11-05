@@ -16,16 +16,15 @@ import {
   CircularProgress,
   Alert,
   Divider,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
+  Autocomplete,
+  TextField,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import { courseService } from '../services/courseService';
 import CourseForm from './CourseForm';
 import { elevatedCardStyles } from '../styles/commonStyles';
+import PageHeader from './PageHeader';
 
 const CourseManagementPage = ({ currentUser, onBack }) => {
   const [courses, setCourses] = useState([]);
@@ -34,7 +33,7 @@ const CourseManagementPage = ({ currentUser, onBack }) => {
   const [editingCourse, setEditingCourse] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
   const [availableCountries, setAvailableCountries] = useState([]);
-  const [countryFilter, setCountryFilter] = useState('All');
+  const [countryFilter, setCountryFilter] = useState('All Countries');
   const [confirmDelete, setConfirmDelete] = useState({
     open: false,
     courseId: null,
@@ -76,7 +75,7 @@ const CourseManagementPage = ({ currentUser, onBack }) => {
   const handleFilterChange = (event) => {
     const country = event.target.value;
     setCountryFilter(country);
-    loadCourses(country === 'All' ? null : country);
+    loadCourses(country === 'All Countries' ? null : country);
   };
 
   const handleSave = async (courseData) => {
@@ -84,7 +83,7 @@ const CourseManagementPage = ({ currentUser, onBack }) => {
       await courseService.saveCourseWithTeeBoxes(courseData, currentUser.email);
       setIsCreating(false);
       setEditingCourse(null);
-      loadCourses(countryFilter === 'All' ? null : countryFilter);
+      loadCourses(countryFilter === 'All Countries' ? null : countryFilter);
     } catch (err) {
       setError('Failed to save course: ' + err.message);
     }
@@ -122,7 +121,7 @@ const CourseManagementPage = ({ currentUser, onBack }) => {
     try {
       await courseService.deleteCourse(courseId, currentUser.email);
       setEditingCourse(null);
-      loadCourses(countryFilter === 'All' ? null : countryFilter);
+      loadCourses(countryFilter === 'All Countries' ? null : countryFilter);
     } catch (err) {
       setError('Failed to delete course: ' + err.message);
     } finally {
@@ -143,30 +142,30 @@ const CourseManagementPage = ({ currentUser, onBack }) => {
     }
 
     return (
-      <Paper {...elevatedCardStyles}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
-          <Box>
-            <Typography variant="h4" component="h1" sx={{ fontWeight: 'bold' }}>
-              Course Management
-            </Typography>
-          </Box>
-          <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
-            <FormControl sx={{ minWidth: 180 }} size="small">
-              <InputLabel>Filter by Country</InputLabel>
-              <Select value={countryFilter} label="Filter by Country" onChange={handleFilterChange}>
-                <MenuItem value="All">All Countries</MenuItem>
-                {availableCountries.map((country) => (
-                  <MenuItem key={country} value={country}>
-                    {country}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
-            <Button variant="contained" startIcon={<AddIcon />} onClick={() => setIsCreating(true)}>
-              Add New Course
-            </Button>
-          </Box>
-        </Box>
+      <>
+        <PageHeader
+          title="Course Management"
+          actions={
+            <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <Autocomplete
+                size="small"
+                options={['All Countries', ...availableCountries]}
+                value={countryFilter}
+                onChange={(event, newValue) => {
+                  handleFilterChange({ target: { value: newValue || 'All Countries' } });
+                }}
+                sx={{ width: 220, backgroundColor: 'white', borderRadius: 1 }}
+                renderInput={(params) => (
+                  <TextField {...params} />
+                )}
+              />
+              <Button variant="contained" startIcon={<AddIcon />} onClick={() => setIsCreating(true)} sx={{ bgcolor: 'white', color: 'primary.main', '&:hover': { bgcolor: 'rgba(255,255,255,0.9)' } }}>
+                Add New Course
+              </Button>
+            </Box>
+          }
+        />
+        <Paper {...elevatedCardStyles}>
         <List>
           {courses.map((course) => (
             <React.Fragment key={course.id}>
@@ -183,7 +182,8 @@ const CourseManagementPage = ({ currentUser, onBack }) => {
             </React.Fragment>
           ))}
         </List>
-      </Paper>
+        </Paper>
+      </>
     );
   };
 

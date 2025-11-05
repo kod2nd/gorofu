@@ -11,8 +11,7 @@ import {
   TableRow,
   Chip,
   IconButton,
-  Tooltip,
-  Grid,
+  Tooltip,  
   Card,
   Button,
   useTheme,
@@ -107,18 +106,18 @@ const UsersTable = ({ users, onEditUser, onChangeUserStatus, onViewAuditLog, onI
               </Box>
             </Box>
 
-            <Grid container spacing={1} sx={{ mb: 2 }}>
-              <Grid item xs={6}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, mb: 2 }}>
+              <Box sx={{ flex: '1 1 calc(50% - 4px)' }}>
                 <Typography variant="body2" color="text.secondary">Role</Typography>
                 {sortedRoles?.map(role => (
                   <Chip key={role} label={role} color={getRoleColor(role)} size="small" sx={{ mr: 0.5, mb: 0.5 }} />
                 ))}
-              </Grid>
-              <Grid item xs={6}><Typography variant="body2" color="text.secondary">Status</Typography><Chip label={user.status} color={getStatusColor(user.status)} size="small" /></Grid>
-              <Grid item xs={6}><Typography variant="body2" color="text.secondary">Country</Typography><Typography variant="body2">{user.country}</Typography></Grid>
-              <Grid item xs={6}><Typography variant="body2" color="text.secondary">Handicap</Typography><Typography variant="body2">{user.handicap || 'N/A'}</Typography></Grid>
-              <Grid item xs={12}><Typography variant="body2" color="text.secondary">Created</Typography><Typography variant="body2">{new Date(user.created_at).toLocaleDateString()}</Typography></Grid>
-            </Grid>
+              </Box>
+              <Box sx={{ flex: '1 1 calc(50% - 4px)' }}><Typography variant="body2" color="text.secondary">Status</Typography><Chip label={user.status} color={getStatusColor(user.status)} size="small" /></Box>
+              <Box sx={{ flex: '1 1 calc(50% - 4px)' }}><Typography variant="body2" color="text.secondary">Country</Typography><Typography variant="body2">{user.country}</Typography></Box>
+              <Box sx={{ flex: '1 1 calc(50% - 4px)' }}><Typography variant="body2" color="text.secondary">Handicap</Typography><Typography variant="body2">{user.handicap || 'N/A'}</Typography></Box>
+              <Box sx={{ flex: '1 1 100%' }}><Typography variant="body2" color="text.secondary">Created</Typography><Typography variant="body2">{new Date(user.created_at).toLocaleDateString()}</Typography></Box>
+            </Box>
 
             <Button size="small" startIcon={<HistoryIcon />} onClick={() => onViewAuditLog(user.email)} fullWidth>
               View Audit Log

@@ -23,6 +23,15 @@ import { cardStyles } from '../styles/commonStyles';
 import { courseService } from '../services/courseService';
 import { countries } from './countries';
 
+const FormSection = ({ title, children }) => (
+  <Box>
+    <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
+      {title}
+    </Typography>
+    <Box sx={{ pl: 1 }}>{children}</Box>
+  </Box>
+);
+
 const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = false }) => {
   const [courseDialogOpen, setCourseDialogOpen] = useState(false);
   const [teeBoxDialogOpen, setTeeBoxDialogOpen] = useState(false);
@@ -121,12 +130,7 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
   return (
     <Paper {...cardStyles}>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-        {/* Date Played Section */}
-        <Box>
-          <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
-            Date Played
-          </Typography>
-          <Box sx={{ pl: 1 }}>
+        <FormSection title="Date Played">
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <DatePicker
                 label="Date Played"
@@ -140,16 +144,10 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
                 }}
               />
             </LocalizationProvider>
-          </Box>
-        </Box>
+        </FormSection>
 
-        {/* Country Section */}
-        <Box>
-          <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
-            Country
-          </Typography>
+        <FormSection title="Country">
           <Autocomplete
-            options={countries}
             getOptionLabel={(option) => option.label || option}
             value={countries.find(c => c.label === formData.country) || null}
             onChange={(event, newValue) => {
@@ -179,16 +177,12 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
                 required
               />
             )}
-            sx={{ pl: 1 }}
-          />
-        </Box>
+            fullWidth
+        />
+        </FormSection>
 
-        {/* Course Information Section */}
-        <Box>
-          <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
-            Course Information
-          </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pl: 1 }}>
+        <FormSection title="Course Information">
+          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
             {/* Course Name with Autocomplete - ✅ FIXED */}
             <Autocomplete
               value={courses.find(c => c.id === formData.course_id) || formData.course_name || null}
@@ -252,14 +246,9 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
               <ToggleButton value="yards">Yards</ToggleButton>
             </ToggleButtonGroup>
           </Box>
-        </Box>
+        </FormSection>
 
-        {/* Round Type Section */}
-        <Box>
-          <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
-            Round Type
-          </Typography>
-          <Box sx={{ pl: 1 }}>
+        <FormSection title="Round Type">
             <ToggleButtonGroup
               color="primary"
               value={formData.round_type}
@@ -271,15 +260,9 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
               <ToggleButton value="front_9">Front 9</ToggleButton>
               <ToggleButton value="back_9">Back 9</ToggleButton>
             </ToggleButtonGroup>
-          </Box>
-        </Box>
+        </FormSection>
 
-        {/* Scoring Zone Details Section */}
-        <Box>
-          <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
-            Scoring Zone Details
-          </Typography>
-          <Box sx={{ pl: 1 }}>
+        <FormSection title="Scoring Zone Details">
             <ToggleButtonGroup
               color="primary"
               value={formData.scoring_zone_level}
@@ -294,8 +277,7 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
               <ToggleButton value="25m - Expert">25m</ToggleButton>
               <ToggleButton value="OnGreen Professional">On Green</ToggleButton>
             </ToggleButtonGroup>
-          </Box>
-        </Box>
+        </FormSection>
       </Box>
 
       {/* Dialog for Custom Course Name */}

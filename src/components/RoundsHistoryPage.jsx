@@ -17,6 +17,7 @@ import { Add as AddIcon } from "@mui/icons-material";
 import { roundService } from "../services/roundService";
 import { elevatedCardStyles } from "../styles/commonStyles";
 import RoundsTable from "./RoundsTable";
+import PageHeader from "./PageHeader";
 
 const RoundsHistoryPage = ({ user, onViewRound, onAddRound, isActive }) => {
   const [rounds, setRounds] = useState([]);
@@ -75,27 +76,9 @@ const RoundsHistoryPage = ({ user, onViewRound, onAddRound, isActive }) => {
 
   return (
     <Box sx={{ maxWidth: 1200, margin: "auto", px: { xs: 2, sm: 3 } }}>
-      <Paper
-        elevation={0}
-        sx={{
-          p: { xs: 3, sm: 4 },
-          mb: 3,
-          background: "linear-gradient(135deg, #667eea 0%, #764ba2 100%)",
-          color: "white",
-          borderRadius: 3,
-        }}
-      >
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={3}
-          alignItems="center"
-        >
-          <Box sx={{ flex: 1, textAlign: { xs: 'center', sm: 'left' } }}>
-          <Typography variant="h4" component="h1" sx={{ fontWeight: "bold" }}>
-            Rounds History
-          </Typography>
-
-          </Box>
+      <PageHeader
+        title="Rounds History"
+        actions={
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -103,15 +86,13 @@ const RoundsHistoryPage = ({ user, onViewRound, onAddRound, isActive }) => {
             sx={{
               bgcolor: "white",
               color: "primary.main",
-              "&:hover": {
-                bgcolor: "rgba(255, 255, 255, 0.9)",
-              },
+              "&:hover": { bgcolor: "rgba(255, 255, 255, 0.9)" },
             }}
           >
             Add New Round
           </Button>
-        </Stack>
-      </Paper>
+        }
+      />
       <Paper {...elevatedCardStyles}>
         <Box
           sx={{
