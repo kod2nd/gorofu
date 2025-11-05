@@ -434,7 +434,11 @@ const MobileHoleEntry = ({
                   borderColor: "divider",
                   transform: isActive ? "scale(1.1)" : "none",
                   transition: "transform 0.2s",
-                  flex: { xs: '1 1 9%', sm: '0 0 auto' }, // Adjust flex behavior
+                  // Use flex-grow: 0 to prevent stretching on the last row.
+                  // Use flex-basis to suggest an initial size.
+                  // On small screens, they will wrap and grow slightly to fill space.
+                  // On larger screens, they will adhere to their fixed width.
+                  flexBasis: { xs: '1 0 9%', sm: '0 0 auto' },
                 }}
               >
                 {holeNum + 1}
