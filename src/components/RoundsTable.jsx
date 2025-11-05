@@ -49,7 +49,7 @@ const RoundsTable = ({ rounds, onViewRound, onDelete }) => {
               </TableCell>
               <TableCell align="center">{round.is_eligible_round ? '✓' : '✗'}</TableCell>
               <TableCell align="center">
-                <Tooltip title="View Details">
+                <Tooltip title=" Round Details">
                   <IconButton onClick={() => onViewRound(round.id)} size="small">
                     <VisibilityIcon />
                   </IconButton>
