@@ -24,7 +24,7 @@ import { userService } from '../services/userService';
 import ProfileDisplay from './ProfileDisplay';
 import ProfileEditForm from './ProfileEditForm';
 
-const AccountPage = ({ userProfile, onProfileUpdate }) => {
+const AccountPage = ({ userProfile, onProfileUpdate, isImpersonating = false }) => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState({});
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
@@ -148,7 +148,7 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
               sx={{
                 fontWeight: 600,
                 textTransform: 'capitalize',
-                bgcolor: 'rgba(255, 255, 255, 0.2)',
+                bgcolor: isImpersonating ? 'rgba(0,0,0,0.2)' : 'rgba(255, 255, 255, 0.2)',
                 color: 'white',
                 border: '1px solid rgba(255, 255, 255, 0.3)',
               }}
@@ -159,6 +159,7 @@ const AccountPage = ({ userProfile, onProfileUpdate }) => {
               variant="contained"
               startIcon={<EditIcon />}
               onClick={() => setIsEditing(true)}
+              disabled={isImpersonating}
               sx={{
                 bgcolor: 'white',
                 color: 'primary.main',

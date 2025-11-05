@@ -15,7 +15,7 @@ import DashboardFilters from './DashboardFilters';
 import RecentInsights from './RecentInsights';
 import FlippingGolfIcon from './FlippingGolfIcon';
 
-const Dashboard = ({ user, onViewRound, isActive }) => {
+const Dashboard = ({ user, onViewRound, isActive, impersonatedUser }) => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [isFiltering, setIsFiltering] = useState(false);
   const [error, setError] = useState('');
@@ -31,8 +31,13 @@ const Dashboard = ({ user, onViewRound, isActive }) => {
   const hasFetchedAllTime = useRef(false); // Track if we've fetched all-time stats
   
   useEffect(() => {
-    // Effect 1: Fetch all-time stats ONCE when component first mounts
-    if (isActive && user && !hasFetchedAllTime.current) {
+    // When the user being viewed changes (due to impersonation), reset the flag
+    // to allow all-time stats to be re-fetched.
+    hasFetchedAllTime.current = false;
+  }, [impersonatedUser]);
+
+  useEffect(() => {
+    const fetchAllTimeDataIfNeeded = async () => {
       const fetchAllTimeData = async () => {
         try {
           const [szirStreakData, szParStreakData, allTimeStats] = await Promise.all([
@@ -48,9 +53,13 @@ const Dashboard = ({ user, onViewRound, isActive }) => {
           setError('Failed to load all-time stats: ' + err.message);
         }
       };
-      fetchAllTimeData();
-    }
-  }, [user, isActive]);
+
+      if (isActive && user && !hasFetchedAllTime.current) {
+        await fetchAllTimeData();
+      }
+    };
+    fetchAllTimeDataIfNeeded();
+  }, [user, isActive, impersonatedUser]); // Rerun when user or active status changes
   
   useEffect(() => {
     // Effect 2: Fetch filter-dependent data when page is active or filters change
@@ -87,7 +96,7 @@ const Dashboard = ({ user, onViewRound, isActive }) => {
     };
 
     fetchData();
-  }, [user, roundLimit, showEligibleRoundsOnly, isActive]);
+  }, [user, roundLimit, showEligibleRoundsOnly, isActive, impersonatedUser]);
   
   // ✅ Show centered flipping icon only on initial load
   if (initialLoading) {

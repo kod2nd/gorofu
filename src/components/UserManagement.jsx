@@ -25,7 +25,7 @@ import UsersTable from './UsersTable';
 import InvitationsList from './InvitationsList';
 import AuditLog from './AuditLog';
 
-const UserManagement = ({ currentUser, isActive }) => {
+const UserManagement = ({ currentUser, isActive, onImpersonate }) => {
   const theme = useTheme();
   
   const [users, setUsers] = useState([]);
@@ -124,9 +124,13 @@ const UserManagement = ({ currentUser, isActive }) => {
   const renderTabContent = () => {
     switch (tabValue) {
       case 0:
-        return <UsersTable users={users} onEditUser={handleEditUser} onChangeUserStatus={handleChangeUserStatus} onViewAuditLog={handleViewAuditLog} />;
-      case 2:
-        return <AuditLog logs={auditLogs} />;
+        return <UsersTable 
+          users={users} 
+          onEditUser={handleEditUser} 
+          onChangeUserStatus={handleChangeUserStatus} 
+          onViewAuditLog={handleViewAuditLog}
+          onImpersonate={onImpersonate}
+          currentUser={currentUser} />;
       default:
         return null;
     }

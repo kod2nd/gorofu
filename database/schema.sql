@@ -152,7 +152,14 @@ SECURITY DEFINER
 SET search_path = public
 AS $$
 BEGIN
-  RETURN (SELECT role FROM user_profiles WHERE user_id = auth.uid());
+  -- Check for impersonation variable
+  IF current_setting('app.impersonated_user_email', true) IS NOT NULL AND current_setting('app.impersonated_user_email', true) <> '' THEN
+    -- If impersonating, return the role of the impersonated user
+    RETURN (SELECT role FROM user_profiles WHERE email = current_setting('app.impersonated_user_email'));
+  ELSE
+    -- Otherwise, return the role of the currently authenticated user
+    RETURN (SELECT role FROM user_profiles WHERE user_id = auth.uid());
+  END IF;
 END;
 $$;
 
@@ -334,6 +341,26 @@ GRANT EXECUTE ON FUNCTION public.get_recent_rounds_stats(TEXT, INT, BOOLEAN) TO 
 -- This function is part of the uuid-ossp extension
 GRANT EXECUTE ON FUNCTION extensions.uuid_generate_v4() TO authenticated, service_role;
 
+-- Function for super_admins to set an impersonation session variable
+CREATE OR REPLACE FUNCTION set_impersonation(user_email_to_impersonate TEXT)
+RETURNS TEXT
+LANGUAGE plpgsql
+AS $$
+BEGIN
+  -- Only allow super_admins to call this function
+  IF (SELECT role FROM user_profiles WHERE user_id = auth.uid()) <> 'super_admin' THEN
+    RAISE EXCEPTION 'Only super_admins can impersonate users.';
+  END IF;
+
+  -- Set the session variable. The 'true' means it's a local setting for the current transaction.
+  PERFORM set_config('app.impersonated_user_email', user_email_to_impersonate, true);
+  
+  RETURN 'Impersonating ' || user_email_to_impersonate;
+END;
+$$;
+
+-- Grant execute permissions for the impersonation function
+GRANT EXECUTE ON FUNCTION public.set_impersonation(TEXT) TO authenticated, service_role;
 
 -- Row Level Security (RLS) Policies
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
@@ -379,38 +406,38 @@ CREATE POLICY "Admins can view all change requests" ON course_change_requests FO
 CREATE POLICY "Admins can update change requests" ON course_change_requests FOR UPDATE USING (get_my_role() IN ('admin', 'super_admin'));
 
 -- Rounds: Users can only access their own rounds
-CREATE POLICY "Users can view their own rounds" ON rounds FOR SELECT USING (user_email = auth.jwt() ->> 'email');
-CREATE POLICY "Users can create their own rounds" ON rounds FOR INSERT WITH CHECK (auth.role() = 'authenticated' AND user_email = auth.jwt() ->> 'email');
-CREATE POLICY "Users can update their own rounds" ON rounds FOR UPDATE USING (user_email = auth.jwt() ->> 'email');
-CREATE POLICY "Users can delete their own rounds" ON rounds FOR DELETE USING (user_email = auth.jwt() ->> 'email');
+CREATE POLICY "Users can view their own rounds, super admins can view all" ON rounds FOR SELECT USING (user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email'));
+CREATE POLICY "Users can create their own rounds, super admins can create for others" ON rounds FOR INSERT WITH CHECK (auth.role() = 'authenticated' AND user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email'));
+CREATE POLICY "Users can update their own rounds, super admins can update all" ON rounds FOR UPDATE USING (user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email'));
+CREATE POLICY "Users can delete their own rounds, super admins can delete all" ON rounds FOR DELETE USING (user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email'));
 
 -- Round holes: Users can only access holes from their own rounds
 CREATE POLICY "Users can view their own round holes" ON round_holes FOR SELECT USING (
   EXISTS (
     SELECT 1 FROM rounds 
     WHERE rounds.id = round_holes.round_id 
-    AND rounds.user_email = auth.jwt() ->> 'email'
+    AND rounds.user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email')
   )
 );
 CREATE POLICY "Users can create their own round holes" ON round_holes FOR INSERT WITH CHECK (
   EXISTS (
     SELECT 1 FROM rounds 
     WHERE rounds.id = round_holes.round_id 
-    AND rounds.user_email = auth.jwt() ->> 'email'
+    AND rounds.user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email')
   )
 );
 CREATE POLICY "Users can update their own round holes" ON round_holes FOR UPDATE USING (
   EXISTS (
     SELECT 1 FROM rounds 
     WHERE rounds.id = round_holes.round_id 
-    AND rounds.user_email = auth.jwt() ->> 'email'
+    AND rounds.user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email')
   )
 );
 CREATE POLICY "Users can delete their own round holes" ON round_holes FOR DELETE USING (
   EXISTS (
     SELECT 1 FROM rounds 
     WHERE rounds.id = round_holes.round_id 
-    AND rounds.user_email = auth.jwt() ->> 'email'
+    AND rounds.user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email')
   )
 );
 

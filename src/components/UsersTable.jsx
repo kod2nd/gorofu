@@ -18,11 +18,12 @@ import {
   useTheme,
   useMediaQuery
 } from '@mui/material';
-import {
+import {  
   Edit as EditIcon,
   Block as BlockIcon,
   CheckCircle as CheckCircleIcon,
-  History as HistoryIcon
+  History as HistoryIcon,
+  Visibility as VisibilityIcon,
 } from '@mui/icons-material';
 
 const getStatusColor = (status) => {
@@ -44,7 +45,7 @@ const getRoleColor = (role) => {
   }
 };
 
-const UsersTable = ({ users, onEditUser, onChangeUserStatus, onViewAuditLog }) => {
+const UsersTable = ({ users, onEditUser, onChangeUserStatus, onViewAuditLog, onImpersonate, currentUser }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
 
@@ -68,6 +69,13 @@ const UsersTable = ({ users, onEditUser, onChangeUserStatus, onViewAuditLog }) =
                     <EditIcon />
                   </IconButton>
                 </Tooltip>
+                {currentUser?.role === 'super_admin' && user.user_id !== currentUser.user_id && (
+                      <Tooltip title="View as User">
+                        <IconButton size="small" color="secondary" onClick={() => onImpersonate(user)}>
+                          <VisibilityIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                 {user.status === 'active' ? (
                   <Tooltip title="Suspend User">
                     <IconButton size="small" color="error" onClick={() => onChangeUserStatus(user.user_id, 'suspended')}>
@@ -152,6 +160,13 @@ const UsersTable = ({ users, onEditUser, onChangeUserStatus, onViewAuditLog }) =
                         <HistoryIcon />
                       </IconButton>
                     </Tooltip>
+                    {currentUser?.role === 'super_admin' && user.user_id !== currentUser.user_id && (
+                      <Tooltip title="View as User">
+                        <IconButton size="small" color="secondary" onClick={() => onImpersonate(user)}>
+                          <VisibilityIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                   </Box>
                 </TableCell>
               </TableRow>

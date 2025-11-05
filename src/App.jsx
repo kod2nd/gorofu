@@ -21,6 +21,7 @@ import Sidebar from './components/Sidebar';
 import AdminRoute from './components/AdminRoute';
 import { userService } from './services/userService';
 import FlippingGolfIcon from './components/FlippingGolfIcon';
+import ImpersonationBanner from './components/ImpersonationBanner';
 
 // Lazy load heavy components
 const Dashboard = lazy(() => import('./components/Dashboard'));
@@ -50,6 +51,7 @@ function App() {
   const [initialProfileLoad, setInitialProfileLoad] = useState(true); // ✅ Separate state for initial load only
   const [editingRoundId, setEditingRoundId] = useState(null);
   const [viewingRoundId, setViewingRoundId] = useState(null);
+  const [impersonatedUser, setImpersonatedUser] = useState(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -109,10 +111,39 @@ function App() {
     setIsDrawerOpen(!isDrawerOpen);
   };
 
+  const handleImpersonate = async (targetUser) => {
+    try {
+      await userService.startImpersonation(targetUser.email);
+      setImpersonatedUser(targetUser);
+      setActivePage('dashboard'); // Go to the user's dashboard
+    } catch (error) {
+      console.error("Failed to start impersonation:", error);
+      // Optionally, show a snackbar error to the admin
+    }
+  };
+
+
+  const handleExitImpersonation = async () => {
+    try {
+      await userService.stopImpersonation();
+      setImpersonatedUser(null);
+      setActivePage('userManagement'); // Go back to user management
+    } catch (error) {
+      console.error("Failed to stop impersonation:", error);
+    }
+  };
+
   const handleSignOut = async () => {
     const { error } = await supabase.auth.signOut();
+    await userService.stopImpersonation(); // Ensure impersonation is cleared on sign out
     if (error) console.error('Error signing out:', error.message);
+    setImpersonatedUser(null); // Clear impersonation on sign out
   };
+
+  // Determine which user's data to show
+  const activeUser = impersonatedUser 
+    ? { id: impersonatedUser.user_id, email: impersonatedUser.email } 
+    : session?.user;
 
   const handleEditRound = (roundId) => {
     setEditingRoundId(roundId);
@@ -177,6 +208,11 @@ function App() {
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
+      <ImpersonationBanner 
+        impersonatedUser={impersonatedUser} 
+        onExit={handleExitImpersonation} 
+        activePage={activePage}
+      />
       <Box sx={{ display: "flex", height: "100vh" }}>
         <Box
           component="nav"
@@ -287,16 +323,17 @@ function App() {
               }>
                 {/* ALL components stay mounted, only visibility changes */}
                 <PageContainer active={activePage === 'dashboard'}>
-                  <Dashboard 
-                    user={session.user} 
+                  <Dashboard
+                    user={activeUser}
                     onViewRound={handleViewRound} 
                     isActive={activePage === 'dashboard'} 
+                    impersonatedUser={impersonatedUser}
                   />
                 </PageContainer>
                 
                 <PageContainer active={activePage === 'addRound'}>
                   <RoundForm 
-                    user={session.user} 
+                    user={activeUser}
                     userProfile={userProfile}
                     isActive={activePage === 'addRound'}
                     closeForm={() => {
@@ -308,24 +345,28 @@ function App() {
                 </PageContainer>
                 
                 <PageContainer active={activePage === 'account'}>
-                  <AccountPage userProfile={userProfile} onProfileUpdate={handleProfileUpdate} />
+                  <AccountPage 
+                    userProfile={impersonatedUser || userProfile} 
+                    onProfileUpdate={handleProfileUpdate}
+                    isImpersonating={!!impersonatedUser}
+                  />
                 </PageContainer>
                 
                 <PageContainer active={activePage === 'userManagement'}>
                   <AdminRoute userProfile={userProfile}>
-                    <UserManagement isActive={activePage === 'userManagement'} />
+                    <UserManagement isActive={activePage === 'userManagement'} onImpersonate={handleImpersonate} />
                   </AdminRoute>
                 </PageContainer>
                 
                 <PageContainer active={activePage === 'courseManagement'}>
                   <AdminRoute userProfile={userProfile}>
-                    <CourseManagementPage user={session.user} onBack={() => setActivePage('dashboard')} />
+                    <CourseManagementPage currentUser={userProfile} onBack={() => setActivePage('dashboard')} />
                   </AdminRoute>
                 </PageContainer>
                 
                 <PageContainer active={activePage === 'roundsHistory'}>
                   <RoundsHistoryPage 
-                    user={session.user}
+                    user={activeUser}
                     isActive={activePage === 'roundsHistory'}
                     onViewRound={handleViewRound} 
                     onAddRound={() => setActivePage('addRound')} 
@@ -335,7 +376,7 @@ function App() {
                 <PageContainer active={activePage === 'viewRound'}>
                   <RoundDetailsPage
                     roundId={viewingRoundId}
-                    user={session.user}
+                    user={activeUser}
                     onEdit={handleEditRound}
                     onBack={() => { setViewingRoundId(null); setActivePage('roundsHistory'); }}
                   />

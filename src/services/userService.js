@@ -278,5 +278,23 @@ export const userService = {
   async isSuperAdmin() {
     const profile = await this.getCurrentUserProfile();
     return profile && profile.role === 'super_admin';
-  }
+  },
+
+  // Impersonation
+  async startImpersonation(userEmail) {
+    const { data, error } = await supabase.rpc('set_impersonation', {
+      user_email_to_impersonate: userEmail,
+    });
+    if (error) throw error;
+    return data;
+  },
+
+  async stopImpersonation() {
+    // Setting the variable to null or an empty string effectively clears it.
+    const { data, error } = await supabase.rpc('set_impersonation', {
+      user_email_to_impersonate: '',
+    });
+    if (error) throw error;
+    return data;
+  },
 };
