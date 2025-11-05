@@ -1,15 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import {
   TextField,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Typography,
   Paper,
   Box,
-  Avatar,
-  Divider,  
   Dialog,
   DialogTitle,
   DialogContent,
@@ -20,6 +14,8 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import Autocomplete from '@mui/material/Autocomplete';
+import ToggleButton from '@mui/material/ToggleButton';
+import ToggleButtonGroup from '@mui/material/ToggleButtonGroup';
 import { createFilterOptions } from '@mui/material/Autocomplete';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import SectionHeader from './SectionHeader';
@@ -28,21 +24,20 @@ import { courseService } from '../services/courseService';
 import { countries } from './countries';
 
 const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = false }) => {
-  // State for dialogs and custom inputs
   const [courseDialogOpen, setCourseDialogOpen] = useState(false);
   const [teeBoxDialogOpen, setTeeBoxDialogOpen] = useState(false);
   const [courses, setCourses] = useState([]);
+  const [teeBoxOptions, setTeeBoxOptions] = useState([]);
   const [customCourseName, setCustomCourseName] = useState('');
   const [customTeeBox, setCustomTeeBox] = useState('');
 
   useEffect(() => {
-    // Do not fetch if editing, as the course is already set.
     if (isEditMode || !roundData.country) return;
 
     const fetchCourses = async () => {
       try {
         const coursesData = await courseService.getCoursesByCountry(roundData.country);
-        setCourses(coursesData); // Keep the whole course object
+        setCourses(coursesData);
       } catch (error) {
         console.error("Failed to fetch courses:", error);
       }
@@ -50,16 +45,16 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
     fetchCourses();
   }, [roundData.country, isEditMode]);
 
-  // Tee box options
-  const teeBoxOptions = [
-    'Red',
-    'White',
-    'Blue',
-    'Black',
-    'Add new tee box...'
-  ];
+  useEffect(() => {
+    if (roundData.course_id) {
+      courseService.getCourseTeeBoxes(roundData.course_id).then(teeBoxes => {
+        setTeeBoxOptions([...teeBoxes, 'Add new tee box...']);
+      }).catch(err => console.error("Failed to fetch tee boxes:", err));
+    } else {
+      setTeeBoxOptions(['Red', 'White', 'Blue', 'Black', 'Add new tee box...']);
+    }
+  }, [roundData.course_id]);
 
-  // Set default values
   const defaults = {
     yards_or_meters_unit: 'meters',
     scoring_zone_level: '100m - Novice',
@@ -67,46 +62,30 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
     round_type: '18_holes',
   };
 
-  // Merge provided data with defaults
   const formData = { ...defaults, ...roundData };
-
   const filter = createFilterOptions();
 
   const handleFilterOptions = (options, params) => {
     const filtered = filter(options, params);
-
-    // Suggest the creation of a new value
     const { inputValue } = params;
     const isExisting = options.some((option) => inputValue === option.name);
     if (inputValue !== '' && !isExisting) {
       filtered.push(`Add new course: "${inputValue}"`);
     }
-
     return filtered;
   };
 
-
   const handleCourseSelect = (event, newValue) => {
     if (typeof newValue === 'string' && newValue.startsWith('Add new course:')) {
-      // Extract the course name from the "Add new..." string
       const newCourseName = newValue.substring(newValue.indexOf('"') + 1, newValue.lastIndexOf('"'));
       handleCourseChange({ target: { name: 'course_name', value: newCourseName } });
-      handleCourseChange({ target: { name: 'course_id', value: null } }); // Clear ID for new course
+      handleCourseChange({ target: { name: 'course_id', value: null } });
     } else if (newValue && newValue.inputValue) {
-      // Handle "Add new course" from free solo
       handleCourseChange({ target: { name: 'course_name', value: newValue.inputValue } });
       handleCourseChange({ target: { name: 'course_id', value: null } });
     } else {
       handleCourseChange({ target: { name: 'course_name', value: newValue?.name || '' } });
       handleCourseChange({ target: { name: 'course_id', value: newValue?.id || null } });
-    }
-  };
-
-  const handleTeeBoxSelect = (e) => {
-    if (e.target.value === 'Add new tee box...') {
-      setTeeBoxDialogOpen(true);
-    } else {
-      handleCourseChange(e);
     }
   };
 
@@ -133,9 +112,14 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
     setCustomTeeBox('');
   };
 
+  const handleToggleButtonChange = (name, value) => {
+    if (value !== null) {
+      handleCourseChange({ target: { name, value } });
+    }
+  };
+
   return (
     <Paper {...cardStyles}>
-      
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {/* Date Played Section */}
         <Box>
@@ -158,6 +142,7 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
             </LocalizationProvider>
           </Box>
         </Box>
+
         {/* Country Section */}
         <Box>
           <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
@@ -171,19 +156,22 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
               handleCourseChange({ target: { name: 'country', value: newValue ? newValue.label : '' } });
             }}
             disabled={isEditMode}
-            renderOption={({ key, ...props }, option) => (
-              <Box component="li" key={key} {...props}>
-                <img
-                  loading="lazy"
-                  width="20"
-                  src={`https://flagcdn.com/w20/${option.code.toLowerCase()}.png`}
-                  srcSet={`https://flagcdn.com/w40/${option.code.toLowerCase()}.png 2x`}
-                  alt=""
-                  style={{ marginRight: '10px' }}
-                />
-                {option.label} ({option.code})
-              </Box>
-            )}
+            renderOption={(props, option) => {
+              const { key, ...otherProps } = props;
+              return (
+                <Box component="li" key={key} {...otherProps}>
+                  <img
+                    loading="lazy"
+                    width="20"
+                    src={`https://flagcdn.com/w20/${option.code.toLowerCase()}.png`}
+                    srcSet={`https://flagcdn.com/w40/${option.code.toLowerCase()}.png 2x`}
+                    alt=""
+                    style={{ marginRight: '10px' }}
+                  />
+                  {option.label} ({option.code})
+                </Box>
+              );
+            }}
             renderInput={(params) => (
               <TextField
                 {...params}
@@ -201,7 +189,7 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
             Course Information
           </Typography>
           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pl: 1 }}>
-            {/* Course Name with Autocomplete */}
+            {/* Course Name with Autocomplete - ✅ FIXED */}
             <Autocomplete
               value={courses.find(c => c.id === formData.course_id) || formData.course_name || null}
               options={courses}
@@ -211,15 +199,18 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
               filterOptions={handleFilterOptions}
               noOptionsText="No course found"
               renderOption={(props, option) => {
+                // ✅ Extract key from props properly
+                const { key, ...otherProps } = props;
+                
                 if (typeof option === 'string' && option.startsWith('Add new course:')) {
                   return (
-                    <li {...props} style={{ color: 'primary.main', fontWeight: 'bold' }}>
+                    <li key={key} {...otherProps} style={{ color: 'primary.main', fontWeight: 'bold' }}>
                       <AddCircleOutlineIcon sx={{ mr: 1 }} />
                       {option}
                     </li>
                   );
                 }
-                return <li {...props}>{option.name}</li>;
+                return <li key={key} {...otherProps}>{option.name}</li>;
               }}
               renderInput={(params) => (
                 <TextField
@@ -233,37 +224,33 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
             />
             
             {/* Tee Box as Select */}
-            <FormControl fullWidth>
-              <InputLabel>Tee Box Played</InputLabel>
-              <Select
-                name="tee_box"
-                value={formData.tee_box || ''}
-                label="Tee Box Played"
-                onChange={handleTeeBoxSelect}
-                required
-                disabled={isEditMode}
-              >
-                {teeBoxOptions.map((option) => (
-                  <MenuItem key={option} value={option}>
-                    {option}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <Autocomplete
+              value={formData.tee_box || ''}
+              options={teeBoxOptions}
+              onChange={(event, newValue) => {
+                if (newValue === 'Add new tee box...') {
+                  setTeeBoxDialogOpen(true);
+                } else {
+                  handleCourseChange({ target: { name: 'tee_box', value: newValue } });
+                }
+              }}
+              disabled={isEditMode}
+              renderInput={(params) => (
+                <TextField {...params} label="Tee Box Played" required fullWidth />
+              )}
+            />
 
             {/* Units */}
-            <FormControl fullWidth>
-              <InputLabel>Units</InputLabel>
-              <Select
-                name="yards_or_meters_unit"
-                value={formData.yards_or_meters_unit}
-                label="Units"
-                onChange={handleCourseChange}
-              >
-                <MenuItem value="meters">Meters</MenuItem>
-                <MenuItem value="yards">Yards</MenuItem>
-              </Select>
-            </FormControl>
+            <ToggleButtonGroup
+              color="primary"
+              value={formData.yards_or_meters_unit}
+              exclusive
+              fullWidth
+              onChange={(e, value) => handleToggleButtonChange('yards_or_meters_unit', value)}
+            >
+              <ToggleButton value="meters">Meters</ToggleButton>
+              <ToggleButton value="yards">Yards</ToggleButton>
+            </ToggleButtonGroup>
           </Box>
         </Box>
 
@@ -272,20 +259,18 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
           <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
             Round Type
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pl: 1 }}>
-            <FormControl fullWidth>
-              <InputLabel>Holes to Play</InputLabel>
-              <Select
-                name="round_type"
-                value={formData.round_type || '18_holes'}
-                label="Holes to Play"
-                onChange={handleCourseChange}
-              >
-                <MenuItem value="front_9">Front 9 Only</MenuItem>
-                <MenuItem value="back_9">Back 9 Only</MenuItem>
-                <MenuItem value="18_holes">18 Holes</MenuItem>
-              </Select>
-            </FormControl>
+          <Box sx={{ pl: 1 }}>
+            <ToggleButtonGroup
+              color="primary"
+              value={formData.round_type}
+              exclusive
+              fullWidth
+              onChange={(e, value) => handleToggleButtonChange('round_type', value)}
+            >
+              <ToggleButton value="18_holes">Full 18</ToggleButton>
+              <ToggleButton value="front_9">Front 9</ToggleButton>
+              <ToggleButton value="back_9">Back 9</ToggleButton>
+            </ToggleButtonGroup>
           </Box>
         </Box>
 
@@ -294,22 +279,21 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
           <Typography variant="subtitle1" fontWeight="bold" color="primary" gutterBottom>
             Scoring Zone Details
           </Typography>
-          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, pl: 1 }}>
-            <FormControl fullWidth>
-              <InputLabel>Scoring Zone Level</InputLabel>
-              <Select
-                name="scoring_zone_level"
-                value={formData.scoring_zone_level}
-                label="Scoring Zone Level"
-                onChange={handleCourseChange}
-              >
-                <MenuItem value="100m - Novice">100m - Novice</MenuItem>
-                <MenuItem value="75m - Journeyman">75m - Journeyman</MenuItem>
-                <MenuItem value="50m - Adapt">50m - Adapt</MenuItem>
-                <MenuItem value="25m - Expert">25m - Expert</MenuItem>
-                <MenuItem value="OnGreen Professional">OnGreen Professional</MenuItem>
-              </Select>
-            </FormControl>
+          <Box sx={{ pl: 1 }}>
+            <ToggleButtonGroup
+              color="primary"
+              value={formData.scoring_zone_level}
+              exclusive
+              fullWidth
+              onChange={(e, value) => handleToggleButtonChange('scoring_zone_level', value)}
+              sx={{ flexWrap: 'wrap' }}
+            >
+              <ToggleButton value="100m - Novice">100m</ToggleButton>
+              <ToggleButton value="75m - Journeyman">75m</ToggleButton>
+              <ToggleButton value="50m - Adapt">50m</ToggleButton>
+              <ToggleButton value="25m - Expert">25m</ToggleButton>
+              <ToggleButton value="OnGreen Professional">On Green</ToggleButton>
+            </ToggleButtonGroup>
           </Box>
         </Box>
       </Box>
