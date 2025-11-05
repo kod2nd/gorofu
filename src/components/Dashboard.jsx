@@ -152,14 +152,19 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser }) => {
             minWidth: { lg: 350 },
           }}
         >
-          <DashboardFilters
-            roundLimit={roundLimit}
-            setRoundLimit={setRoundLimit}
-            showEligibleRoundsOnly={showEligibleRoundsOnly}
-            setShowEligibleRoundsOnly={setShowEligibleRoundsOnly}
-            isFiltering={isFiltering}
-          />
+          <Paper {...elevatedCardStyles}>
+            <DashboardFilters
+              roundLimit={roundLimit}
+              setRoundLimit={setRoundLimit}
+              showEligibleRoundsOnly={showEligibleRoundsOnly}
+              setShowEligibleRoundsOnly={setShowEligibleRoundsOnly}
+              isFiltering={isFiltering}
+            />
+          </Paper>
+          <Paper {...elevatedCardStyles}>
           <RecentInsights recentStats={recentStats} isFiltering={isFiltering} />
+
+            </Paper>
         </Box>
 
         {/* Right Column */}
@@ -189,7 +194,10 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser }) => {
               <RoundsTable rounds={recentRounds} onViewRound={onViewRound} />
             )}
           </Paper>
+          <Paper {...elevatedCardStyles}>
           <Analytics recentRounds={recentRounds} recentStats={recentStats} />
+
+          </Paper>
         </Box>
       </Box>
     </Box>

@@ -17,10 +17,15 @@ export const cardStyles = {
 
 // Elevated card variant for main containers
 export const elevatedCardStyles = {
-  elevation: 3,
+  elevation: 4,
   sx: {
     p: { xs: 2, md: 4 },
-    borderRadius: 3,
+    borderRadius: 4, // Make it rounder
+    transition: 'all 0.2s ease-in-out',
+    '&:hover': {
+      transform: 'translateY(-3px)',
+      boxShadow: 8, // Increase shadow on hover for a "lifted" effect
+    }
   }
 };
 

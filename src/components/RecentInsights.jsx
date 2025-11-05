@@ -54,28 +54,28 @@ const RecentInsights = ({ recentStats, isFiltering }) => (
       </Box>
     : recentStats && recentStats.total_holes_played > 0 ?
       <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, pt: 2 }}>
-        <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: 120 }}> 
+        <Box sx={{ flex: '1 1 calc(50% - 8px)'}}> 
           <StatCard 
             label="Avg Score" 
             value={Number(recentStats.avg_par4_score).toFixed(1)} 
             tooltip="Average score on par 4 holes." 
           /> 
         </Box>
-        <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: 120 }}> 
+        <Box sx={{ flex: '1 1 calc(50% - 8px)' }}> 
           <StatCard 
             label="Avg Putts" 
             value={recentStats.avg_putts_per_hole ? Number(recentStats.avg_putts_per_hole).toFixed(1) : '-'} 
             tooltip="Average number of putts per hole." 
           /> 
         </Box>
-        <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: 120 }}> 
+        <Box sx={{ flex: '1 1 calc(50% - 8px)' }}> 
           <StatCard 
             label="SZIR %" 
             value={recentStats.szir_percentage ? `${Number(recentStats.szir_percentage).toFixed(0)}%` : '-'} 
             tooltip="Scoring Zone in Regulation %" 
           /> 
         </Box>
-        <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: 120 }}> 
+        <Box sx={{ flex: '1 1 calc(50% - 8px)' }}> 
           <StatCard 
             label="SZ Par %" 
             value={recentStats.holeout_within_3_shots_count} 
