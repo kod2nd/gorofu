@@ -22,6 +22,7 @@ import CourseDetailsForm from './components/CourseDetailsForm';
 import HoleDetailsForm from './components/HoleDetailsForm';
 import MobileHoleEntry from './components/MobileHoleEntry';
 import ViewListIcon from '@mui/icons-material/ViewList';
+import ScorecardTable from './components/ScorecardTable';
 import SportsGolfIcon from '@mui/icons-material/SportsGolf';
 import RoundInsights from './components/RoundInsights';
 import SectionHeader from './components/SectionHeader';
@@ -410,6 +411,7 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
             isEditMode={!!roundIdToEdit}
           />
           
+          <Box sx={{ mt: 4 }}>
           <SectionHeader 
             title="Round Details" 
             subtitle="Log your round's hole by hole data"
@@ -436,13 +438,19 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
               isEditMode={!!roundIdToEdit}
             />
           )}
-          
+          </Box>
+          {/* Real-time Scorecard */}
+          <Box sx={{ mt: 4 }}>
+            <SectionHeader title="Live Scorecard" />
+            <ScorecardTable holes={holes} />
+          </Box>
+          <Box sx={{ mt: 4 }}>
           <SectionHeader 
             title="Round Insights" 
             subtitle="View the insights from your round"
           />
           <RoundInsights insightsData={insightsData} />
-          
+          </Box>
           <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
             <Button
               type="submit"
