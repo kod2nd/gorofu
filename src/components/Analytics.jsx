@@ -153,9 +153,6 @@ const Analytics = ({ recentRounds, recentStats }) => {
         display: 'flex',
         flexWrap: 'wrap',
         gap: 3,
-        '& > .MuiPaper-root': { // Target the Paper components directly
-          flexGrow: 1,
-        },
       }}
     >
       {performanceData.some(d => d['Par 3 Avg Score'] != null) && (
