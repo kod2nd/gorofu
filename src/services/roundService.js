@@ -17,7 +17,8 @@ export const roundService = {
         total_holes_played: roundData.total_holes_played,
         total_score: roundData.total_score,
         total_putts: roundData.total_putts,
-        total_penalties: roundData.total_penalties
+        total_penalties: roundData.total_penalties,
+        is_eligible_round: roundData.is_eligible_round
       })
       .select()
       .single();

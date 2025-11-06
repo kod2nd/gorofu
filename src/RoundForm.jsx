@@ -302,7 +302,7 @@ const RoundForm = ({
   const totalScoringHoles = useMemo(
     () =>
       holes.filter(
-        (h) => h.hole_score && (h.putts !== "" || h.holeout_from_outside_4ft)
+        (h) => h.played && h.hole_score && (h.putts !== "" && h.putts !== null || h.holeout_from_outside_4ft)
       ).length,
     [holes]
   );
@@ -329,9 +329,7 @@ const RoundForm = ({
 
     // Determine if it's an "eligible" round (>=7 holes for 9, >=14 for 18)
     let is_eligible_round = false;
-    const playedHolesWithData = holes.filter(
-      (h) => h.hole_score && (h.putts !== "" || h.holeout_from_outside_4ft)
-    );
+    const playedHolesWithData = holes.filter(h => h.played && h.hole_score && (h.putts !== "" && h.putts !== null || h.holeout_from_outside_4ft));
     if (
       courseDetails.round_type === "18_holes" &&
       playedHolesWithData.length >= 14

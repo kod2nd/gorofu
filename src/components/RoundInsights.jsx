@@ -56,7 +56,7 @@ const RoundInsights = ({ insightsData }) => {
         </Typography>
         <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
           <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: { xs: 'calc(50% - 8px)', sm: 'calc(25% - 12px)' } }}>
-            <StatCard label="Scoring Holes" value={totalHolesPlayed} tooltip="Total number of holes with hole-by-hole data."/>
+            <StatCard label="Holes Played" value={totalHolesPlayed} tooltip="Total number of holes with hole-by-hole data."/>
           </Box>
           <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: { xs: 'calc(50% - 8px)', sm: 'calc(25% - 12px)' } }}>
             <StatCard label="Total Strokes" value={totalScore} tooltip="Sum of all strokes for the round(s)."/>
