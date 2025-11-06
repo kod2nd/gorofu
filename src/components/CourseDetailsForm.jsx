@@ -243,9 +243,12 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
               fullWidth
               onChange={(e, value) => handleToggleButtonChange('yards_or_meters_unit', value)}
               sx={{
-                '& .Mui-selected': {
-                  backgroundColor: 'primary.dark',
-                  color: 'white',
+                "& .Mui-selected, & .Mui-selected:hover": {
+                  color: "white",
+                  backgroundColor: 'primary.dark'
+                },
+                "& .MuiToggleButton-root": {
+                  flex: 1
                 }
               }}
             >
@@ -263,9 +266,12 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
               fullWidth
               onChange={(e, value) => handleToggleButtonChange('round_type', value)}
               sx={{
-                '& .Mui-selected': {
-                  backgroundColor: 'primary.dark',
-                  color: 'white',
+                "& .Mui-selected, & .Mui-selected:hover": {
+                  color: "white",
+                  backgroundColor: 'primary.dark'
+                },
+                "& .MuiToggleButton-root": {
+                  flex: 1
                 }
               }}
             >
@@ -284,9 +290,12 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
               onChange={(e, value) => handleToggleButtonChange('scoring_zone_level', value)}
               sx={{ 
                 flexWrap: 'wrap',
-                '& .Mui-selected': {
-                  backgroundColor: 'primary.dark',
-                  color: 'white',
+                "& .Mui-selected, & .Mui-selected:hover": {
+                  color: "white",
+                  backgroundColor: 'primary.dark'
+                },
+                "& .MuiToggleButton-root": {
+                  flex: 1
                 }
               }}
             >

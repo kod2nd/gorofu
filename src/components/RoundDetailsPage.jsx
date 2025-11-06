@@ -317,6 +317,14 @@ const RoundDetailsPage = ({ roundId, user, onEdit, onBack }) => {
         )}
 
         {/* Insights */}
+        {(isMobile ? activeTab === 2 : true) && (
+          <Paper {...elevatedCardStyles}>
+            <Typography {...sectionHeaderStyles} sx={{mb: 2}}>
+              Round Insights
+            </Typography>
+            <RoundInsights insightsData={insightsData} />
+          </Paper>
+        )}
       </Box>
     </Box>
   );
