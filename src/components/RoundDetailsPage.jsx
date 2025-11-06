@@ -10,7 +10,7 @@ import {
   Card,
   CardContent,
   Chip,
-  Tabs, Tab, useTheme, useMediaQuery
+  Tabs, Tab, useTheme, useMediaQuery, ToggleButtonGroup, ToggleButton
 } from "@mui/material";
 import { Stack } from "@mui/system";
 import {
@@ -27,6 +27,7 @@ import {
   sectionHeaderStyles,
 } from "../styles/commonStyles";
 import RoundInsights from "./RoundInsights";
+import ScoringBiasSlider from "./ScoringBiasSlider";
 import ScorecardTable from "./ScorecardTable";
 
 const StatItem = ({ label, value, size = "medium" }) => (
@@ -71,13 +72,20 @@ const DetailItem = ({ label, value }) => (
 );
 
 
-const RoundDetailsPage = ({ roundId, user, onEdit, onBack }) => {
+const RoundDetailsPage = ({ roundId, user, userProfile, onEdit, onBack }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [round, setRound] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
+  const [currentScoringBias, setCurrentScoringBias] = useState(userProfile?.scoring_bias ?? 1);
+
+  const handleBiasChange = (event, newBias) => {
+    if (newBias !== null) {
+      setCurrentScoringBias(newBias);
+    }
+  };
 
   useEffect(() => {
     if (roundId && user) {
@@ -307,12 +315,15 @@ const RoundDetailsPage = ({ roundId, user, onEdit, onBack }) => {
         {(isMobile ? activeTab === 0 : true) && (
           <Paper {...elevatedCardStyles}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-              {isMobile && <LockIcon color="primary" fontSize="small" />}
               <Typography {...sectionHeaderStyles}>
                 Scorecard {isMobile && '(Scroll to view)'}
               </Typography>
             </Box>
-            <ScorecardTable holes={round.holes} />
+            <ScoringBiasSlider 
+  currentScoringBias={currentScoringBias} 
+  handleBiasChange={handleBiasChange} 
+/>
+            <ScorecardTable holes={round.holes} scoringBias={currentScoringBias} />
           </Paper>
         )}
 

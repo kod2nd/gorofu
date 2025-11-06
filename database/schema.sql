@@ -14,6 +14,7 @@ CREATE TABLE user_profiles (
   status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'suspended', 'inactive')),
   country TEXT DEFAULT 'Singapore',
   handicap DECIMAL(3,1),
+  scoring_bias INTEGER DEFAULT 1, -- 0=Par, 1=Bogey, 2=Double Bogey
   phone TEXT,
   date_of_birth DATE,
   created_by TEXT, -- email of admin who created/approved the user

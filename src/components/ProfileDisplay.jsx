@@ -13,6 +13,7 @@ import {
   Phone as PhoneIcon,
   Cake as CakeIcon,
   SportsGolf as SportsGolfIcon,
+  Tune as TuneIcon,
 } from '@mui/icons-material';
 
 const InfoCard = ({ icon, label, value, color = 'primary.main' }) => (
@@ -87,6 +88,13 @@ const InfoCard = ({ icon, label, value, color = 'primary.main' }) => (
 );
 
 const ProfileDisplay = ({ userProfile }) => {
+  const scoringBiasMap = {
+    0: 'Par',
+    1: 'Bogey',
+    2: 'Double Bogey',
+  };
+  const scoringBiasText = scoringBiasMap[userProfile.scoring_bias] ?? 'Bogey';
+
   return (
     <>
       <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mb: 4, px: 1 }}>
@@ -142,6 +150,12 @@ const ProfileDisplay = ({ userProfile }) => {
                 : null
             }
             color="linear-gradient(135deg, #30cfd0 0%, #330867 100%)"
+          />
+          <InfoCard
+            icon={<TuneIcon />}
+            label="Scorecard Color Bias"
+            value={scoringBiasText}
+            color="linear-gradient(135deg, #868f96 0%, #596164 100%)"
           />
       </Box>
     </>

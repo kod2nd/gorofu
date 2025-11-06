@@ -12,7 +12,7 @@ import {
   useMediaQuery,
 } from '@mui/material';
 
-const ScorecardTable = ({ holes }) => {
+const ScorecardTable = ({ holes, scoringBias = 0 }) => { // Default to 0 (Par)
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
 
@@ -336,22 +336,26 @@ const ScorecardTable = ({ holes }) => {
                     sx={{
                       minWidth: 52,
                       borderRight: `1px solid ${theme.palette.divider}`,
-                      ...(rowDef.key === "hole_score" &&
-                        hole?.hole_score && {
-                          color:
-                            hole.hole_score < hole.par
-                              ? "success.main"
-                              : hole.hole_score > hole.par
-                              ? "error.main"
-                              : "inherit",
-                          fontWeight: "bold",
-                          backgroundColor:
-                            hole.hole_score < hole.par
-                              ? theme.palette.success.light + "40"
-                              : hole.hole_score > hole.par
-                              ? theme.palette.error.light + "40"
-                              : "inherit",
-                        }),
+                      ...(rowDef.key === "hole_score" && hole?.hole_score && hole?.par
+                        ? (() => {
+                            const scoreDiff = hole.hole_score - hole.par;
+                            return {
+                              color:
+                                scoreDiff < scoringBias
+                                  ? "success.main"
+                                  : scoreDiff > scoringBias
+                                  ? "error.main"
+                                  : "inherit",
+                              fontWeight: "bold",
+                              backgroundColor:
+                                scoreDiff < scoringBias
+                                  ? theme.palette.success.light + "40"
+                                  : scoreDiff > scoringBias
+                                  ? theme.palette.error.light + "40"
+                                  : "inherit",
+                            };
+                          })()
+                        : {}),
                       ...(rowDef.key === "penalty_shots" &&
                         hole?.penalty_shots > 0 && {
                           color: "error.main",
@@ -403,22 +407,26 @@ const ScorecardTable = ({ holes }) => {
                     sx={{
                       minWidth: 52,
                       borderRight: `1px solid ${theme.palette.divider}`,
-                      ...(rowDef.key === "hole_score" &&
-                        hole?.hole_score && {
-                          color:
-                            hole.hole_score < hole.par
-                              ? "success.main"
-                              : hole.hole_score > hole.par
-                              ? "error.main"
-                              : "inherit",
-                          fontWeight: "bold",
-                          backgroundColor:
-                            hole.hole_score < hole.par
-                              ? theme.palette.success.light + "40"
-                              : hole.hole_score > hole.par
-                              ? theme.palette.error.light + "40"
-                              : "inherit",
-                        }),
+                      ...(rowDef.key === "hole_score" && hole?.hole_score && hole?.par
+                        ? (() => {
+                            const scoreDiff = hole.hole_score - hole.par;
+                            return {
+                              color:
+                                scoreDiff < scoringBias
+                                  ? "success.main"
+                                  : scoreDiff > scoringBias
+                                  ? "error.main"
+                                  : "inherit",
+                              fontWeight: "bold",
+                              backgroundColor:
+                                scoreDiff < scoringBias
+                                  ? theme.palette.success.light + "40"
+                                  : scoreDiff > scoringBias
+                                  ? theme.palette.error.light + "40"
+                                  : "inherit",
+                            };
+                          })()
+                        : {}),
                       ...(rowDef.key === "penalty_shots" &&
                         hole?.penalty_shots > 0 && {
                           color: "error.main",

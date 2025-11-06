@@ -20,8 +20,8 @@ import {
   Close as CloseIcon,
   AdminPanelSettings as AdminIcon,
 } from '@mui/icons-material';
-import { userService } from '../services/userService';
-import ProfileDisplay from './ProfileDisplay';
+import { userProfileService } from '../services/userProfileService';
+import ProfileDisplay from './ProfileDisplay'; // Ensure this import is present
 import ProfileEditForm from './ProfileEditForm';
 
 const AccountPage = ({ userProfile, onProfileUpdate, isImpersonating = false }) => {
@@ -37,6 +37,7 @@ const AccountPage = ({ userProfile, onProfileUpdate, isImpersonating = false }) 
         handicap: userProfile.handicap || '',
         phone: userProfile.phone || '',
         date_of_birth: userProfile.date_of_birth || '',
+        scoring_bias: userProfile.scoring_bias ?? 1, // Default to 1 (Bogey) if not set
       });
     }
   }, [userProfile]);
@@ -64,8 +65,9 @@ const AccountPage = ({ userProfile, onProfileUpdate, isImpersonating = false }) 
         date_of_birth: formData.date_of_birth || null,
       };
 
-      const updatedProfile = await userService.upsertUserProfile(dataToSave);
-      onProfileUpdate(updatedProfile);
+      await userProfileService.updateUserProfile(userProfile.user_id, dataToSave);
+      // Pass the updated form data back to the parent to update the UI immediately
+      onProfileUpdate({ ...userProfile, ...dataToSave });
       setIsEditing(false);
       setSnackbar({ open: true, message: 'Profile updated successfully!', severity: 'success' });
     } catch (error) {
@@ -81,6 +83,7 @@ const AccountPage = ({ userProfile, onProfileUpdate, isImpersonating = false }) 
       handicap: userProfile.handicap || '',
       phone: userProfile.phone || '',
       date_of_birth: userProfile.date_of_birth || '',
+      scoring_bias: userProfile.scoring_bias ?? 1,
     });
     setIsEditing(false);
   };
