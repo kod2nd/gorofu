@@ -150,13 +150,30 @@ const StatInput = ({ stat, holeData, onHoleChange, isEditMode }) => {
   };
 
   if (stat.name === "hole_score") {
+    const par = parseInt(holeData.par, 10);
+    let primaryOptions = [3, 4, 5, 6, 7, 8]; // Default for when par isn't set
+    let extendedOptions = [1, 2, 9, 10, 11, 12];
+
+    if (!isNaN(par) && par === 3) {
+      primaryOptions = [2, 3, 4, 5, 6, 7];
+      extendedOptions = [1, 8, 9, 10, 11, 12];
+    } else if (!isNaN(par) && par === 4) {
+      primaryOptions = [3, 4, 5, 6, 7, 8];
+      extendedOptions = [1, 2, 9, 10, 11, 12];
+    } else if (!isNaN(par) && par >= 5) {
+      // Generate options from par-2 to par+3
+      primaryOptions = Array.from({ length: 6 }, (_, i) => par - 2 + i);
+      // Generate 6 extended options that don't overlap with primary
+      extendedOptions = [par - 4, par - 3, par + 4, par + 5, par + 6, par + 7].filter(s => s > 0);
+    }
+
     return (
       <QuickSelector
         stat={stat}
         holeData={holeData}
         onHoleChange={onHoleChange}
-        primaryOptions={[2, 3, 4, 5, 6, 7]}
-        extendedOptions={[1, 8, 9, 10, 11, 12]}
+        primaryOptions={primaryOptions}
+        extendedOptions={extendedOptions}
       />
     );
   }
