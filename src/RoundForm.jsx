@@ -207,6 +207,16 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
       updatedHole.hole_score = value;
     }
 
+    // UX Logic: If putts is 0, then putts_within4ft must be 0, and it must be a holeout from outside 4ft.
+    if (name === 'putts' && Number(value) === 0) {
+      updatedHole.putts_within4ft = 0;
+      updatedHole.holeout_from_outside_4ft = true;
+    }
+
+    if (name === 'putts_within4ft' && Number(value) === 0) {
+      updatedHole.holeout_from_outside_4ft = true;
+    }
+
     // If a hole is marked as not played, clear its data.
     if (name === 'played' && !checked) {
       updatedHole = { ...updatedHole,
