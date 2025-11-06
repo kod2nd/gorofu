@@ -200,6 +200,7 @@ export const roundService = {
         total_score,
         total_putts,
         total_holes_played,
+        is_eligible_round,
         tee_box,
         courses ( name ),
         round_holes ( * )
@@ -236,10 +237,9 @@ export const roundService = {
   },
 
   // Get cumulative stats for a user by calling the database function
-  async getCumulativeStats(userEmail, eligibleRoundsOnly) {
+  async getCumulativeStats(userEmail) {
     const { data, error } = await supabase.rpc('get_user_cumulative_stats', {
-      user_email_param: userEmail,
-      eligible_rounds_only: eligibleRoundsOnly
+      user_email_param: userEmail
     });
 
     if (error) throw error;

@@ -21,7 +21,7 @@ const ScorecardTable = ({ holes }) => {
       key: "par",
       label: "Par",
       getValue: (hole) => hole?.par || "-",
-      icon: "⛳",
+      icon: "🛺",
     },
     {
       key: "hole_score",
@@ -30,17 +30,23 @@ const ScorecardTable = ({ holes }) => {
       icon: "🎯",
     },
     {
+      key: "penalty_shots",
+      label: "Penalties",
+      getValue: (hole) => hole?.penalty_shots || "-",
+      icon: "❗️",
+    },
+    {
       key: "putts",
       label: "Putts",
       getValue: (hole) => hole?.putts ?? "-",
-      icon: "🏌️",
+      icon: "⛳",
     },
     {
       key: "scoring_zone_in_regulation",
       label: "SZIR",
       getValue: (hole) =>
         hole?.hole_score ? (hole.scoring_zone_in_regulation ? "✓" : "✗") : "-",
-      icon: "🎪",
+      icon: "🏌️",
     },
     {
       key: "holeout_within_3_shots_scoring_zone",
@@ -66,12 +72,7 @@ const ScorecardTable = ({ holes }) => {
         hole?.hole_score ? (hole.holeout_from_outside_4ft ? "✓" : "-") : "-",
       icon: "🍀",
     },
-    {
-      key: "penalty_shots",
-      label: "Penalties",
-      getValue: (hole) => hole?.penalty_shots || "-",
-      icon: "⚠️",
-    },
+
   ];
 
   const calculateTotal = (holes, key, start, end) => {

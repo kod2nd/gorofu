@@ -8,6 +8,8 @@ import {
   AppBar,
   Toolbar,
   Typography,
+  Snackbar,
+  Alert,
   useMediaQuery,
   IconButton,
 } from '@mui/material';
@@ -54,6 +56,7 @@ function App() {
   const [editingRoundId, setEditingRoundId] = useState(null);
   const [viewingRoundId, setViewingRoundId] = useState(null);
   const [impersonatedUser, setImpersonatedUser] = useState(null);
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -155,6 +158,10 @@ function App() {
   const handleViewRound = (roundId) => {
     setViewingRoundId(roundId);
     setActivePage('viewRound');
+  };
+
+  const showSnackbar = (message, severity = 'success') => {
+    setSnackbar({ open: true, message, severity });
   };
 
   const getPageTitle = (page) => {
@@ -344,6 +351,7 @@ function App() {
                       setEditingRoundId(null);
                       setActivePage('roundsHistory');
                     }}
+                    onSuccess={(message) => showSnackbar(message)}
                     roundIdToEdit={editingRoundId}
                   />
                 </PageContainer>
@@ -397,6 +405,18 @@ function App() {
                   />
                 </PageContainer>
               </Suspense>
+              <Snackbar
+                open={snackbar.open}
+                autoHideDuration={6000}
+                onClose={() => setSnackbar({ ...snackbar, open: false })}
+                anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+              >
+                <Alert 
+                  onClose={() => setSnackbar({ ...snackbar, open: false })} 
+                  severity={snackbar.severity} sx={{ width: '100%' }}>
+                  {snackbar.message}
+                </Alert>
+              </Snackbar>
             </Container>
           </Box>
         </Box>

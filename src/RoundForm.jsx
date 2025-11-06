@@ -44,7 +44,7 @@ const initialHoleState = {
   holeout_within_3_shots_scoring_zone: false,
 };
 
-const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
+const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit, onSuccess }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [loading, setLoading] = useState(false);
@@ -262,12 +262,11 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
 
     // Determine if it's an "eligible" round (>=7 holes for 9, >=14 for 18)
     let is_eligible_round = false;
-    if (courseDetails.round_type === '18_holes') {
-      is_eligible_round = holes.filter(h => h.played).length >= 14;
-    } else if (courseDetails.round_type === 'front_9') {
-      is_eligible_round = holes.slice(0, 9).filter(h => h.played).length >= 7;
-    } else if (courseDetails.round_type === 'back_9') {
-      is_eligible_round = holes.slice(9, 18).filter(h => h.played).length >= 7;
+    const playedHolesWithData = holes.filter(h => h.hole_score && (h.putts !== '' || h.holeout_from_outside_4ft));
+    if (courseDetails.round_type === '18_holes' && playedHolesWithData.length >= 14) {
+      is_eligible_round = true;
+    } else if ((courseDetails.round_type === 'front_9' || courseDetails.round_type === 'back_9') && playedHolesWithData.length >= 7) {
+      is_eligible_round = true;
     }
 
 
@@ -343,11 +342,12 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
       if (roundIdToEdit) {
         // Update existing round
         await roundService.updateRound(roundIdToEdit, roundData, holesData, user.email);
-        setSnackbar({ open: true, message: 'Round updated successfully!', severity: 'success' });
+        // Use the callback for consistency
+        if (onSuccess) onSuccess('Round updated successfully!');
       } else {
         // Create new round
         await roundService.createRound(roundData, holesData, user.email);
-        setSnackbar({ open: true, message: 'Round added successfully!', severity: 'success' });
+        if (onSuccess) onSuccess('Round added successfully!');
       }
       closeForm();
     } catch (error) {

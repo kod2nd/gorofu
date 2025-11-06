@@ -289,10 +289,6 @@ const RoundDetailsPage = ({ roundId, user, onEdit, onBack }) => {
                   value={round.total_penalties || 0}
                 />
                 <DetailItem
-                  label="Played Holes"
-                  value={`${playedHoles.length} / 18`}
-                />
-                <DetailItem
                   label="Eligible"
                   value={round.is_eligible_round ? "✓" : "✗"}
                 />

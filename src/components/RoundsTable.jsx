@@ -45,7 +45,7 @@ const RoundsTable = ({ rounds, onViewRound, onDelete }) => {
                 {`${round.round_holes.filter(h => h.scoring_zone_in_regulation).length} / ${round.total_holes_played}`}
               </TableCell>
               <TableCell align="center">
-                {`${round.round_holes.filter(h => h.holeout_within_3_shots_scoring_zone).length} / ${round.round_holes.filter(h => h.scoring_zone_in_regulation).length}`}
+                {`${round.round_holes.filter(h => h.holeout_within_3_shots_scoring_zone).length} / ${round.total_holes_played}`}
               </TableCell>
               <TableCell align="center">{round.is_eligible_round ? '✓' : '✗'}</TableCell>
               <TableCell align="center">

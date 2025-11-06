@@ -284,17 +284,21 @@ END;
 $$;
 
 -- Drop the function first to allow changing the return signature
-DROP FUNCTION IF EXISTS public.get_user_cumulative_stats(TEXT, BOOLEAN); -- Keep this to ensure idempotency
+DROP FUNCTION IF EXISTS public.get_user_cumulative_stats(TEXT); -- Keep this to ensure idempotency
 
 -- Function to get cumulative (all-time) stats for a user
-CREATE OR REPLACE FUNCTION get_user_cumulative_stats(user_email_param TEXT, eligible_rounds_only BOOLEAN)
-RETURNS TABLE(total_rounds_played BIGINT, total_holes_played BIGINT, avg_score NUMERIC, avg_putts NUMERIC, total_szir BIGINT)
+CREATE OR REPLACE FUNCTION get_user_cumulative_stats(user_email_param TEXT)
+RETURNS TABLE(total_rounds_played BIGINT, eligible_rounds_count BIGINT, total_holes_played BIGINT, avg_score NUMERIC, avg_putts NUMERIC, total_szir BIGINT)
 LANGUAGE plpgsql STABLE SET search_path = 'public'
 AS $$
 BEGIN
     RETURN QUERY
     SELECT
         COUNT(DISTINCT r.id)::BIGINT AS total_rounds_played,
+        COALESCE(
+            COUNT(DISTINCT r.id) FILTER (WHERE r.is_eligible_round = TRUE),
+            0
+        )::BIGINT AS eligible_rounds_count,
         COALESCE(
             SUM(CASE WHEN rh.hole_score IS NOT NULL AND rh.putts IS NOT NULL THEN 1 ELSE 0 END),
             0
@@ -307,8 +311,7 @@ BEGIN
     LEFT JOIN
         round_holes rh ON r.id = rh.round_id
     WHERE
-        r.user_email = user_email_param
-        AND (NOT eligible_rounds_only OR r.is_eligible_round = TRUE);
+        r.user_email = user_email_param;
 END;
 $$;
 
