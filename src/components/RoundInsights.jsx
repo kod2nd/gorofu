@@ -45,7 +45,7 @@ const RoundInsights = ({ insightsData }) => {
   const SZIRPercentage = totalHolesPlayed > 0 ? (totalSZIR / totalHolesPlayed) * 100 : null;
   const multiPuttRatio = totalHolesPlayed > 0 ? (holesWithMoreThanOnePuttWithin4ft / totalHolesPlayed) * 100 : null;
   const holeoutFromOutside4ftPercentage = totalHolesPlayed > 0 ? (totalHoleoutFromOutside4ft / totalHolesPlayed) * 100 : null;
-  const holeoutWithin3ShotsPercentage = totalSZIR > 0 ? (totalHoleoutWithin3Shots / totalSZIR) * 100 : null;
+  const holeoutWithin3ShotsPercentage = totalSZIR > 0 ? (totalHoleoutWithin3Shots / totalHolesPlayed) * 100 : null;
 
   return (
     <Paper {...cardStyles}>
@@ -103,7 +103,7 @@ const RoundInsights = ({ insightsData }) => {
           <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: { xs: 'calc(50% - 8px)', sm: 'calc(33.33% - 11px)' } }}>
             <StatCard
                 label="SZ Par (Holeout in 3)"
-                value={`${totalHoleoutWithin3Shots} / ${totalSZIR}`}
+                value={`${totalHoleoutWithin3Shots} / ${totalHolesPlayed}`}
                 percentage={holeoutWithin3ShotsPercentage}
                 tooltip="Holing out in 3 or fewer shots once inside the Scoring Zone. This is your conversion rate for scoring opportunities."
             />

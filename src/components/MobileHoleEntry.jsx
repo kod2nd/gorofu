@@ -412,7 +412,7 @@ const MobileHoleEntry = ({
         }}
       >
         {holesToDisplay.map((_, idx) => {
-          const holeNum = nineStartIndex + idx;
+          const holeNum = startIndex + idx;
           const isActive = currentHoleIndex === holeNum;
           const hasScore = holes[holeNum].hole_score > 0;
           return (
