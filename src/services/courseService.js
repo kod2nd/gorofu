@@ -89,7 +89,7 @@ export const courseService = {
 
     const { data, error } = await supabase
       .from('course_tee_boxes')
-      .select('hole_number, par, distance')
+      .select('hole_number, par, distance, yards_or_meters_unit')
       .eq('course_id', courseId)
       .eq('tee_box', teeBox)
       .order('hole_number');

@@ -159,6 +159,12 @@ const RoundForm = ({ user, userProfile, closeForm, roundIdToEdit }) => {
         const teeBoxHoles = await courseService.getTeeBoxData(courseDetails.course_id, courseDetails.tee_box);
         
         if (teeBoxHoles && teeBoxHoles.length > 0) {
+          // Auto-set the yards/meters unit based on the first hole's data
+          const unit = teeBoxHoles[0].yards_or_meters_unit;
+          if (unit) {
+            handleCourseChange({ target: { name: 'yards_or_meters_unit', value: unit } });
+          }
+
           setHoles(currentHoles => 
             currentHoles.map((hole) => {
               const matchingTeeBoxHole = teeBoxHoles.find(tbh => tbh.hole_number === hole.hole_number);

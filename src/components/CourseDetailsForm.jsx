@@ -242,6 +242,12 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
               exclusive
               fullWidth
               onChange={(e, value) => handleToggleButtonChange('yards_or_meters_unit', value)}
+              sx={{
+                '& .Mui-selected': {
+                  backgroundColor: 'primary.dark',
+                  color: 'white',
+                }
+              }}
             >
               <ToggleButton value="meters">Meters</ToggleButton>
               <ToggleButton value="yards">Yards</ToggleButton>
@@ -256,6 +262,12 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
               exclusive
               fullWidth
               onChange={(e, value) => handleToggleButtonChange('round_type', value)}
+              sx={{
+                '& .Mui-selected': {
+                  backgroundColor: 'primary.dark',
+                  color: 'white',
+                }
+              }}
             >
               <ToggleButton value="18_holes">Full 18</ToggleButton>
               <ToggleButton value="front_9">Front 9</ToggleButton>
@@ -270,7 +282,13 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
               exclusive
               fullWidth
               onChange={(e, value) => handleToggleButtonChange('scoring_zone_level', value)}
-              sx={{ flexWrap: 'wrap' }}
+              sx={{ 
+                flexWrap: 'wrap',
+                '& .Mui-selected': {
+                  backgroundColor: 'primary.dark',
+                  color: 'white',
+                }
+              }}
             >
               <ToggleButton value="100m - Novice">100m</ToggleButton>
               <ToggleButton value="75m - Journeyman">75m</ToggleButton>
