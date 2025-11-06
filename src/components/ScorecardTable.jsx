@@ -97,6 +97,65 @@ const ScorecardTable = ({ holes, scoringBias = 0 }) => { // Default to 0 (Par)
     total: rowDefinitions.map(rd => ({ key: rd.key, value: calculateTotal(normalizedHoles, rd.key, 0, 18) })),
   };
 
+  const renderScore = (hole, rowDef) => {
+    if (!hole?.hole_score || !hole?.par) {
+      return <Typography variant="body2" sx={{ fontWeight: "bold", fontSize: "0.75rem" }}>{hole?.hole_score || '-'}</Typography>;
+    }
+
+    const scoreDiff = hole.hole_score - hole.par; // This is correct
+    const scoreValue = rowDef.getValue(hole);
+
+    const shapeSize = 22;
+    const shapeSx = {
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: shapeSize,
+      height: shapeSize,
+      boxSizing: 'border-box',
+    };
+
+    // Double Circle: Eagle or better relative to bias
+    if (scoreDiff <= scoringBias - 2) {
+      return (
+        <Box sx={{ ...shapeSx, borderRadius: '50%', border: `1px solid ${theme.palette.success.main}` }}>
+          <Box sx={{ ...shapeSx, width: shapeSize - 6, height: shapeSize - 6, borderRadius: '50%', border: `1px solid ${theme.palette.success.main}` }}>
+            <Typography variant="body2" sx={{ fontWeight: "bold", fontSize: "0.75rem" }}>{scoreValue}</Typography>
+          </Box>
+        </Box>
+      );
+    }
+    // Single Circle: Birdie relative to bias
+    if (scoreDiff === scoringBias - 1) {
+      return (
+        <Box sx={{ ...shapeSx, borderRadius: '50%', border: `1px solid ${theme.palette.success.main}` }}>
+          <Typography variant="body2" sx={{ fontWeight: "bold", fontSize: "0.75rem" }}>{scoreValue}</Typography>
+        </Box>
+      );
+    }
+    // Double Square: Double bogey or worse relative to bias
+    if (scoreDiff >= scoringBias + 2) {
+      return (
+        <Box sx={{ ...shapeSx, borderRadius: 1, border: `1px solid ${theme.palette.error.main}` }}>
+          <Box sx={{ ...shapeSx, width: shapeSize - 6, height: shapeSize - 6, borderRadius: 1, border: `1px solid ${theme.palette.error.main}` }}>
+            <Typography variant="body2" sx={{ fontWeight: "bold", fontSize: "0.75rem", }}>{scoreValue}</Typography>
+          </Box>
+        </Box>
+      );
+    }
+    // Single Square: Bogey relative to bias
+    if (scoreDiff === scoringBias + 1) {
+      return (
+        <Box sx={{ ...shapeSx, borderRadius: 1, border: `1px solid` }}>
+          <Typography variant="body2" sx={{ fontWeight: "bold", fontSize: "0.75rem" }}>{scoreValue}</Typography>
+        </Box>
+      );
+    }
+
+    // Default: Par relative to bias
+    return <Typography variant="body2" sx={{ fontWeight: "bold", fontSize: "0.75rem" }}>{scoreValue}</Typography>;
+  };
+
   return (
     <Box
       sx={{
@@ -153,7 +212,7 @@ const ScorecardTable = ({ holes, scoringBias = 0 }) => { // Default to 0 (Par)
                   left: 0,
                   zIndex: 20,
                   backgroundColor: theme.palette.primary.main,
-                  minWidth: 90,
+                  minWidth: 70,
                   textAlign: "center",
                   borderRight: `2px solid ${theme.palette.primary.dark}`,
                 }}
@@ -181,7 +240,7 @@ const ScorecardTable = ({ holes, scoringBias = 0 }) => { // Default to 0 (Par)
                   key={i}
                   align="center"
                   sx={{
-                    minWidth: 52, // Keep minWidth for alignment
+                    minWidth: 38, // Keep minWidth for alignment
                   }}
                 >
                   <Box
@@ -212,7 +271,7 @@ const ScorecardTable = ({ holes, scoringBias = 0 }) => { // Default to 0 (Par)
                 </TableCell>
               ))}
               {/* OUT Column */}
-              <TableCell align="center" sx={{ minWidth: 52, backgroundColor: theme.palette.warning.main, color: 'white', fontWeight: 'bold', borderRight: `2px solid ${theme.palette.warning.dark}` }}>
+              <TableCell align="center" sx={{ minWidth: 38, backgroundColor: theme.palette.warning.main, color: 'white', fontWeight: 'bold', borderRight: `2px solid ${theme.palette.warning.dark}` }}>
                 OUT
               </TableCell>
               {/* Holes 10-18 */}
@@ -221,7 +280,7 @@ const ScorecardTable = ({ holes, scoringBias = 0 }) => { // Default to 0 (Par)
                   key={i + 9}
                   align="center"
                   sx={{
-                    minWidth: 52, // Keep minWidth for alignment
+                    minWidth: 38, // Keep minWidth for alignment
                   }}
                 >
                   <Box
@@ -252,15 +311,15 @@ const ScorecardTable = ({ holes, scoringBias = 0 }) => { // Default to 0 (Par)
                 </TableCell>
               ))}
               {/* IN Column */}
-              <TableCell align="center" sx={{ minWidth: 52, backgroundColor: theme.palette.info.main, color: 'white', fontWeight: 'bold', borderRight: `2px solid ${theme.palette.info.dark}` }}>
+              <TableCell align="center" sx={{ minWidth: 38, backgroundColor: theme.palette.info.main, color: 'white', fontWeight: 'bold', borderRight: `2px solid ${theme.palette.info.dark}` }}>
                 IN
               </TableCell>
                             {/* OUT Column */}
-              <TableCell align="center" sx={{ minWidth: 52, backgroundColor: theme.palette.warning.main, color: 'white', fontWeight: 'bold', borderRight: `2px solid ${theme.palette.warning.dark}` }}>
+              <TableCell align="center" sx={{ minWidth: 38, backgroundColor: theme.palette.warning.main, color: 'white', fontWeight: 'bold', borderRight: `2px solid ${theme.palette.warning.dark}` }}>
                 OUT
               </TableCell>
               {/* TOTAL Column */}
-              <TableCell align="center" sx={{ minWidth: 52, backgroundColor: theme.palette.success.main, color: 'white', fontWeight: 'bold' }}>
+              <TableCell align="center" sx={{ minWidth: 38, backgroundColor: theme.palette.success.main, color: 'white', fontWeight: 'bold' }}>
                 TOT
               </TableCell>
             </TableRow>
@@ -290,7 +349,7 @@ const ScorecardTable = ({ holes, scoringBias = 0 }) => { // Default to 0 (Par)
                     fontWeight: "bold",
                     borderRight: `2px solid ${theme.palette.primary.main}`,
                     boxShadow: "3px 0 6px rgba(0,0,0,0.1)",
-                    minWidth: 90,
+                    minWidth: 70,
                     background: `linear-gradient(135deg, ${theme.palette.background.paper} 0%, ${theme.palette.grey[50]} 100%)`,
                     "&:hover": {
                       background: `linear-gradient(135deg, ${theme.palette.primary.light}10 0%, ${theme.palette.grey[100]} 100%)`,
@@ -334,64 +393,33 @@ const ScorecardTable = ({ holes, scoringBias = 0 }) => { // Default to 0 (Par)
                     key={i}
                     align="center"
                     sx={{
-                      minWidth: 52,
                       borderRight: `1px solid ${theme.palette.divider}`,
-                      ...(rowDef.key === "hole_score" && hole?.hole_score && hole?.par
-                        ? (() => {
-                            const scoreDiff = hole.hole_score - hole.par;
-                            return {
-                              color:
-                                scoreDiff < scoringBias
-                                  ? "success.main"
-                                  : scoreDiff > scoringBias
-                                  ? "error.main"
-                                  : "inherit",
-                              fontWeight: "bold",
-                              backgroundColor:
-                                scoreDiff < scoringBias
-                                  ? theme.palette.success.light + "40"
-                                  : scoreDiff > scoringBias
-                                  ? theme.palette.error.light + "40"
-                                  : "inherit",
-                            };
-                          })()
-                        : {}),
-                      ...(rowDef.key === "penalty_shots" &&
-                        hole?.penalty_shots > 0 && {
+                      minWidth: 38,
+                      ...(rowDef.key === "putts_within4ft" &&
+                        hole?.putts_within4ft > 1 && {
                           color: "error.main",
                           fontWeight: "bold",
                           backgroundColor: theme.palette.error.light + "40",
                         }),
-                      ...(rowDef.key === "scoring_zone_in_regulation" &&
-                        hole?.scoring_zone_in_regulation && {
-                          backgroundColor: theme.palette.success.light + "30",
-                        }),
-                      ...(rowDef.key === "holeout_within_3_shots_scoring_zone" &&
-                        hole?.holeout_within_3_shots_scoring_zone && {
-                          backgroundColor: theme.palette.info.light + "30",
-                        }),
-                      ...(rowDef.key === "holeout_from_outside_4ft" &&
-                        hole?.holeout_from_outside_4ft && {
-                          backgroundColor: theme.palette.warning.light + "30",
-                        }),
                     }}
                   >
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        fontWeight: "bold",
-                        fontSize: "0.75rem",
-                      }}
-                    >
-                      {rowDef.getValue(hole)}
-                    </Typography>
+                    {rowDef.key === 'hole_score' ? (
+                      renderScore(hole, rowDef)
+                    ) : (
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}
+                      >
+                        {rowDef.getValue(hole)}
+                      </Typography>
+                    )}
                   </TableCell>
                 ))}
                 {/* OUT Total */}
                 <TableCell align="center" sx={{ fontWeight: 'bold', backgroundColor: theme.palette.grey[400], borderRight: `2px solid ${theme.palette.warning.main}` }}>
                   {
                     (() => {
-                      const total = totals.out.find(t => t.key === rowDef.key)?.value;
+                      const total = totals.out.find(t => t.key === rowDef.key)?.value || 0;
                       if (['scoring_zone_in_regulation', 'holeout_within_3_shots_scoring_zone', 'holeout_from_outside_4ft'].includes(rowDef.key)) {
                         return total > 0 ? total : '-';
                       }
@@ -405,58 +433,33 @@ const ScorecardTable = ({ holes, scoringBias = 0 }) => { // Default to 0 (Par)
                     key={i + 9}
                     align="center"
                     sx={{
-                      minWidth: 52,
+                      minWidth: 38,
                       borderRight: `1px solid ${theme.palette.divider}`,
-                      ...(rowDef.key === "hole_score" && hole?.hole_score && hole?.par
-                        ? (() => {
-                            const scoreDiff = hole.hole_score - hole.par;
-                            return {
-                              color:
-                                scoreDiff < scoringBias
-                                  ? "success.main"
-                                  : scoreDiff > scoringBias
-                                  ? "error.main"
-                                  : "inherit",
-                              fontWeight: "bold",
-                              backgroundColor:
-                                scoreDiff < scoringBias
-                                  ? theme.palette.success.light + "40"
-                                  : scoreDiff > scoringBias
-                                  ? theme.palette.error.light + "40"
-                                  : "inherit",
-                            };
-                          })()
-                        : {}),
-                      ...(rowDef.key === "penalty_shots" &&
-                        hole?.penalty_shots > 0 && {
+                      ...(rowDef.key === "putts_within4ft" &&
+                        hole?.putts_within4ft > 1 && {
                           color: "error.main",
                           fontWeight: "bold",
                           backgroundColor: theme.palette.error.light + "40",
                         }),
-                      ...(rowDef.key === "scoring_zone_in_regulation" &&
-                        hole?.scoring_zone_in_regulation && {
-                          backgroundColor: theme.palette.success.light + "30",
-                        }),
-                      ...(rowDef.key === "holeout_within_3_shots_scoring_zone" &&
-                        hole?.holeout_within_3_shots_scoring_zone && {
-                          backgroundColor: theme.palette.info.light + "30",
-                        }),
-                      ...(rowDef.key === "holeout_from_outside_4ft" &&
-                        hole?.holeout_from_outside_4ft && {
-                          backgroundColor: theme.palette.warning.light + "30",
-                        }),
                     }}
                   >
-                    <Typography variant="body2" sx={{ fontWeight: "bold", fontSize: "0.75rem" }}>
-                      {rowDef.getValue(hole)}
-                    </Typography>
+                    {rowDef.key === 'hole_score' ? (
+                      renderScore(hole, rowDef)
+                    ) : (
+                      <Typography
+                        variant="body2"
+                        sx={{ fontWeight: 'bold', fontSize: '0.75rem' }}
+                      >
+                        {rowDef.getValue(hole)}
+                      </Typography>
+                    )}
                   </TableCell>
                 ))}
                 {/* IN Total */}
                 <TableCell align="center" sx={{ fontWeight: 'bold', backgroundColor: theme.palette.grey[500], borderRight: `2px solid ${theme.palette.info.main}` }}>
                   {
                     (() => {
-                      const total = totals.in.find(t => t.key === rowDef.key)?.value;
+                      const total = totals.in.find(t => t.key === rowDef.key)?.value || 0;
                       if (['scoring_zone_in_regulation', 'holeout_within_3_shots_scoring_zone', 'holeout_from_outside_4ft'].includes(rowDef.key)) {
                         return total > 0 ? total : '-';
                       }
@@ -468,7 +471,7 @@ const ScorecardTable = ({ holes, scoringBias = 0 }) => { // Default to 0 (Par)
                 <TableCell align="center" sx={{ fontWeight: 'bold', backgroundColor: theme.palette.grey[400], borderRight: `2px solid ${theme.palette.warning.main}` }}>
                   {
                     (() => {
-                      const total = totals.out.find(t => t.key === rowDef.key)?.value;
+                      const total = totals.out.find(t => t.key === rowDef.key)?.value || 0;
                       if (['scoring_zone_in_regulation', 'holeout_within_3_shots_scoring_zone', 'holeout_from_outside_4ft'].includes(rowDef.key)) {
                         return total > 0 ? total : '-';
                       }
@@ -480,7 +483,7 @@ const ScorecardTable = ({ holes, scoringBias = 0 }) => { // Default to 0 (Par)
                 <TableCell align="center" sx={{ fontWeight: 'bold', color: 'white', backgroundColor: theme.palette.grey[700] }}>
                   {
                     (() => {
-                      const total = totals.total.find(t => t.key === rowDef.key)?.value;
+                      const total = totals.total.find(t => t.key === rowDef.key)?.value || 0;
                       if (rowDef.key === 'hole_score') {
                         const parTotal = totals.total.find(t => t.key === 'par')?.value;
                         const diff = total - parTotal;
