@@ -133,6 +133,10 @@ export const roundService = {
       par: parseInt(hole.par) || null,
       distance: parseInt(hole.distance) || null,
       putts: parseInt(hole.putts) || null,
+      putts_within4ft: parseInt(hole.putts_within4ft) || 0,
+      scoring_zone_in_regulation: hole.scoring_zone_in_regulation || false,
+      holeout_from_outside_4ft: hole.holeout_from_outside_4ft || false,
+      holeout_within_3_shots_scoring_zone: hole.holeout_within_3_shots_scoring_zone || false,
     }));
 
     const { error: holesError } = await supabase
