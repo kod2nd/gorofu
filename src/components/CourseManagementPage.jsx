@@ -15,6 +15,7 @@ import {
   IconButton,
   CircularProgress,
   Alert,
+  Snackbar,
   Divider,
   Autocomplete,
   TextField,
@@ -38,6 +39,11 @@ const CourseManagementPage = ({ currentUser, onBack }) => {
     open: false,
     courseId: null,
     courseName: '',
+  });
+  const [snackbar, setSnackbar] = useState({
+    open: false,
+    message: '',
+    severity: 'success',
   });
 
   useEffect(() => {
@@ -81,11 +87,12 @@ const CourseManagementPage = ({ currentUser, onBack }) => {
   const handleSave = async (courseData) => {
     try {
       await courseService.saveCourseWithTeeBoxes(courseData, currentUser.email);
+      setSnackbar({ open: true, message: 'Course saved successfully!', severity: 'success' });
       setIsCreating(false);
       setEditingCourse(null);
       loadCourses(countryFilter === 'All Countries' ? null : countryFilter);
     } catch (err) {
-      setError('Failed to save course: ' + err.message);
+      setSnackbar({ open: true, message: `Failed to save course: ${err.message}`, severity: 'error' });
     }
   };
 
@@ -120,10 +127,11 @@ const CourseManagementPage = ({ currentUser, onBack }) => {
 
     try {
       await courseService.deleteCourse(courseId, currentUser.email);
+      setSnackbar({ open: true, message: 'Course deleted successfully.', severity: 'info' });
       setEditingCourse(null);
       loadCourses(countryFilter === 'All Countries' ? null : countryFilter);
     } catch (err) {
-      setError('Failed to delete course: ' + err.message);
+      setSnackbar({ open: true, message: `Failed to delete course: ${err.message}`, severity: 'error' });
     } finally {
       setConfirmDelete({ open: false, courseId: null, courseName: '' });
     }
@@ -213,6 +221,22 @@ const CourseManagementPage = ({ currentUser, onBack }) => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      {/* Snackbar for feedback */}
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert 
+          onClose={() => setSnackbar({ ...snackbar, open: false })} 
+          severity={snackbar.severity} 
+          sx={{ width: '100%' }}
+        >
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </>
   );
 };

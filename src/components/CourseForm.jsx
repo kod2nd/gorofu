@@ -9,7 +9,9 @@ import {
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  IconButton
+  IconButton,
+  ToggleButtonGroup,
+  ToggleButton,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -68,6 +70,12 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
     setCourse({ ...course, tee_boxes: newTeeBoxes, holes: newHoles });
   };
 
+  const handleTeeBoxUnitChange = (index, newUnit) => {
+    if (!newUnit) return; // Prevent unselecting both
+    const newTeeBoxes = [...course.tee_boxes];
+    newTeeBoxes[index].yards_or_meters_unit = newUnit;
+    setCourse({ ...course, tee_boxes: newTeeBoxes });
+  };
   const handleHoleDataChange = (holeIndex, field, value) => {
     const newHoles = [...course.holes];
     newHoles[holeIndex][field] = value;
@@ -210,14 +218,27 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
                 }}
               >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <TextField 
-                    label={`Tee ${index + 1} Name`} 
-                    value={teeBox.name} 
-                    onChange={(e) => handleTeeBoxNameChange(index, e.target.value)} 
-                    fullWidth 
-                    error={course.tee_boxes.some((tb, i) => tb.name.trim() === teeBox.name.trim() && i !== index)}
-                    helperText={course.tee_boxes.some((tb, i) => tb.name.trim() === teeBox.name.trim() && i !== index) ? 'Duplicate name' : ''}
-                  />
+                  <Box sx={{ flexGrow: 1 }}>
+                    <TextField 
+                      label={`Tee ${index + 1} Name`} 
+                      value={teeBox.name} 
+                      onChange={(e) => handleTeeBoxNameChange(index, e.target.value)} 
+                      fullWidth 
+                      error={course.tee_boxes.some((tb, i) => tb.name.trim() === teeBox.name.trim() && i !== index)}
+                      helperText={course.tee_boxes.some((tb, i) => tb.name.trim() === teeBox.name.trim() && i !== index) ? 'Duplicate name' : ''}
+                    />
+                    <ToggleButtonGroup
+                      color="primary"
+                      value={teeBox.yards_or_meters_unit}
+                      exclusive
+                      onChange={(e, value) => handleTeeBoxUnitChange(index, value)}
+                      size="small"
+                      sx={{ mt: 1, width: '100%' }}
+                    >
+                      <ToggleButton value="meters" sx={{ flexGrow: 1 }}>Meters</ToggleButton>
+                      <ToggleButton value="yards" sx={{ flexGrow: 1 }}>Yards</ToggleButton>
+                    </ToggleButtonGroup>
+                  </Box>
                   <IconButton onClick={() => removeTeeBox(index)} color="error"><DeleteIcon /></IconButton>
                 </Box>
               </Box>

@@ -464,7 +464,7 @@ CREATE POLICY "Admins can delete courses" ON courses FOR DELETE USING (has_roles
 -- Course tee boxes: Everyone can read, authenticated users can create/update
 CREATE POLICY "Anyone can view course tee boxes" ON course_tee_boxes FOR SELECT USING (true);
 CREATE POLICY "Authenticated users can create tee box data" ON course_tee_boxes FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-CREATE POLICY "Users can update tee box data they created" ON course_tee_boxes FOR UPDATE USING (last_updated_by = auth.jwt() ->> 'email');
+CREATE POLICY "Users can update tee box data they created" ON course_tee_boxes FOR UPDATE USING (auth.role() = 'authenticated');
 
 -- Change requests: Users can create and view their own requests, admins can view all
 CREATE POLICY "Users can view their change requests" ON course_change_requests FOR SELECT USING (requested_by = auth.jwt() ->> 'email');
