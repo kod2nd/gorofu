@@ -1,37 +1,55 @@
 import React from 'react';
 import { Box, Typography, Paper, Tooltip } from '@mui/material';
-import { elevatedCardStyles } from '../styles/commonStyles';
 import StreakBox from './StreakBox';
 
 const StatCard = ({ label, value, tooltip }) => (
-  <Paper sx={{ 
-    p: 2, 
-    textAlign: 'center', 
-    height: '100%', 
-    display: 'flex', 
-    flexDirection: 'column',
-    justifyContent: 'center',
-    // Frosted glass / shiny badge effect
-    background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.95), rgba(255, 255, 255, 0.6))',
-    backdropFilter: 'blur(10px)',
-    border: '1px solid rgba(255, 255, 255, 0.9)',
-    color: 'black',
-    transition: 'all 0.2s ease-in-out',
-    '&:hover': {
-      transform: 'translateY(-2px)',
-      background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.4))',
-    }
-  }}>
+  <Paper 
+    elevation={3}
+    sx={{ 
+      p: 2, 
+      textAlign: 'center', 
+      height: '100%', 
+      display: 'flex', 
+      flexDirection: 'column',
+      justifyContent: 'center',
+      // Solid white with strong shadow for visibility
+      background: 'white',
+      borderRadius: 2,
+      border: '2px solid rgba(255, 255, 255, 0.4)',
+      transition: 'all 0.3s ease',
+      '&:hover': {
+        transform: 'translateY(-6px)',
+        boxShadow: '0 12px 32px rgba(0, 0, 0, 0.3)',
+        borderColor: 'white',
+      }
+    }}
+  >
     <Tooltip title={tooltip || ''} arrow placement="top">
       <Box>
-        <Typography variant="caption" display="block" sx={{ lineHeight: 1.2, minHeight: '2.4em', textTransform: 'uppercase', opacity: 0.9 }}>
+        <Typography 
+          variant="caption" 
+          display="block" 
+          sx={{ 
+            lineHeight: 1.2, 
+            minHeight: '2.4em', 
+            textTransform: 'uppercase', 
+            letterSpacing: '0.5px',
+            fontWeight: 600,
+            color: 'text.secondary'
+          }}
+        >
           {label}
         </Typography>
         <Typography 
           variant="h5" 
           component="div"
           sx={{ 
-            fontWeight: 'bold', my: 0.5, display: 'flex', justifyContent: 'center', alignItems: 'center', color: 'black'
+            fontWeight: 'bold', 
+            my: 0.5, 
+            display: 'flex', 
+            justifyContent: 'center', 
+            alignItems: 'center',
+            color: 'primary.main'
           }}
         >
           {value ?? '-'}
