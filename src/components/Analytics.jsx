@@ -417,7 +417,7 @@ const Analytics = ({ recentRounds, recentStats }) => {
             scoreDataKey="Par 5 Avg Score"
             puttsDataKey="Par 5 Avg Putts"
             scoreColor={COLORS.primary}
-            puttsColor={COLORS.warning}
+            puttsColor={COLORS.success}
           />
         )}
 
