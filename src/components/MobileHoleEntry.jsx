@@ -355,7 +355,8 @@ const MobileHoleEntry = ({
     if (diff === -1) return { label: "Birdie", color: "success.main" };
     if (diff === 0) return { label: "Par", color: "text.secondary" };
     if (diff === 1) return { label: "Bogey", color: "warning.main" };
-    if (diff > 1) return { label: "Dbl Bogey+", color: "error.main" };
+    if (diff === 2) return { label: "Dbl Bogey", color: "error.main" };
+    if (diff > 2) return { label: "Triple Bogey+", color: "error.main" };
     return null;
   };
   const scoreBadge = getScoreBadge();

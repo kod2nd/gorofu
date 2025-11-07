@@ -377,8 +377,9 @@ BEGIN
         COALESCE(SUM(CASE WHEN rh.putts >= 3 THEN 1 ELSE 0 END), 0)::BIGINT,
         COALESCE(SUM(CASE WHEN rh.hole_score < rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
         COALESCE(SUM(CASE WHEN rh.hole_score = rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.hole_score = rh.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.hole_score >= rh.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN rh.hole_score = rh.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT, -- Bogey
+        COALESCE(SUM(CASE WHEN rh.hole_score = rh.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT, -- Double Bogey
+        COALESCE(SUM(CASE WHEN rh.hole_score >= rh.par + 3 THEN 1 ELSE 0 END), 0)::BIGINT, -- Triple Bogey+
         (AVG(rh.putts) FILTER (WHERE ctb.par = 3))::NUMERIC,
         (AVG(rh.putts) FILTER (WHERE ctb.par = 4))::NUMERIC,
         (AVG(rh.putts) FILTER (WHERE ctb.par = 5))::NUMERIC,

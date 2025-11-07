@@ -19,7 +19,8 @@ const SCORE_DISTRIBUTION_COLORS = {
   'Birdie+': '#10b981',
   'Par': '#3b82f6',
   'Bogey': '#f59e0b',
-  'Double+': '#ef4444',
+  'Dbl Bogey': '#ef4444',
+  'Triple+': '#dc2626', // A darker red for more severe errors
 };
 
 const ChartCard = ({ title, subtitle, children, icon }) => (
@@ -312,14 +313,16 @@ const Analytics = ({ recentRounds, recentStats }) => {
     const birdie = recentStats[`${prefix}birdie_or_better_count`] || 0;
     const par = recentStats[`${prefix}par_count`] || 0;
     const bogey = recentStats[`${prefix}bogey_count`] || 0;
-    const double = recentStats[`${prefix}double_bogey_plus_count`] || 0;
-    const total = birdie + par + bogey + double;
+    const double = recentStats[`${prefix}double_bogey_count`] || 0;
+    const triplePlus = recentStats[`${prefix}triple_bogey_plus_count`] || 0;
+    const total = birdie + par + bogey + double + triplePlus;
     if (total === 0) return null;
     return {
       'Birdie+': birdie,
       'Par': par,
       'Bogey': bogey,
-      'Double+': double,
+      'Dbl Bogey': double,
+      'Triple+': triplePlus,
     };
   };
 
@@ -600,7 +603,8 @@ const Analytics = ({ recentRounds, recentStats }) => {
                 <Bar dataKey="Birdie+" stackId="a" fill={SCORE_DISTRIBUTION_COLORS['Birdie+']} />
                 <Bar dataKey="Par" stackId="a" fill={SCORE_DISTRIBUTION_COLORS['Par']} />
                 <Bar dataKey="Bogey" stackId="a" fill={SCORE_DISTRIBUTION_COLORS['Bogey']} />
-                <Bar dataKey="Double+" stackId="a" fill={SCORE_DISTRIBUTION_COLORS['Double+']} />
+                <Bar dataKey="Dbl Bogey" stackId="a" fill={SCORE_DISTRIBUTION_COLORS['Dbl Bogey']} />
+                <Bar dataKey="Triple+" stackId="a" fill={SCORE_DISTRIBUTION_COLORS['Triple+']} />
               </BarChart>
             </ResponsiveContainer>
           </ChartCard>

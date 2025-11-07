@@ -114,9 +114,31 @@ const ScorecardTable = ({ holes, scoringBias = 0 }) => { // Default to 0 (Par)
       height: shapeSize,
       boxSizing: 'border-box',
     };
+    // Condor or better
+    if (scoreDiff <= scoringBias - 3) {
+      return (
+        <Box sx={{ ...shapeSx, borderRadius: '50%', border: `1px solid ${theme.palette.success.main}` }}>
+          <Box sx={{ ...shapeSx, width: shapeSize - 6, height: shapeSize - 6, borderRadius: '50%', border: `1px solid ${theme.palette.success.main}` }}>
+            <Box sx={{ ...shapeSx, width: shapeSize - 12, height: shapeSize - 12, borderRadius: '50%', border: `1px solid ${theme.palette.success.main}` }}>
+              <Typography variant="body2" sx={{ fontWeight: "bold", fontSize: "0.75rem" }}>{scoreValue}</Typography>
+            </Box>
+          </Box>
+        </Box>
+      );
+    }
 
+    // Triangle for Triple Bogey or worse
+    if (scoreDiff >= scoringBias + 3) {
+      return (
+        <Box sx={{ ...shapeSx, width: 0, height: 0, borderLeft: '12px solid transparent', borderRight: '12px solid transparent', borderBottom: `20px solid ${theme.palette.error.main}`, position: 'relative' }}>
+          <Typography variant="body2" sx={{ fontWeight: "bold", fontSize: "0.75rem", color: 'white', position: 'absolute', top: '4px', left: '50%', transform: 'translateX(-50%)' }}>
+            {scoreValue}
+          </Typography>
+        </Box>
+      );
+    }
     // Double Circle: Eagle or better relative to bias
-    if (scoreDiff <= scoringBias - 2) {
+    if (scoreDiff === scoringBias - 2) {
       return (
         <Box sx={{ ...shapeSx, borderRadius: '50%', border: `1px solid ${theme.palette.success.main}` }}>
           <Box sx={{ ...shapeSx, width: shapeSize - 6, height: shapeSize - 6, borderRadius: '50%', border: `1px solid ${theme.palette.success.main}` }}>
@@ -134,7 +156,7 @@ const ScorecardTable = ({ holes, scoringBias = 0 }) => { // Default to 0 (Par)
       );
     }
     // Double Square: Double bogey or worse relative to bias
-    if (scoreDiff >= scoringBias + 2) {
+    if (scoreDiff === scoringBias + 2) {
       return (
         <Box sx={{ ...shapeSx, borderRadius: 1, border: `1px solid ${theme.palette.error.main}` }}>
           <Box sx={{ ...shapeSx, width: shapeSize - 6, height: shapeSize - 6, borderRadius: 1, border: `1px solid ${theme.palette.error.main}` }}>
