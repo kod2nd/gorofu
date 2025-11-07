@@ -1,76 +1,37 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import {
   Box,
   Typography,
   Paper,
+  Button,
   CircularProgress,
   Alert,
-  Button,
+  Tabs,
+  Tab,
+  Stack,
   Divider,
-  Card,
-  CardContent,
-  Chip,
-  Tabs, Tab, useTheme, useMediaQuery, ToggleButtonGroup, ToggleButton
+  useTheme,
+  useMediaQuery,
 } from "@mui/material";
-import { Stack } from "@mui/system";
 import {
   Edit as EditIcon,
   ArrowBack as ArrowBackIcon,
-  GolfCourse as GolfCourseIcon,
   Score as ScoreIcon,
+  GolfCourse as GolfCourseIcon,
   TrendingUp as TrendingUpIcon,
-  Lock as LockIcon,
 } from "@mui/icons-material";
 import { roundService } from "../services/roundService";
-import {
-  elevatedCardStyles,
-  sectionHeaderStyles,
-} from "../styles/commonStyles";
+import ScorecardTable from "./ScorecardTable";
 import RoundInsights from "./RoundInsights";
 import ScoringBiasSlider from "./ScoringBiasSlider";
-import ScorecardTable from "./ScorecardTable";
-
-const StatItem = ({ label, value, size = "medium" }) => (
-  <Box sx={{ textAlign: "center", p: 1 }}>
-    <Typography
-      variant={size === "small" ? "caption" : "body2"}
-      color="text.secondary"
-    >
-      {label}
-    </Typography>
-    <Typography
-      variant={size === "small" ? "h6" : "h5"}
-      fontWeight="bold"
-      color="primary.main"
-    >
-      {value}
-    </Typography>
-  </Box>
-);
+import { elevatedCardStyles, sectionHeaderStyles } from "../styles/commonStyles";
 
 const DetailItem = ({ label, value }) => (
-  <Box
-    sx={{
-      p: 2,
-      bgcolor: "grey.50",
-      borderRadius: 2,
-      border: "1px solid",
-      borderColor: "divider",
-    }}
-  >
-    <Typography
-      variant="caption"
-      color="text.secondary"
-      sx={{ textTransform: "uppercase", letterSpacing: 0.5 }}
-    >
-      {label}
-    </Typography>
-    <Typography variant="body1" fontWeight="bold" sx={{ mt: 0.5 }}>
-      {value}
-    </Typography>
+  <Box>
+    <Typography variant="caption" color="text.secondary">{label}</Typography>
+    <Typography variant="body1" fontWeight="medium">{value}</Typography>
   </Box>
 );
-
 
 const RoundDetailsPage = ({ roundId, user, userProfile, onEdit, onBack }) => {
   const theme = useTheme();
@@ -80,6 +41,10 @@ const RoundDetailsPage = ({ roundId, user, userProfile, onEdit, onBack }) => {
   const [round, setRound] = useState(null);
   const [activeTab, setActiveTab] = useState(0);
   const [currentScoringBias, setCurrentScoringBias] = useState(userProfile?.scoring_bias ?? 1);
+  
+  // ✅ Track if we've already fetched for this roundId
+  const hasFetchedRef = useRef(false);
+  const lastFetchedRoundId = useRef(null);
 
   const handleBiasChange = (event, newBias) => {
     if (newBias !== null) {
@@ -88,7 +53,15 @@ const RoundDetailsPage = ({ roundId, user, userProfile, onEdit, onBack }) => {
   };
 
   useEffect(() => {
+    // ✅ Only fetch if:
+    // 1. We have roundId and user
+    // 2. We haven't fetched yet OR the roundId changed
     if (roundId && user) {
+      if (hasFetchedRef.current && lastFetchedRoundId.current === roundId) {
+        // Already fetched this round, skip
+        return;
+      }
+
       const fetchRound = async () => {
         try {
           setLoading(true);
@@ -98,6 +71,10 @@ const RoundDetailsPage = ({ roundId, user, userProfile, onEdit, onBack }) => {
             user.email
           );
           setRound(roundData);
+          
+          // ✅ Mark as fetched
+          hasFetchedRef.current = true;
+          lastFetchedRoundId.current = roundId;
         } catch (err) {
           setError("Failed to load round details: " + err.message);
         } finally {
@@ -108,6 +85,8 @@ const RoundDetailsPage = ({ roundId, user, userProfile, onEdit, onBack }) => {
     }
   }, [roundId, user]);
 
+  // ... rest of your component stays exactly the same
+  
   const insightsData = useMemo(() => {
     if (!round) return {};
     const scoringHoles = round.holes.filter(
@@ -239,8 +218,6 @@ const RoundDetailsPage = ({ roundId, user, userProfile, onEdit, onBack }) => {
 
       <Divider sx={{ my: 2 }} />
 
-      {/* Round Details */}
-
       {/* Tabs for Mobile Navigation */}
       {isMobile && (
         <Paper sx={{ mb: 2 }}>
@@ -260,7 +237,6 @@ const RoundDetailsPage = ({ roundId, user, userProfile, onEdit, onBack }) => {
       <Box sx={{ display: "block", gap: 2 }}>
         {(isMobile ? activeTab === 1 : true) && (
           <Paper {...elevatedCardStyles}>
-            {/* Detailed Information */}
             <Box>
               <Typography
                 variant="subtitle2"
@@ -311,6 +287,7 @@ const RoundDetailsPage = ({ roundId, user, userProfile, onEdit, onBack }) => {
             </Box>
           </Paper>
         )}
+        
         {/* Scorecard */}
         {(isMobile ? activeTab === 0 : true) && (
           <Paper {...elevatedCardStyles}>
@@ -320,9 +297,9 @@ const RoundDetailsPage = ({ roundId, user, userProfile, onEdit, onBack }) => {
               </Typography>
             </Box>
             <ScoringBiasSlider 
-  currentScoringBias={currentScoringBias} 
-  handleBiasChange={handleBiasChange} 
-/>
+              currentScoringBias={currentScoringBias} 
+              handleBiasChange={handleBiasChange} 
+            />
             <ScorecardTable holes={round.holes} scoringBias={currentScoringBias} />
           </Paper>
         )}
