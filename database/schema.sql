@@ -207,6 +207,7 @@ $$;
 CREATE OR REPLACE FUNCTION is_my_student(student_email_to_check TEXT)
 RETURNS BOOLEAN
 LANGUAGE plpgsql
+STABLE
 SECURITY DEFINER
 AS $$
 DECLARE
@@ -325,15 +326,15 @@ RETURNS TABLE(
     total_holes_played BIGINT, avg_par3_score NUMERIC, avg_par4_score NUMERIC, avg_par5_score NUMERIC, 
     avg_putts_per_hole NUMERIC, szir_percentage NUMERIC, szir_count BIGINT, multi_putt_4ft_holes BIGINT,
     holeout_within_3_shots_count BIGINT, holeout_from_outside_4ft_count BIGINT, total_penalties BIGINT,
-    avg_penalties_per_round NUMERIC, one_putt_count BIGINT, two_putt_count BIGINT, three_putt_plus_count BIGINT,
-    birdie_or_better_count BIGINT, par_count BIGINT, bogey_count BIGINT, double_bogey_plus_count BIGINT,
+    avg_penalties_per_round NUMERIC, one_putt_count BIGINT, two_putt_count BIGINT, three_putt_plus_count BIGINT, -- Corrected line
+    birdie_or_better_count BIGINT, par_count BIGINT, bogey_count BIGINT, double_bogey_count BIGINT, triple_bogey_plus_count BIGINT,
     avg_putts_par3 NUMERIC, avg_putts_par4 NUMERIC, avg_putts_par5 NUMERIC, avg_score_with_szir NUMERIC,
     avg_score_without_szir NUMERIC, avg_score_with_szpar NUMERIC, avg_score_without_szpar NUMERIC,
     avg_score_with_szir_par3 NUMERIC, avg_score_with_szir_par4 NUMERIC, avg_score_with_szir_par5 NUMERIC,
     avg_score_without_szir_par3 NUMERIC, avg_score_without_szir_par4 NUMERIC, avg_score_without_szir_par5 NUMERIC,
-    par3_birdie_or_better_count BIGINT, par3_par_count BIGINT, par3_bogey_count BIGINT, par3_double_bogey_plus_count BIGINT,
-    par4_birdie_or_better_count BIGINT, par4_par_count BIGINT, par4_bogey_count BIGINT, par4_double_bogey_plus_count BIGINT,
-    par5_birdie_or_better_count BIGINT, par5_par_count BIGINT, par5_bogey_count BIGINT, par5_double_bogey_plus_count BIGINT,
+    par3_birdie_or_better_count BIGINT, par3_par_count BIGINT, par3_bogey_count BIGINT, par3_double_bogey_count BIGINT, par3_triple_bogey_plus_count BIGINT,
+    par4_birdie_or_better_count BIGINT, par4_par_count BIGINT, par4_bogey_count BIGINT, par4_double_bogey_count BIGINT, par4_triple_bogey_plus_count BIGINT,
+    par5_birdie_or_better_count BIGINT, par5_par_count BIGINT, par5_bogey_count BIGINT, par5_double_bogey_count BIGINT, par5_triple_bogey_plus_count BIGINT,
     avg_score_with_szpar_par3 NUMERIC, avg_score_without_szpar_par3 NUMERIC, avg_score_with_szpar_par4 NUMERIC,
     avg_score_without_szpar_par4 NUMERIC, avg_score_with_szpar_par5 NUMERIC, avg_score_without_szpar_par5 NUMERIC,
     avg_score_with_penalty_par3 NUMERIC, avg_score_without_penalty_par3 NUMERIC, avg_score_with_penalty_par4 NUMERIC,
@@ -396,15 +397,18 @@ BEGIN
         COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score < rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
         COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score = rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
         COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score = rh.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score >= rh.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score = rh.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score >= rh.par + 3 THEN 1 ELSE 0 END), 0)::BIGINT,
         COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score < rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
         COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score = rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
         COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score = rh.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score >= rh.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score = rh.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score >= rh.par + 3 THEN 1 ELSE 0 END), 0)::BIGINT,
         COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score < rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
         COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score = rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
         COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score = rh.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score >= rh.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score = rh.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score >= rh.par + 3 THEN 1 ELSE 0 END), 0)::BIGINT,
         (AVG(rh.hole_score) FILTER (WHERE rh.holeout_within_3_shots_scoring_zone IS TRUE AND ctb.par = 3))::NUMERIC,
         (AVG(rh.hole_score) FILTER (WHERE rh.holeout_within_3_shots_scoring_zone IS FALSE AND rh.scoring_zone_in_regulation IS TRUE AND ctb.par = 3))::NUMERIC,
         (AVG(rh.hole_score) FILTER (WHERE rh.holeout_within_3_shots_scoring_zone IS TRUE AND ctb.par = 4))::NUMERIC,
@@ -458,6 +462,7 @@ GRANT EXECUTE ON FUNCTION extensions.uuid_generate_v4() TO authenticated, servic
 CREATE OR REPLACE FUNCTION set_impersonation(user_email_to_impersonate TEXT)
 RETURNS TEXT
 LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = 'public'
 AS $$
 BEGIN
   -- Only allow super_admins to call this function
@@ -576,6 +581,7 @@ CREATE TRIGGER update_rounds_updated_at BEFORE UPDATE ON rounds FOR EACH ROW EXE
 CREATE OR REPLACE FUNCTION public.handle_new_user()
 RETURNS TRIGGER
 LANGUAGE plpgsql
+SET search_path = 'public'
 SECURITY DEFINER -- This is important for accessing the auth.users table
 AS $$
 BEGIN

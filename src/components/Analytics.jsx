@@ -330,8 +330,7 @@ const Analytics = ({ recentRounds, recentStats }) => {
     { name: 'Par 3', ...getDistributionPercentages('par3_') },
     { name: 'Par 4', ...getDistributionPercentages('par4_') },
     { name: 'Par 5', ...getDistributionPercentages('par5_') },
-    { name: 'Overall', ...getDistributionPercentages('') },
-  ].filter(d => d);
+  ].filter(d => d['Birdie+'] || d['Par'] || d['Bogey'] || d['Dbl Bogey'] || d['Triple+']);
 
   const luckByParData = [
     { name: 'Par 3', '% of Holes': recentStats.total_par3_holes > 0 ? (recentStats.luck_on_par3_count / recentStats.total_par3_holes) * 100 : 0 },
