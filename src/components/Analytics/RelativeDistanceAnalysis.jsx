@@ -59,12 +59,11 @@ const RelativeDistanceAnalysis = ({ recentRounds }) => {
   const getDistanceRange = (avgDist, type) => {
     if (!avgDist) return '-';
     const convertedAvg = convertDistance(avgDist);
-    const convertedDeviation = convertDistance(deviation);
     const unit = distanceUnit === 'yards' ? 'y' : 'm';
     switch (type) {
-      case 'Short':   return `Under ${Math.round(convertedAvg - convertedDeviation)}${unit}`;
-      case 'Medium':  return `Target ± ${Math.round(convertedDeviation)}${unit}`;
-      case 'Long':    return `Over ${Math.round(convertedAvg + convertedDeviation)}${unit}`;
+      case 'Short':   return `Under ${Math.round(convertedAvg - deviation)}${unit}`;
+      case 'Medium':  return `Target ± ${Math.round(deviation)}${unit}`;
+      case 'Long':    return `Over ${Math.round(convertedAvg + deviation)}${unit}`;
       default: return '-';
     }
   };
@@ -166,7 +165,7 @@ const RelativeDistanceAnalysis = ({ recentRounds }) => {
             Scoring by Hole Length
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Performance on short, medium, and long holes against the average
+            Performance on short, medium, and long holes against the par distance
           </Typography>
         </Box>
       </Box>
@@ -190,7 +189,7 @@ const RelativeDistanceAnalysis = ({ recentRounds }) => {
             gutterBottom
             display="block"
           >
-            Length Deviation
+            Adjust Distance Range
           </Typography>
 
           {(() => {
@@ -212,7 +211,7 @@ const RelativeDistanceAnalysis = ({ recentRounds }) => {
 
             return (
               <Slider
-                value={isYards ? deviation : deviation * YARDS_TO_METERS}
+                value={deviation}
                 onChange={handleSliderChange}
                 valueLabelDisplay="auto"
                 step={isYards ? 5 : 5}
@@ -250,7 +249,7 @@ const RelativeDistanceAnalysis = ({ recentRounds }) => {
             gutterBottom
             display="block"
           >
-            Distance Unit
+            Units
           </Typography>
           <ToggleButtonGroup
             color="primary"
