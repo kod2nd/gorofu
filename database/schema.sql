@@ -320,10 +320,13 @@ $$;
 -- Drop the function first to allow changing the return signature
 DROP FUNCTION IF EXISTS public.get_recent_rounds_stats(TEXT, INT, BOOLEAN, NUMERIC);
 
+DROP FUNCTION get_recent_rounds_base_stats(text,integer,boolean);
+
 -- NEW: Function for base stats
 CREATE OR REPLACE FUNCTION get_recent_rounds_base_stats(user_email_param TEXT, round_limit INT, eligible_rounds_only BOOLEAN)
 RETURNS TABLE (
     total_holes_played BIGINT,
+    avg_putts_per_hole NUMERIC,
     szir_percentage NUMERIC,
     szir_count BIGINT,
     multi_putt_4ft_holes BIGINT,
@@ -351,6 +354,7 @@ BEGIN
     )
     SELECT
         COUNT(rh.id)::BIGINT,
+        COALESCE(AVG(rh.putts), 0)::NUMERIC,
         (CASE WHEN COUNT(rh.id) > 0 THEN (SUM(CASE WHEN rh.scoring_zone_in_regulation THEN 1 ELSE 0 END)::NUMERIC / NULLIF(COUNT(rh.id), 0) * 100) ELSE 0 END)::NUMERIC,
         COALESCE(SUM(CASE WHEN rh.scoring_zone_in_regulation THEN 1 ELSE 0 END), 0)::BIGINT,
         COALESCE(SUM(CASE WHEN rh.putts_within4ft > 1 THEN 1 ELSE 0 END), 0)::BIGINT,
@@ -376,7 +380,9 @@ $$;
 -- NEW: Function for par type stats
 CREATE OR REPLACE FUNCTION get_recent_rounds_par_type_stats(user_email_param TEXT, round_limit INT, eligible_rounds_only BOOLEAN)
 RETURNS TABLE (
-    avg_par3_score NUMERIC, avg_par4_score NUMERIC, avg_par5_score NUMERIC,
+    avg_par3_score NUMERIC, 
+    avg_par4_score NUMERIC, 
+    avg_par5_score NUMERIC,
     avg_putts_par3 NUMERIC, avg_putts_par4 NUMERIC, avg_putts_par5 NUMERIC,
     par3_birdie_or_better_count BIGINT, par3_par_count BIGINT, par3_bogey_count BIGINT, par3_double_bogey_count BIGINT, par3_triple_bogey_plus_count BIGINT,
     par4_birdie_or_better_count BIGINT, par4_par_count BIGINT, par4_bogey_count BIGINT, par4_double_bogey_count BIGINT, par4_triple_bogey_plus_count BIGINT,
