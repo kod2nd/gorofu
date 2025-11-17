@@ -183,6 +183,11 @@ const Analytics = ({ recentRounds, recentStats, onRelativeDistanceThresholdChang
     'Par 5 Avg Putts': getParTypeStatsForRound(r, 5)?.putts,
   })).reverse();
 
+  const shortMissesData = recentRounds.map(r => ({
+    date: new Date(r.round_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    'Short Misses (< 4ft)': r.round_holes.filter(h => h.putts_within4ft > 1).length,
+  })).reverse();
+
   const avgPenaltiesPar3 = recentStats.total_par3_holes > 0 ? (recentStats.penalty_on_par3_count / recentStats.total_par3_holes) : 0;
   const avgPenaltiesPar4 = recentStats.total_par4_holes > 0 ? (recentStats.penalty_on_par4_count / recentStats.total_par4_holes) : 0;
   const avgPenaltiesPar5 = recentStats.total_par5_holes > 0 ? (recentStats.penalty_on_par5_count / recentStats.total_par5_holes) : 0;
@@ -431,6 +436,35 @@ const Analytics = ({ recentRounds, recentStats, onRelativeDistanceThresholdChang
                   />
                 </Bar>
               </BarChart>
+            </ResponsiveContainer>
+          </ChartCard>
+        )}
+
+        {/* Short Putt Performance */}
+        {shortMissesData.some(d => d['Short Misses (< 4ft)'] > 0) && (
+          <ChartCard
+            title="Short Putt Performance"
+            subtitle="Holes with 2 or more putts from inside 4ft"
+            icon={<ShowChart />}
+          >
+            <ResponsiveContainer width="100%" height={280}>
+              <LineChart data={shortMissesData} margin={{ top: 10, right: 20, left: -10, bottom: 10 }}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                <XAxis dataKey="date" stroke="#6b7280" style={{ fontSize: '12px' }} />
+                          <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Legend content={<CustomLegend />} />
+                <Line 
+                  name="Short Misses"
+                  type="monotone" 
+                  dataKey="Short Misses (< 4ft)" 
+                  stroke={COLORS.error} 
+                  strokeWidth={3} 
+                  dot={{ r: 4 }} 
+                  activeDot={{ r: 6 }} 
+                  connectNulls 
+                />
+              </LineChart>
             </ResponsiveContainer>
           </ChartCard>
         )}
