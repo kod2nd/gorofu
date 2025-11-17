@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import { LineChart, Line, BarChart, Bar, Tooltip, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, Cell, LabelList } from 'recharts';
 import { TrendingUp, TrendingDown, ShowChart, Remove } from '@mui/icons-material';
-import RelativeDistanceAnalysis from './RelativeDistanceAnalysis';
+import RelativeDistanceAnalysis from './Analytics/RelativeDistanceAnalysis';
 
 // Modern color palette
 const COLORS = {
