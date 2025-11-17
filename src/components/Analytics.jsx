@@ -631,8 +631,7 @@ const Analytics = ({ recentRounds, recentStats, onRelativeDistanceThresholdChang
         {recentStats && (
           <Box sx={{ flexBasis: '100%' }}>
           <RelativeDistanceAnalysis
-            stats={recentStats}
-            onThresholdChange={onRelativeDistanceThresholdChange}
+            recentRounds={recentRounds}
           />
           </Box>
         )}
