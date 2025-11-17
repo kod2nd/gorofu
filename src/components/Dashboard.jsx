@@ -24,6 +24,7 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser }) => {
 
   const isInitialMount = useRef(true);
   const hasFetchedAllTime = useRef(false); // Track if we've fetched all-time stats
+  const wasActive = useRef(isActive); // Track previous active state
 
   useEffect(() => {
     // When the user being viewed changes (due to impersonation), reset the flag
@@ -50,12 +51,16 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser }) => {
         }
       };
 
-      if (isActive && user && !hasFetchedAllTime.current) {
+      // Fetch if the component is now active and wasn't before,
+      // or if the user/impersonatedUser has changed.
+      if (isActive && user && (isActive !== wasActive.current || !hasFetchedAllTime.current)) {
         await fetchAllTimeData();
       }
     };
     fetchAllTimeDataIfNeeded();
-  }, [user, isActive, impersonatedUser]); // Rerun when user or active status changes
+    // Update the previous active state ref *after* the effect has run
+    wasActive.current = isActive;
+  }, [user, isActive, impersonatedUser]);
 
   useEffect(() => {
     // Effect 2: Fetch filter-dependent data when page is active or filters change
