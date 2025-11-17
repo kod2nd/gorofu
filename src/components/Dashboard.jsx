@@ -23,13 +23,20 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser }) => {
   const [showEligibleRoundsOnly, setShowEligibleRoundsOnly] = useState(false);
 
   const isInitialMount = useRef(true);
-  const hasFetchedAllTime = useRef(false); // Track if we've fetched all-time stats
-  const wasActive = useRef(isActive); // Track previous active state
+  const hasFetchedAllTime = useRef(false);
+  const wasActive = useRef(isActive);
+  
+  // ✅ Track the last fetched filter state to prevent refetching with same filters
+  const lastFetchedFilters = useRef(null);
+  const lastFetchedUser = useRef(null);
 
   useEffect(() => {
-    // When the user being viewed changes (due to impersonation), reset the flag
-    // to allow all-time stats to be re-fetched.
-    hasFetchedAllTime.current = false;
+    // When the user being viewed changes (due to impersonation), reset flags
+    if (impersonatedUser !== lastFetchedUser.current) {
+      hasFetchedAllTime.current = false;
+      lastFetchedFilters.current = null;
+      lastFetchedUser.current = impersonatedUser;
+    }
   }, [impersonatedUser]);
 
   useEffect(() => {
@@ -58,15 +65,25 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser }) => {
       }
     };
     fetchAllTimeDataIfNeeded();
-    // Update the previous active state ref *after* the effect has run
     wasActive.current = isActive;
   }, [user, isActive, impersonatedUser]);
 
   useEffect(() => {
-    // Effect 2: Fetch filter-dependent data when page is active or filters change
+    // Effect 2: Fetch filter-dependent data ONLY when filters actually change or first mount
     const fetchData = async () => {
-      // Only fetch if the page is active and the user is available
-      if (!isActive || !user) return;
+      // Only fetch if the user is available
+      if (!user) return;
+
+      // ✅ Create a filter state key
+      const currentFiltersKey = `${roundLimit}-${showEligibleRoundsOnly}-${user.email}`;
+      
+      // ✅ Skip if we've already fetched with these exact filters (prevents refetch on tab switch)
+      if (lastFetchedFilters.current === currentFiltersKey && !isInitialMount.current) {
+        return;
+      }
+
+      // ✅ Mark these filters as fetched
+      lastFetchedFilters.current = currentFiltersKey;
 
       // Determine which loading state to set
       if (isInitialMount.current) {
@@ -105,7 +122,7 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser }) => {
     };
 
     fetchData();
-  }, [user, roundLimit, showEligibleRoundsOnly, isActive, impersonatedUser]);
+  }, [user, roundLimit, showEligibleRoundsOnly]); // ✅ Removed isActive and impersonatedUser from deps
 
   // ✅ Show centered flipping icon only on initial load
   if (initialLoading) {
@@ -167,9 +184,8 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser }) => {
             />
           </Paper>
           <Paper {...elevatedCardStyles}>
-          <RecentInsights recentStats={recentStats} isFiltering={isFiltering} />
-
-            </Paper>
+            <RecentInsights recentStats={recentStats} isFiltering={isFiltering} />
+          </Paper>
         </Box>
 
         {/* Right Column */}
@@ -200,8 +216,7 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser }) => {
             )}
           </Paper>
           <Paper {...elevatedCardStyles}>
-          <Analytics recentRounds={recentRounds} recentStats={recentStats} />
-
+            <Analytics recentRounds={recentRounds} recentStats={recentStats} />
           </Paper>
         </Box>
       </Box>
