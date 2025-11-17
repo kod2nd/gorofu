@@ -455,7 +455,7 @@ const Analytics = ({ recentRounds, recentStats, onRelativeDistanceThresholdChang
                 <Tooltip content={<CustomTooltip />} />
                 <Legend content={<CustomLegend />} />
                 <Line 
-                  name="Short Misses"
+                  name="Holes with Short Misses"
                   type="monotone" 
                   dataKey="Short Misses (< 4ft)" 
                   stroke={COLORS.error} 
