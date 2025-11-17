@@ -144,7 +144,7 @@ const DistributionTooltip = ({ active, payload, label }) => {
 const TotalBarLabel = (props) => {
   const { x, y, width, value, index, data } = props;
   const dataPoint = data[index];
-  const total = (dataPoint['Putts'] || 0) + (dataPoint['Strokes to Green'] || 0);
+  const total = (dataPoint['Putts'] || 0) + (dataPoint['Strokes to Green'] || 0) + (dataPoint['Penalties'] || 0);
 
   if (total === 0) {
     return null;
@@ -183,21 +183,34 @@ const Analytics = ({ recentRounds, recentStats, onRelativeDistanceThresholdChang
     'Par 5 Avg Putts': getParTypeStatsForRound(r, 5)?.putts,
   })).reverse();
 
+  const avgPenaltiesPar3 = recentStats.total_par3_holes > 0 ? (recentStats.penalty_on_par3_count / recentStats.total_par3_holes) : 0;
+  const avgPenaltiesPar4 = recentStats.total_par4_holes > 0 ? (recentStats.penalty_on_par4_count / recentStats.total_par4_holes) : 0;
+  const avgPenaltiesPar5 = recentStats.total_par5_holes > 0 ? (recentStats.penalty_on_par5_count / recentStats.total_par5_holes) : 0;
+
   const scoreProportionData = [
     { 
       name: 'Par 3', 
       'Putts': recentStats.avg_putts_par3 ? parseFloat(recentStats.avg_putts_par3) : 0,
-      'Strokes to Green': recentStats.avg_par3_score ? parseFloat(recentStats.avg_par3_score) - (recentStats.avg_putts_par3 || 0) : 0,
+      'Penalties': avgPenaltiesPar3,
+      'Strokes to Green': recentStats.avg_par3_score 
+        ? parseFloat(recentStats.avg_par3_score) - (recentStats.avg_putts_par3 || 0) - avgPenaltiesPar3
+        : 0,
     },
     { 
       name: 'Par 4', 
       'Putts': recentStats.avg_putts_par4 ? parseFloat(recentStats.avg_putts_par4) : 0,
-      'Strokes to Green': recentStats.avg_par4_score ? parseFloat(recentStats.avg_par4_score) - (recentStats.avg_putts_par4 || 0) : 0,
+      'Penalties': avgPenaltiesPar4,
+      'Strokes to Green': recentStats.avg_par4_score 
+        ? parseFloat(recentStats.avg_par4_score) - (recentStats.avg_putts_par4 || 0) - avgPenaltiesPar4
+        : 0,
     },
     { 
       name: 'Par 5', 
       'Putts': recentStats.avg_putts_par5 ? parseFloat(recentStats.avg_putts_par5) : 0,
-      'Strokes to Green': recentStats.avg_par5_score ? parseFloat(recentStats.avg_par5_score) - (recentStats.avg_putts_par5 || 0) : 0,
+      'Penalties': avgPenaltiesPar5,
+      'Strokes to Green': recentStats.avg_par5_score 
+        ? parseFloat(recentStats.avg_par5_score) - (recentStats.avg_putts_par5 || 0) - avgPenaltiesPar5
+        : 0,
     },
   ];
 
@@ -288,7 +301,6 @@ const Analytics = ({ recentRounds, recentStats, onRelativeDistanceThresholdChang
     { name: 'Par 4', '% of Holes with Penalty': recentStats.total_par4_holes > 0 ? (recentStats.penalty_on_par4_count / recentStats.total_par4_holes) * 100 : 0 },
     { name: 'Par 5', '% of Holes with Penalty': recentStats.total_par5_holes > 0 ? (recentStats.penalty_on_par5_count / recentStats.total_par5_holes) * 100 : 0 },
   ];
-  
 
   const penaltyImpactData = [
     {
@@ -371,7 +383,7 @@ const Analytics = ({ recentRounds, recentStats, onRelativeDistanceThresholdChang
                 <YAxis
                   stroke="#6b7280"
                   style={{ fontSize: "12px" }}
-                  domain={[0, (dataMax) => Math.ceil(dataMax * 1.2)]}
+                  domain={[0, (dataMax) => Math.ceil(dataMax)]}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Legend content={<CustomLegend />} />
@@ -392,12 +404,20 @@ const Analytics = ({ recentRounds, recentStats, onRelativeDistanceThresholdChang
                   />
                 </Bar>
 
+                {/* Penalties with inside labels */}
+                <Bar
+                  dataKey="Penalties"
+                  stackId="a"
+                  fill={COLORS.error}
+                >
+                </Bar>
+
                 {/* Putts with inside labels AND total on top */}
                 <Bar
                   dataKey="Putts"
                   stackId="a"
                   fill={COLORS.success}
-                  radius={[8, 8, 0, 0]}
+                  radius={[8, 8, 0, 0]} // Only top bar has rounded corners
                 >
                   <LabelList
                     dataKey="Putts"
@@ -632,8 +652,8 @@ const Analytics = ({ recentRounds, recentStats, onRelativeDistanceThresholdChang
         {/* Luck by Par Type */}
         {luckByParData.length > 0 && (
           <ChartCard
-            title="Propensity for 'Luck' by Par Type"
-            subtitle="Percentage of holes with a holed shot from >4ft"
+            title="Strokes Gained by Par Type"
+            subtitle="Percentage of holes with a holed shot from outside 4ft"
             icon={<ShowChart />}
           >
             <ResponsiveContainer width="100%" height={280}>
@@ -670,7 +690,7 @@ const Analytics = ({ recentRounds, recentStats, onRelativeDistanceThresholdChang
         {/* Luck by SZIR Status */}
         {luckBySzirData.some((d) => d["Propensity for Luck (%)"] > 0) && (
           <ChartCard
-            title="'Luck' by SZIR Status"
+            title="Strokes Gained by SZIR Status"
             subtitle="Are you more likely to hole a long putt after a good or bad approach?"
             icon={<ShowChart />}
           >
