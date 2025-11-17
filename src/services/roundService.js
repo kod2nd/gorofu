@@ -250,15 +250,40 @@ export const roundService = {
   },
 
   // Get recent rounds stats by calling the database function
-  async getRecentRoundsStats(userEmail, limit, eligibleRoundsOnly) {
-    const { data, error } = await supabase.rpc('get_recent_rounds_stats', {
-      user_email_param: userEmail,
-      round_limit: limit,
-      eligible_rounds_only: eligibleRoundsOnly
-    });
+  async getRecentRoundsStats(userEmail, limit, eligibleRoundsOnly, relativeDistanceThreshold = 0.15) {
+    try {
+      // Run all stats queries in parallel for efficiency
+      const [baseStatsRes, parTypeStatsRes, advancedStatsRes] = await Promise.all([
+        supabase.rpc('get_recent_rounds_base_stats', {
+          user_email_param: userEmail,
+          round_limit: limit,
+          eligible_rounds_only: eligibleRoundsOnly
+        }),
+        supabase.rpc('get_recent_rounds_par_type_stats', {
+          user_email_param: userEmail,
+          round_limit: limit,
+          eligible_rounds_only: eligibleRoundsOnly
+        }),
+        supabase.rpc('get_recent_rounds_advanced_stats', {
+          user_email_param: userEmail,
+          round_limit: limit,
+          eligible_rounds_only: eligibleRoundsOnly,
+          relative_distance_threshold: relativeDistanceThreshold
+        })
+      ]);
 
-    if (error) throw error;
+      // Check for errors in any of the parallel calls
+      if (baseStatsRes.error) throw baseStatsRes.error;
+      if (parTypeStatsRes.error) throw parTypeStatsRes.error;
+      if (advancedStatsRes.error) throw advancedStatsRes.error;
 
-    return data[0];
+      // Combine the results from all functions into a single object
+      const combinedStats = { ...baseStatsRes.data[0], ...parTypeStatsRes.data[0], ...advancedStatsRes.data[0] };
+      return combinedStats;
+
+    } catch (error) {
+      console.error("Error fetching recent rounds stats:", error);
+      throw error;
+    }
   }
 };

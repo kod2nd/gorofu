@@ -318,54 +318,39 @@ END;
 $$;
 
 -- Drop the function first to allow changing the return signature
-DROP FUNCTION IF EXISTS public.get_recent_rounds_stats(TEXT, INT, BOOLEAN); -- Keep this to ensure idempotency
+DROP FUNCTION IF EXISTS public.get_recent_rounds_stats(TEXT, INT, BOOLEAN, NUMERIC);
 
--- Function to get stats for a specific number of recent rounds
-CREATE OR REPLACE FUNCTION get_recent_rounds_stats(user_email_param TEXT, round_limit INT, eligible_rounds_only BOOLEAN)
-RETURNS TABLE(
-    total_holes_played BIGINT, avg_par3_score NUMERIC, avg_par4_score NUMERIC, avg_par5_score NUMERIC, 
-    avg_putts_per_hole NUMERIC, szir_percentage NUMERIC, szir_count BIGINT, multi_putt_4ft_holes BIGINT,
-    holeout_within_3_shots_count BIGINT, holeout_from_outside_4ft_count BIGINT, total_penalties BIGINT,
-    avg_penalties_per_round NUMERIC, one_putt_count BIGINT, two_putt_count BIGINT, three_putt_plus_count BIGINT, -- Corrected line
-    birdie_or_better_count BIGINT, par_count BIGINT, bogey_count BIGINT, double_bogey_count BIGINT, triple_bogey_plus_count BIGINT,
-    avg_putts_par3 NUMERIC, avg_putts_par4 NUMERIC, avg_putts_par5 NUMERIC, avg_score_with_szir NUMERIC,
-    avg_score_without_szir NUMERIC, avg_score_with_szpar NUMERIC, avg_score_without_szpar NUMERIC,
-    avg_score_with_szir_par3 NUMERIC, avg_score_with_szir_par4 NUMERIC, avg_score_with_szir_par5 NUMERIC,
-    avg_score_without_szir_par3 NUMERIC, avg_score_without_szir_par4 NUMERIC, avg_score_without_szir_par5 NUMERIC,
-    par3_birdie_or_better_count BIGINT, par3_par_count BIGINT, par3_bogey_count BIGINT, par3_double_bogey_count BIGINT, par3_triple_bogey_plus_count BIGINT,
-    par4_birdie_or_better_count BIGINT, par4_par_count BIGINT, par4_bogey_count BIGINT, par4_double_bogey_count BIGINT, par4_triple_bogey_plus_count BIGINT,
-    par5_birdie_or_better_count BIGINT, par5_par_count BIGINT, par5_bogey_count BIGINT, par5_double_bogey_count BIGINT, par5_triple_bogey_plus_count BIGINT,
-    avg_score_with_szpar_par3 NUMERIC, avg_score_without_szpar_par3 NUMERIC, avg_score_with_szpar_par4 NUMERIC,
-    avg_score_without_szpar_par4 NUMERIC, avg_score_with_szpar_par5 NUMERIC, avg_score_without_szpar_par5 NUMERIC,
-    avg_score_with_penalty_par3 NUMERIC, avg_score_without_penalty_par3 NUMERIC, avg_score_with_penalty_par4 NUMERIC,
-    avg_score_without_penalty_par4 NUMERIC, avg_score_with_penalty_par5 NUMERIC, avg_score_without_penalty_par5 NUMERIC,
-    penalty_on_par3_count BIGINT, penalty_on_par4_count BIGINT, penalty_on_par5_count BIGINT,
-    luck_on_par3_count BIGINT, luck_on_par4_count BIGINT, luck_on_par5_count BIGINT, total_par3_holes BIGINT,
-    total_par4_holes BIGINT, total_par5_holes BIGINT, luck_with_szir_count BIGINT, luck_without_szir_count BIGINT,
-    total_szir_holes BIGINT, total_non_szir_holes BIGINT
+-- NEW: Function for base stats
+CREATE OR REPLACE FUNCTION get_recent_rounds_base_stats(user_email_param TEXT, round_limit INT, eligible_rounds_only BOOLEAN)
+RETURNS TABLE (
+    total_holes_played BIGINT,
+    szir_percentage NUMERIC,
+    szir_count BIGINT,
+    multi_putt_4ft_holes BIGINT,
+    holeout_within_3_shots_count BIGINT,
+    holeout_from_outside_4ft_count BIGINT,
+    total_penalties BIGINT,
+    avg_penalties_per_round NUMERIC,
+    one_putt_count BIGINT,
+    two_putt_count BIGINT,
+    three_putt_plus_count BIGINT,
+    birdie_or_better_count BIGINT,
+    par_count BIGINT,
+    bogey_count BIGINT,
+    double_bogey_count BIGINT,
+    triple_bogey_plus_count BIGINT
 )
-LANGUAGE plpgsql STABLE SET search_path = 'public'
-AS $$
+LANGUAGE plpgsql STABLE SET search_path = 'public' AS $$
 BEGIN
     RETURN QUERY
     WITH recent_rounds AS (
-        SELECT id
-        FROM rounds
-        WHERE
-            user_email = user_email_param AND
-            (NOT eligible_rounds_only OR is_eligible_round = TRUE)
-        ORDER BY
-            round_date DESC,
-            created_at DESC
-        LIMIT
-            CASE WHEN round_limit > 0 THEN round_limit ELSE NULL END
+        SELECT id FROM rounds
+        WHERE user_email = user_email_param AND (NOT eligible_rounds_only OR is_eligible_round = TRUE)
+        ORDER BY round_date DESC, created_at DESC
+        LIMIT CASE WHEN round_limit > 0 THEN round_limit ELSE NULL END
     )
     SELECT
         COUNT(rh.id)::BIGINT,
-        (AVG(rh.hole_score) FILTER (WHERE ctb.par = 3))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE ctb.par = 4))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE ctb.par = 5))::NUMERIC,
-        COALESCE(AVG(rh.putts), 0)::NUMERIC,
         (CASE WHEN COUNT(rh.id) > 0 THEN (SUM(CASE WHEN rh.scoring_zone_in_regulation THEN 1 ELSE 0 END)::NUMERIC / NULLIF(COUNT(rh.id), 0) * 100) ELSE 0 END)::NUMERIC,
         COALESCE(SUM(CASE WHEN rh.scoring_zone_in_regulation THEN 1 ELSE 0 END), 0)::BIGINT,
         COALESCE(SUM(CASE WHEN rh.putts_within4ft > 1 THEN 1 ELSE 0 END), 0)::BIGINT,
@@ -376,74 +361,154 @@ BEGIN
         COALESCE(SUM(CASE WHEN rh.putts = 1 THEN 1 ELSE 0 END), 0)::BIGINT,
         COALESCE(SUM(CASE WHEN rh.putts = 2 THEN 1 ELSE 0 END), 0)::BIGINT,
         COALESCE(SUM(CASE WHEN rh.putts >= 3 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.hole_score < rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.hole_score = rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.hole_score = rh.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT, -- Bogey
-        COALESCE(SUM(CASE WHEN rh.hole_score = rh.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT, -- Double Bogey
-        COALESCE(SUM(CASE WHEN rh.hole_score >= rh.par + 3 THEN 1 ELSE 0 END), 0)::BIGINT, -- Triple Bogey+
+        COALESCE(SUM(CASE WHEN rh.hole_score < ctb.par THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN rh.hole_score = ctb.par THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN rh.hole_score = ctb.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN rh.hole_score = ctb.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN rh.hole_score >= ctb.par + 3 THEN 1 ELSE 0 END), 0)::BIGINT
+    FROM rounds r
+    JOIN round_holes rh ON r.id = rh.round_id
+    JOIN course_tee_boxes ctb ON r.course_id = ctb.course_id AND r.tee_box = ctb.tee_box AND rh.hole_number = ctb.hole_number
+    WHERE r.id IN (SELECT id FROM recent_rounds);
+END;
+$$;
+
+-- NEW: Function for par type stats
+CREATE OR REPLACE FUNCTION get_recent_rounds_par_type_stats(user_email_param TEXT, round_limit INT, eligible_rounds_only BOOLEAN)
+RETURNS TABLE (
+    avg_par3_score NUMERIC, avg_par4_score NUMERIC, avg_par5_score NUMERIC,
+    avg_putts_par3 NUMERIC, avg_putts_par4 NUMERIC, avg_putts_par5 NUMERIC,
+    par3_birdie_or_better_count BIGINT, par3_par_count BIGINT, par3_bogey_count BIGINT, par3_double_bogey_count BIGINT, par3_triple_bogey_plus_count BIGINT,
+    par4_birdie_or_better_count BIGINT, par4_par_count BIGINT, par4_bogey_count BIGINT, par4_double_bogey_count BIGINT, par4_triple_bogey_plus_count BIGINT,
+    par5_birdie_or_better_count BIGINT, par5_par_count BIGINT, par5_bogey_count BIGINT, par5_double_bogey_count BIGINT, par5_triple_bogey_plus_count BIGINT
+)
+LANGUAGE plpgsql STABLE SET search_path = 'public' AS $$
+BEGIN
+    RETURN QUERY
+    WITH recent_rounds AS (
+        SELECT id FROM rounds
+        WHERE user_email = user_email_param AND (NOT eligible_rounds_only OR is_eligible_round = TRUE)
+        ORDER BY round_date DESC, created_at DESC
+        LIMIT CASE WHEN round_limit > 0 THEN round_limit ELSE NULL END
+    )
+    SELECT
+        (AVG(rh.hole_score) FILTER (WHERE ctb.par = 3))::NUMERIC,
+        (AVG(rh.hole_score) FILTER (WHERE ctb.par = 4))::NUMERIC,
+        (AVG(rh.hole_score) FILTER (WHERE ctb.par = 5))::NUMERIC,
         (AVG(rh.putts) FILTER (WHERE ctb.par = 3))::NUMERIC,
         (AVG(rh.putts) FILTER (WHERE ctb.par = 4))::NUMERIC,
         (AVG(rh.putts) FILTER (WHERE ctb.par = 5))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.scoring_zone_in_regulation IS TRUE))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.scoring_zone_in_regulation IS FALSE))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.holeout_within_3_shots_scoring_zone IS TRUE))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.holeout_within_3_shots_scoring_zone IS FALSE AND rh.scoring_zone_in_regulation IS TRUE))::NUMERIC, -- Avg score when SZ Par is missed
-        (AVG(rh.hole_score) FILTER (WHERE rh.scoring_zone_in_regulation IS TRUE AND ctb.par = 3))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.scoring_zone_in_regulation IS TRUE AND ctb.par = 4))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.scoring_zone_in_regulation IS TRUE AND ctb.par = 5))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.scoring_zone_in_regulation IS FALSE AND ctb.par = 3))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.scoring_zone_in_regulation IS FALSE AND ctb.par = 4))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.scoring_zone_in_regulation IS FALSE AND ctb.par = 5))::NUMERIC,
-        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score < rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score = rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score = rh.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score = rh.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score >= rh.par + 3 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score < rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score = rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score = rh.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score = rh.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score >= rh.par + 3 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score < rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score = rh.par THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score = rh.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score = rh.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score >= rh.par + 3 THEN 1 ELSE 0 END), 0)::BIGINT,
-        (AVG(rh.hole_score) FILTER (WHERE rh.holeout_within_3_shots_scoring_zone IS TRUE AND ctb.par = 3))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.holeout_within_3_shots_scoring_zone IS FALSE AND rh.scoring_zone_in_regulation IS TRUE AND ctb.par = 3))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.holeout_within_3_shots_scoring_zone IS TRUE AND ctb.par = 4))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.holeout_within_3_shots_scoring_zone IS FALSE AND rh.scoring_zone_in_regulation IS TRUE AND ctb.par = 4))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.holeout_within_3_shots_scoring_zone IS TRUE AND ctb.par = 5))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.holeout_within_3_shots_scoring_zone IS FALSE AND rh.scoring_zone_in_regulation IS TRUE AND ctb.par = 5))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.penalty_shots > 0 AND ctb.par = 3))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.penalty_shots = 0 AND ctb.par = 3))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.penalty_shots > 0 AND ctb.par = 4))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.penalty_shots = 0 AND ctb.par = 4))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.penalty_shots > 0 AND ctb.par = 5))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE rh.penalty_shots = 0 AND ctb.par = 5))::NUMERIC,
-        -- Penalty Propensity
-        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.penalty_shots > 0 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.penalty_shots > 0 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.penalty_shots > 0 THEN 1 ELSE 0 END), 0)::BIGINT,
-        -- Luck Stats
-        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.holeout_from_outside_4ft THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.holeout_from_outside_4ft THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.holeout_from_outside_4ft THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 3 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 4 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 5 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.scoring_zone_in_regulation IS TRUE AND rh.holeout_from_outside_4ft THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.scoring_zone_in_regulation IS FALSE AND rh.holeout_from_outside_4ft THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.scoring_zone_in_regulation IS TRUE THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.scoring_zone_in_regulation IS FALSE THEN 1 ELSE 0 END), 0)::BIGINT
-    FROM
-        rounds r
-    LEFT JOIN
-        round_holes rh ON r.id = rh.round_id
-    LEFT JOIN
-        course_tee_boxes ctb ON r.course_id = ctb.course_id AND r.tee_box = ctb.tee_box AND rh.hole_number = ctb.hole_number
-    WHERE
-        r.id IN (SELECT id FROM recent_rounds);
+        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score < ctb.par THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score = ctb.par THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score = ctb.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score = ctb.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score >= ctb.par + 3 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score < ctb.par THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score = ctb.par THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score = ctb.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score = ctb.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score >= ctb.par + 3 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score < ctb.par THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score = ctb.par THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score = ctb.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score = ctb.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score >= ctb.par + 3 THEN 1 ELSE 0 END), 0)::BIGINT
+    FROM rounds r
+    JOIN round_holes rh ON r.id = rh.round_id
+    JOIN course_tee_boxes ctb ON r.course_id = ctb.course_id AND r.tee_box = ctb.tee_box AND rh.hole_number = ctb.hole_number
+    WHERE r.id IN (SELECT id FROM recent_rounds);
+END;
+$$;
+
+-- Drop the function first
+DROP FUNCTION IF EXISTS get_recent_rounds_advanced_stats(text,integer,boolean,numeric);
+-- NEW: Function for advanced stats
+CREATE OR REPLACE FUNCTION get_recent_rounds_advanced_stats(user_email_param TEXT, round_limit INT, eligible_rounds_only BOOLEAN, relative_distance_threshold NUMERIC DEFAULT 0.15)
+RETURNS TABLE (
+    -- SZIR/SZ Par stats
+    avg_score_with_szir NUMERIC,
+    avg_score_without_szir NUMERIC,
+    avg_score_with_szpar NUMERIC,
+    avg_score_without_szpar NUMERIC,
+    avg_score_with_szir_par3 NUMERIC, avg_score_with_szir_par4 NUMERIC, avg_score_with_szir_par5 NUMERIC,
+    avg_score_without_szir_par3 NUMERIC, avg_score_without_szir_par4 NUMERIC, avg_score_without_szir_par5 NUMERIC,
+    avg_score_with_szpar_par3 NUMERIC, avg_score_without_szpar_par3 NUMERIC, avg_score_with_szpar_par4 NUMERIC,
+    avg_score_without_szpar_par4 NUMERIC, avg_score_with_szpar_par5 NUMERIC, avg_score_without_szpar_par5 NUMERIC,
+    -- Penalty stats
+    avg_score_with_penalty_par3 NUMERIC, avg_score_without_penalty_par3 NUMERIC, avg_score_with_penalty_par4 NUMERIC,
+    avg_score_without_penalty_par4 NUMERIC, avg_score_with_penalty_par5 NUMERIC, avg_score_without_penalty_par5 NUMERIC,
+    penalty_on_par3_count BIGINT, penalty_on_par4_count BIGINT, penalty_on_par5_count BIGINT,
+    -- Luck stats
+    luck_on_par3_count BIGINT, luck_on_par4_count BIGINT, luck_on_par5_count BIGINT,
+    total_par3_holes BIGINT, total_par4_holes BIGINT, total_par5_holes BIGINT,
+    luck_with_szir_count BIGINT, luck_without_szir_count BIGINT,
+    total_szir_holes BIGINT, total_non_szir_holes BIGINT,
+    -- Relative distance stats
+    avg_dist_par3 NUMERIC, avg_dist_par4 NUMERIC, avg_dist_par5 NUMERIC,
+    avg_score_short_par3 NUMERIC, avg_score_medium_par3 NUMERIC, avg_score_long_par3 NUMERIC,
+    avg_score_short_par4 NUMERIC, avg_score_medium_par4 NUMERIC, avg_score_long_par4 NUMERIC,
+    avg_score_short_par5 NUMERIC, avg_score_medium_par5 NUMERIC, avg_score_long_par5 NUMERIC
+)
+LANGUAGE plpgsql STABLE SET search_path = 'public' AS $$
+BEGIN
+    RETURN QUERY
+    WITH recent_rounds AS (
+        SELECT id FROM rounds
+        WHERE user_email = user_email_param AND (NOT eligible_rounds_only OR is_eligible_round = TRUE)
+        ORDER BY round_date DESC, created_at DESC
+        LIMIT CASE WHEN round_limit > 0 THEN round_limit ELSE NULL END
+    ),
+    all_holes AS (
+        SELECT rh.hole_score, rh.scoring_zone_in_regulation, rh.holeout_within_3_shots_scoring_zone, rh.penalty_shots, rh.holeout_from_outside_4ft, ctb.par as course_par, ctb.distance as course_distance
+        FROM round_holes rh
+        JOIN rounds r ON rh.round_id = r.id
+        JOIN course_tee_boxes ctb ON r.course_id = ctb.course_id AND r.tee_box = ctb.tee_box AND rh.hole_number = ctb.hole_number
+        WHERE r.id IN (SELECT id FROM recent_rounds)
+    ),
+    avg_distances AS (
+        SELECT
+            COALESCE(AVG(course_distance) FILTER (WHERE course_par = 3), 0) AS avg_d_p3,
+            COALESCE(AVG(course_distance) FILTER (WHERE course_par = 4), 0) AS avg_d_p4,
+            COALESCE(AVG(course_distance) FILTER (WHERE course_par = 5), 0) AS avg_d_p5
+        FROM all_holes
+    )
+    SELECT
+        -- SZIR/SZ Par stats
+        (AVG(ah.hole_score) FILTER (WHERE ah.scoring_zone_in_regulation IS TRUE))::NUMERIC,
+        (AVG(ah.hole_score) FILTER (WHERE ah.scoring_zone_in_regulation IS FALSE))::NUMERIC,
+        (AVG(ah.hole_score) FILTER (WHERE ah.holeout_within_3_shots_scoring_zone IS TRUE))::NUMERIC,
+        (AVG(ah.hole_score) FILTER (WHERE ah.holeout_within_3_shots_scoring_zone IS FALSE AND ah.scoring_zone_in_regulation IS TRUE))::NUMERIC,
+        (AVG(ah.hole_score) FILTER (WHERE ah.scoring_zone_in_regulation IS TRUE AND ah.course_par = 3))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.scoring_zone_in_regulation IS TRUE AND ah.course_par = 4))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.scoring_zone_in_regulation IS TRUE AND ah.course_par = 5))::NUMERIC,
+        (AVG(ah.hole_score) FILTER (WHERE ah.scoring_zone_in_regulation IS FALSE AND ah.course_par = 3))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.scoring_zone_in_regulation IS FALSE AND ah.course_par = 4))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.scoring_zone_in_regulation IS FALSE AND ah.course_par = 5))::NUMERIC,
+        (AVG(ah.hole_score) FILTER (WHERE ah.holeout_within_3_shots_scoring_zone IS TRUE AND ah.course_par = 3))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.holeout_within_3_shots_scoring_zone IS FALSE AND ah.scoring_zone_in_regulation IS TRUE AND ah.course_par = 3))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.holeout_within_3_shots_scoring_zone IS TRUE AND ah.course_par = 4))::NUMERIC,
+        (AVG(ah.hole_score) FILTER (WHERE ah.holeout_within_3_shots_scoring_zone IS FALSE AND ah.scoring_zone_in_regulation IS TRUE AND ah.course_par = 4))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.holeout_within_3_shots_scoring_zone IS TRUE AND ah.course_par = 5))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.holeout_within_3_shots_scoring_zone IS FALSE AND ah.scoring_zone_in_regulation IS TRUE AND ah.course_par = 5))::NUMERIC,
+        -- Penalty stats
+        (AVG(ah.hole_score) FILTER (WHERE ah.penalty_shots > 0 AND ah.course_par = 3))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.penalty_shots = 0 AND ah.course_par = 3))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.penalty_shots > 0 AND ah.course_par = 4))::NUMERIC,
+        (AVG(ah.hole_score) FILTER (WHERE ah.penalty_shots = 0 AND ah.course_par = 4))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.penalty_shots > 0 AND ah.course_par = 5))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.penalty_shots = 0 AND ah.course_par = 5))::NUMERIC,
+        COALESCE(SUM(CASE WHEN ah.course_par = 3 AND ah.penalty_shots > 0 THEN 1 ELSE 0 END), 0)::BIGINT, COALESCE(SUM(CASE WHEN ah.course_par = 4 AND ah.penalty_shots > 0 THEN 1 ELSE 0 END), 0)::BIGINT, COALESCE(SUM(CASE WHEN ah.course_par = 5 AND ah.penalty_shots > 0 THEN 1 ELSE 0 END), 0)::BIGINT,
+        -- Luck stats
+        COALESCE(SUM(CASE WHEN ah.course_par = 3 AND ah.holeout_from_outside_4ft THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ah.course_par = 4 AND ah.holeout_from_outside_4ft THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ah.course_par = 5 AND ah.holeout_from_outside_4ft THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ah.course_par = 3 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ah.course_par = 4 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ah.course_par = 5 THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ah.scoring_zone_in_regulation IS TRUE AND ah.holeout_from_outside_4ft THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ah.scoring_zone_in_regulation IS FALSE AND ah.holeout_from_outside_4ft THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ah.scoring_zone_in_regulation IS TRUE THEN 1 ELSE 0 END), 0)::BIGINT,
+        COALESCE(SUM(CASE WHEN ah.scoring_zone_in_regulation IS FALSE THEN 1 ELSE 0 END), 0)::BIGINT,
+        -- Relative distance stats
+        MAX(ad.avg_d_p3), MAX(ad.avg_d_p4), MAX(ad.avg_d_p5),
+        (AVG(ah.hole_score) FILTER (WHERE ah.course_par = 3 AND ah.course_distance < ad.avg_d_p3 * (1 - relative_distance_threshold)))::NUMERIC,
+        (AVG(ah.hole_score) FILTER (WHERE ah.course_par = 3 AND ah.course_distance >= ad.avg_d_p3 * (1 - relative_distance_threshold) AND ah.course_distance <= ad.avg_d_p3 * (1 + relative_distance_threshold)))::NUMERIC,
+        (AVG(ah.hole_score) FILTER (WHERE ah.course_par = 3 AND ah.course_distance > ad.avg_d_p3 * (1 + relative_distance_threshold)))::NUMERIC,
+        (AVG(ah.hole_score) FILTER (WHERE ah.course_par = 4 AND ah.course_distance < ad.avg_d_p4 * (1 - relative_distance_threshold)))::NUMERIC,
+        (AVG(ah.hole_score) FILTER (WHERE ah.course_par = 4 AND ah.course_distance >= ad.avg_d_p4 * (1 - relative_distance_threshold) AND ah.course_distance <= ad.avg_d_p4 * (1 + relative_distance_threshold)))::NUMERIC,
+        (AVG(ah.hole_score) FILTER (WHERE ah.course_par = 4 AND ah.course_distance > ad.avg_d_p4 * (1 + relative_distance_threshold)))::NUMERIC,
+        (AVG(ah.hole_score) FILTER (WHERE ah.course_par = 5 AND ah.course_distance < ad.avg_d_p5 * (1 - relative_distance_threshold)))::NUMERIC,
+        (AVG(ah.hole_score) FILTER (WHERE ah.course_par = 5 AND ah.course_distance >= ad.avg_d_p5 * (1 - relative_distance_threshold) AND ah.course_distance <= ad.avg_d_p5 * (1 + relative_distance_threshold)))::NUMERIC,
+        (AVG(ah.hole_score) FILTER (WHERE ah.course_par = 5 AND ah.course_distance > ad.avg_d_p5 * (1 + relative_distance_threshold)))::NUMERIC
+    FROM all_holes ah, avg_distances ad;
 END;
 $$;
 
@@ -451,8 +516,10 @@ $$;
 -- This allows the functions to be called from the client-side library
 GRANT EXECUTE ON FUNCTION public.calculate_user_szir_streak(TEXT) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.calculate_user_szpar_streak(TEXT) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.get_user_cumulative_stats(TEXT, BOOLEAN) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.get_recent_rounds_stats(TEXT, INT, BOOLEAN) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_user_cumulative_stats(TEXT) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_recent_rounds_base_stats(TEXT, INT, BOOLEAN) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_recent_rounds_par_type_stats(TEXT, INT, BOOLEAN) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.get_recent_rounds_advanced_stats(TEXT, INT, BOOLEAN, NUMERIC) TO authenticated, service_role;
 
 -- Grant execute permissions for uuid_generate_v4 to allow creating invitation tokens
 -- This function is part of the uuid-ossp extension
