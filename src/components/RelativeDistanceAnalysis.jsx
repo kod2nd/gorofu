@@ -218,8 +218,7 @@ const RelativeDistanceAnalysis = ({ recentRounds }) => {
             Scoring by Hole Length
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Performance on short, medium, and long holes relative to your
-            average
+            Performance on short, medium, and long holes against the average
           </Typography>
         </Box>
       </Box>
@@ -443,7 +442,7 @@ const RelativeDistanceAnalysis = ({ recentRounds }) => {
                     }}
                   >
                     <Chip
-                      label={data.medium ? data.medium.toFixed(2) : "No Data"}
+                      label={data.medium ? getScoreDisplay(data.medium, data.avgScore) : "No Data"}
                       size="small"
                       icon={getScoreIcon(data.medium, data.avgScore)}
                       sx={{ fontWeight: "bold", minWidth: 60, ...getChipStyles(data.medium, data.avgScore) }}
@@ -468,7 +467,7 @@ const RelativeDistanceAnalysis = ({ recentRounds }) => {
                     }}
                   >
                     <Chip
-                      label={data.long ? data.long.toFixed(2) : "No Data"}
+                      label={data.long ? getScoreDisplay(data.long, data.avgScore) : "No Data"}
                       size="small"
                       icon={getScoreIcon(data.long, data.avgScore)}
                       sx={{ fontWeight: "bold", minWidth: 60, ...getChipStyles(data.long, data.avgScore) }}
