@@ -36,7 +36,7 @@ const SCORE_DISTRIBUTION_COLORS = {
   'Par': '#3b82f6',
   'Bogey': '#f59e0b',
   'Dbl Bogey': '#ef4444',
-  'Triple+': '#dc2626', // A darker red for more severe errors
+  'Triple+': '#991b1b', // A darker red for more severe errors
 };
 
 const ChartCard = ({ title, subtitle, children, icon }) => (
@@ -130,6 +130,14 @@ const DistributionTooltip = ({ active, payload, label }) => {
   if (!active || !payload || payload.length === 0) return null;
   
   const total = payload.reduce((sum, entry) => sum + entry.value, 0);
+
+  // Define the desired order to match the legend and bars
+  const desiredOrder = ['Birdie+', 'Par', 'Bogey', 'Dbl Bogey', 'Triple+'];
+
+  // Sort the payload from recharts to match our desired order
+  const sortedPayload = [...payload].sort((a, b) => {
+    return desiredOrder.indexOf(a.name) - desiredOrder.indexOf(b.name);
+  });
   
   return (
     <Paper 
@@ -145,7 +153,7 @@ const DistributionTooltip = ({ active, payload, label }) => {
       <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 1 }}>
         {label}
       </Typography>
-      {payload.map((entry, index) => (
+      {sortedPayload.map((entry, index) => (
         <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: 'center' }}>
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Box 
@@ -169,9 +177,18 @@ const DistributionTooltip = ({ active, payload, label }) => {
   );
 };
 
-const CustomLegend = ({ payload, colors }) => (
-  <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mt: 2, flexWrap: 'wrap' }}>
-    {payload.map((entry, index) => (
+const CustomLegend = ({ payload, colors }) => {
+  // Define the desired order for the legend items
+  const desiredOrder = ['Birdie+', 'Par', 'Bogey', 'Dbl Bogey', 'Triple+'];
+
+  // Sort the payload from recharts to match our desired order
+  const sortedPayload = [...payload].sort((a, b) => {
+    return desiredOrder.indexOf(a.value) - desiredOrder.indexOf(b.value);
+  });
+
+  return (
+    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mt: 2, flexWrap: 'wrap' }}>
+      {sortedPayload.map((entry, index) => (
       <Box key={`item-${index}`} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
         <Box 
           sx={{ 
@@ -186,8 +203,9 @@ const CustomLegend = ({ payload, colors }) => (
         </Typography>
       </Box>
     ))}
-  </Box>
-);
+    </Box>
+  );
+};
 
 const TotalBarLabel = (props) => {
   const { x, y, width, value, index, data } = props;
