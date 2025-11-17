@@ -40,6 +40,7 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
       ],
     }
   );
+  const [showParOverrides, setShowParOverrides] = useState({});
 
   const handleCourseChange = (e) => {
     setCourse({ ...course, [e.target.name]: e.target.value });
@@ -251,27 +252,45 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
         {course.holes.map((hole, holeIndex) => (
           <Accordion key={hole.hole_number}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Typography sx={{ width: '33%', flexShrink: 0 }}>Hole {hole.hole_number}</Typography>
-              <TextField
-                label="Par"
-                size="small"
-                type="number"
-                value={hole.par}
-                onChange={(e) => handleHoleDataChange(holeIndex, 'par', e.target.value)}
-                onClick={(e) => e.stopPropagation()}
-                sx={{ width: '80px' }}
-              />
+              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', pr: 2 }}>
+                <Typography sx={{ flexShrink: 0, fontWeight: 'medium' }}>Hole {hole.hole_number}</Typography>
+                <Box onClick={(e) => e.stopPropagation()}>
+                  <ToggleButtonGroup
+                    color="primary"
+                    value={hole.par}
+                    exclusive
+                    size="small"
+                    onChange={(e, value) => {
+                      if (value !== null) {
+                        handleHoleDataChange(holeIndex, 'par', value);
+                      }
+                    }}
+                  >
+                    <ToggleButton value="2">2</ToggleButton>
+                    <ToggleButton value="3">3</ToggleButton>
+                    <ToggleButton value="4">4</ToggleButton>
+                    <ToggleButton value="5">5</ToggleButton>
+                    <ToggleButton value="6">6</ToggleButton>
+                    <ToggleButton value="7">7</ToggleButton>
+                  </ToggleButtonGroup>
+                </Box>
+              </Box>
             </AccordionSummary>
             <AccordionDetails>
               <Box>
-                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>Distance</Typography>
+                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'bold' }}>Distances</Typography>
                 <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                   {course.tee_boxes.map((teeBox) => (
                     <Box
                       key={teeBox.name}
                       sx={{
-                        flex: '1 1 calc(50% - 8px)',
-                        '@media (min-width:900px)': { flex: '1 1 calc(25% - 12px)' },
+                        flexBasis: 'calc(50% - 8px)',
+                        '@media (min-width:600px)': {
+                          flexBasis: 'calc(33.33% - 11px)',
+                        },
+                        '@media (min-width:900px)': {
+                          flexBasis: 'calc(25% - 12px)',
+                        },
                       }}
                     >
                       <TextField
@@ -285,35 +304,46 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
                   ))}
                 </Box>
               </Box>
-              <Box sx={{ mt: 3 }}>
-                <Typography variant="subtitle2" sx={{ mb: 1, fontWeight: 'bold' }}>Hole Par Override <Typography variant="caption" color="text.secondary">(Optional)</Typography></Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
-                  {course.tee_boxes.map((teeBox) => (
-                    <Box
-                      key={`${teeBox.name}-par`}
-                      sx={{
-                        flex: '1 1 calc(50% - 8px)',
-                        '@media (min-width:900px)': { flex: '1 1 calc(25% - 12px)' },
-                      }}
-                    >
-                      <TextField
-                        label={`${teeBox.name} Par`}
-                        type="number"
-                        value={hole.par_overrides[teeBox.name] || ''}
-                        onChange={(e) => handleParOverrideChange(holeIndex, teeBox.name, e.target.value)}
-                        fullWidth
-                      />
-                    </Box>
-                  ))}
+              <Button 
+                size="small" 
+                onClick={() => setShowParOverrides(prev => ({ ...prev, [holeIndex]: !prev[holeIndex] }))}
+                sx={{ mt: 2 }}
+              >
+                {showParOverrides[holeIndex] ? 'Hide' : 'Show'} Par Overrides
+              </Button>
+              {showParOverrides[holeIndex] && (
+                <Box sx={{ mt: 2, p: 2, border: '1px dashed', borderColor: 'divider', borderRadius: 1 }}>
+                  <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'bold' }}>Par Overrides <Typography variant="caption" color="text.secondary">(Optional)</Typography></Typography>
+                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                    {course.tee_boxes.map((teeBox) => (
+                      <Box
+                        key={`${teeBox.name}-par`}
+                        sx={{
+                          flexBasis: 'calc(50% - 8px)',
+                          '@media (min-width:600px)': { flexBasis: 'calc(33.33% - 11px)' },
+                          '@media (min-width:900px)': { flexBasis: 'calc(25% - 12px)' },
+                        }}
+                      >
+                        <TextField
+                          label={`${teeBox.name} Par`}
+                          type="number"
+                          value={hole.par_overrides[teeBox.name] || ''}
+                          onChange={(e) => handleParOverrideChange(holeIndex, teeBox.name, e.target.value)}
+                          fullWidth
+                          size="small"
+                        />
+                      </Box>
+                    ))}
+                  </Box>
                 </Box>
-              </Box>
+              )}
             </AccordionDetails>
           </Accordion>
         ))}
 
         <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button type="submit" variant="contained" color="primary" disabled={hasDuplicateTeeBoxes}>
+          <Button type="submit" variant="contained" color="primary" disabled={hasDuplicateTeeBoxes || course.tee_boxes.some(tb => tb.name.trim() === '')}>
             Save Course
           </Button>
           <Button variant="outlined" onClick={onCancel}>
