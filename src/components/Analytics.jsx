@@ -18,6 +18,9 @@ import {
 import { LineChart, Line, BarChart, Bar, Tooltip, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, Cell, LabelList } from 'recharts';
 import { TrendingUp, TrendingDown, ShowChart, Remove } from '@mui/icons-material';
 import RelativeDistanceAnalysis from './Analytics/RelativeDistanceAnalysis';
+import PerformanceLineChart from './Analytics/PerformanceLineChart';
+import CustomTooltip from './Analytics/CustomTooltip';
+import CustomLegend from './Analytics/CustomLegend';
 
 // Modern color palette
 const COLORS = {
@@ -87,45 +90,6 @@ const ChartCard = ({ title, subtitle, children, icon }) => (
   </Paper>
 );
 
-const CustomTooltip = ({ active, payload, label }) => {
-  if (!active || !payload) return null;
-  
-  return (
-    <Paper 
-      elevation={3}
-      sx={{ 
-        p: 1.5,
-        background: 'rgba(255, 255, 255, 0.98)',
-        backdropFilter: 'blur(10px)',
-        border: '1px solid',
-        borderColor: 'divider',
-      }}
-    >
-      <Typography variant="body2" sx={{ fontWeight: 'bold', mb: 0.5 }}>
-        {label}
-      </Typography>
-      {payload.map((entry, index) => (
-        <Box key={index} sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-          <Box 
-            sx={{ 
-              width: 8, 
-              height: 8, 
-              borderRadius: '50%', 
-              backgroundColor: entry.color 
-            }} 
-          />
-          <Typography variant="caption" color="text.secondary">
-            {entry.name}:
-          </Typography>
-          <Typography variant="caption" sx={{ fontWeight: 600 }}>
-            {typeof entry.value === 'number' ? entry.value.toFixed(2) : entry.value}
-          </Typography>
-        </Box>
-      ))}
-    </Paper>
-  );
-};
-
 const DistributionTooltip = ({ active, payload, label }) => {
   if (!active || !payload || payload.length === 0) return null;
   
@@ -177,36 +141,6 @@ const DistributionTooltip = ({ active, payload, label }) => {
   );
 };
 
-const CustomLegend = ({ payload, colors }) => {
-  // Define the desired order for the legend items
-  const desiredOrder = ['Birdie+', 'Par', 'Bogey', 'Dbl Bogey', 'Triple+'];
-
-  // Sort the payload from recharts to match our desired order
-  const sortedPayload = [...payload].sort((a, b) => {
-    return desiredOrder.indexOf(a.value) - desiredOrder.indexOf(b.value);
-  });
-
-  return (
-    <Box sx={{ display: 'flex', justifyContent: 'center', gap: 3, mt: 2, flexWrap: 'wrap' }}>
-      {sortedPayload.map((entry, index) => (
-      <Box key={`item-${index}`} sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-        <Box 
-          sx={{ 
-            width: 12, 
-            height: 12, 
-            borderRadius: 1,
-            backgroundColor: colors ? colors[entry.value] : entry.color 
-          }} 
-        />
-        <Typography variant="caption" sx={{ fontWeight: 500 }}>
-          {entry.value}
-        </Typography>
-      </Box>
-    ))}
-    </Box>
-  );
-};
-
 const TotalBarLabel = (props) => {
   const { x, y, width, value, index, data } = props;
   const dataPoint = data[index];
@@ -222,46 +156,6 @@ const TotalBarLabel = (props) => {
     </text>
   );
 };
-
-const PerformanceLineChart = ({ title, data, scoreDataKey, puttsDataKey, scoreColor, puttsColor }) => (
-  <ChartCard 
-    title={title}
-    subtitle="Average score and putts over time"
-    icon={<ShowChart />}
-  >
-    <ResponsiveContainer width="100%" height={280}>
-      <LineChart data={data} margin={{ top: 10, right: 10, left: -20, bottom: 10 }}>
-        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-        <XAxis 
-          dataKey="date" 
-          stroke="#6b7280"
-          style={{ fontSize: '12px' }}
-        />
-        <YAxis stroke="#6b7280" style={{ fontSize: '12px' }} />
-        <Tooltip content={<CustomTooltip />} />
-        <Legend content={<CustomLegend />} />
-        <Line 
-          type="monotone" 
-          dataKey={scoreDataKey}
-          stroke={scoreColor}
-          strokeWidth={3}
-          dot={{ fill: scoreColor, r: 4 }}
-          activeDot={{ r: 6 }}
-          connectNulls 
-        />
-        <Line 
-          type="monotone" 
-          dataKey={puttsDataKey}
-          stroke={puttsColor}
-          strokeWidth={3}
-          dot={{ fill: puttsColor, r: 4 }}
-          activeDot={{ r: 6 }}
-          connectNulls 
-        />
-      </LineChart>
-    </ResponsiveContainer>
-  </ChartCard>
-);
 
 const Analytics = ({ recentRounds, recentStats, onRelativeDistanceThresholdChange }) => {
   if (!recentRounds || recentRounds.length === 0 || !recentStats) {
