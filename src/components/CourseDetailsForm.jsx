@@ -32,7 +32,7 @@ const FormSection = ({ title, children }) => (
   </Box>
 );
 
-const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = false }) => {
+const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = false, isMobile }) => {
   const [courseDialogOpen, setCourseDialogOpen] = useState(false);
   const [teeBoxDialogOpen, setTeeBoxDialogOpen] = useState(false);
   const [courses, setCourses] = useState([]);
@@ -128,7 +128,11 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
   };
 
   return (
-    <Paper {...cardStyles}>
+    <Paper 
+      sx={{
+        cardStyles
+      }}
+    >
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         <FormSection title="Date Played">
             <LocalizationProvider dateAdapter={AdapterDateFns}>
@@ -245,7 +249,7 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
               sx={{
                 "& .Mui-selected, & .Mui-selected:hover": {
                   color: "white",
-                  backgroundColor: 'primary.dark'
+                  backgroundColor: 'primary.main'
                 },
                 "& .MuiToggleButton-root": {
                   flex: 1
@@ -268,7 +272,7 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
               sx={{
                 "& .Mui-selected, & .Mui-selected:hover": {
                   color: "white",
-                  backgroundColor: 'primary.dark'
+                  backgroundColor: 'primary.main'
                 },
                 "& .MuiToggleButton-root": {
                   flex: 1
@@ -292,7 +296,7 @@ const CourseDetailsForm = ({ roundData = {}, handleCourseChange, isEditMode = fa
                 flexWrap: 'wrap',
                 "& .Mui-selected, & .Mui-selected:hover": {
                   color: "white",
-                  backgroundColor: 'primary.dark'
+                  backgroundColor: 'primary.main'
                 },
                 "& .MuiToggleButton-root": {
                   flex: 1

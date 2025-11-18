@@ -27,7 +27,7 @@ const StatCard = ({ label, value, percentage, tooltip }) => (
   </Tooltip>
 );
 
-const RoundInsights = ({ insightsData }) => {
+const RoundInsights = ({ insightsData, isMobile }) => {
   const {
     totalScore,
     totalPenalties,
@@ -48,7 +48,9 @@ const RoundInsights = ({ insightsData }) => {
   const holeoutWithin3ShotsPercentage = totalSZIR > 0 ? (totalHoleoutWithin3Shots / totalHolesPlayed) * 100 : null;
 
   return (
-    <Paper {...cardStyles}>
+    <Paper sx={{
+            cardStyles,
+          }}>
       
       <Box sx={{ mb: 4 }}>
         <Typography {...sectionHeaderStyles}>

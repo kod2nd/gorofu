@@ -393,7 +393,7 @@ const MobileHoleEntry = ({
   }
 
   return (
-    <Box sx={{ p: { xs: 1, sm: 2 } }}>
+    <Box sx={{ p: { xs: 1, sm: 2 }, maxWidth: isMobile ? '100%' : '800px', mx: 'auto'}}>
       {/* Nine Selector */}
       {isMobile && roundType === '18_holes' && (
         <Box display="flex" justifyContent="center" sx={{ mb: 2 }}>
@@ -524,7 +524,7 @@ const MobileHoleEntry = ({
               alignItems="center"
             >
         <Typography variant="body2" color="text.secondary" mb={1}>
-          Hole Played
+          Played Hole
         </Typography>
               <Switch
                 name="played"
@@ -702,6 +702,28 @@ const MobileHoleEntry = ({
               </Box>
             </Box>
         
+        </Box>
+        {/* Bottom Navigation */}
+        <Box sx={{ p: 2, display: 'flex', justifyContent: 'space-between', borderTop: 1, borderColor: 'divider', minHeight: 68.5 }}>
+            {currentHoleIndex > 0 && (
+                <Button 
+                    startIcon={<ChevronLeft />}
+                    onClick={() => goToHole(currentHoleIndex - 1)}
+                    variant="outlined"
+                >
+                    To Hole {currentHoleIndex}
+                </Button>
+            )}
+            {currentHoleIndex < holes.length - 1 && (
+                <Button 
+                    endIcon={<ChevronRight />}
+                    onClick={() => goToHole(currentHoleIndex + 1)}
+                    variant="contained"
+                    sx={{ ml: 'auto' }} // Push to the right if "Previous" is hidden
+                >
+                    To Hole {currentHoleIndex + 2}
+                </Button>
+            )}
         </Box>
       </Paper>
     </Box>

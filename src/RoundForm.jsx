@@ -503,6 +503,7 @@ const RoundForm = ({
             roundData={courseDetails}
             handleCourseChange={handleCourseChange}
             isEditMode={!!roundIdToEdit}
+            isMobile={isMobile}
           />
 
           <Box sx={{ mt: 4 }}>
@@ -535,7 +536,7 @@ const RoundForm = ({
           </Box>
           {/* Real-time Scorecard */}
           <Box sx={{ mt: 4 }}>
-            <SectionHeader title="Live Scorecard" />
+            <SectionHeader title="Scorecard Review" />
             <ScorecardTable holes={holes} />
           </Box>
           <Box sx={{ mt: 4 }}>
@@ -543,7 +544,7 @@ const RoundForm = ({
               title="Round Insights"
               subtitle="View the insights from your round"
             />
-            <RoundInsights insightsData={insightsData} />
+            <RoundInsights insightsData={insightsData} isMobile={isMobile} />
           </Box>
           <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mt: 4 }}>
             <Button
