@@ -124,6 +124,7 @@ const RoundForm = ({
             return {
               ...initialHoleState,
               ...userPlayedHole,
+              hole_number: holeNumber, // Ensure hole_number is always present
               distance: userPlayedHole.distance || "",
             };
           });
