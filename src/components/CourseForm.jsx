@@ -16,6 +16,7 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete';
+import { Download, UploadFile } from '@mui/icons-material';
 import { elevatedCardStyles } from '../styles/commonStyles';
 import { countries } from './countries';
 
@@ -120,6 +121,77 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
     });
 
     setCourse({ ...course, tee_boxes: newTeeBoxes, holes: newHoles });
+  };
+
+  const handleDownloadTemplate = () => {
+    const headers = ['hole_number', 'par'];
+    course.tee_boxes.forEach(tb => {
+      headers.push(`${tb.name}_distance`);
+      headers.push(`${tb.name}_par`);
+    });
+
+    const rows = Array.from({ length: 18 }, (_, i) => {
+      const row = { hole_number: i + 1, par: '' };
+      course.tee_boxes.forEach(tb => {
+        row[`${tb.name}_distance`] = '';
+        row[`${tb.name}_par`] = '';
+      });
+      return headers.map(header => row[header]).join(',');
+    });
+
+    const csvContent = [headers.join(','), ...rows].join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'course_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const text = e.target.result;
+      const lines = text.split('\n').filter(line => line.trim() !== '');
+      const headers = lines[0].split(',').map(h => h.trim());
+      const newHoles = [...course.holes];
+
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim());
+        const rowData = headers.reduce((obj, header, index) => {
+          obj[header] = values[index];
+          return obj;
+        }, {});
+
+        const holeNumber = parseInt(rowData.hole_number, 10);
+        if (holeNumber >= 1 && holeNumber <= 18) {
+          const holeIndex = holeNumber - 1;
+          const hole = newHoles[holeIndex];
+
+          if (rowData.par) {
+            hole.par = rowData.par;
+          }
+
+          course.tee_boxes.forEach(tb => {
+            const distKey = `${tb.name}_distance`;
+            const parKey = `${tb.name}_par`;
+            if (rowData[distKey]) {
+              hole.distances[tb.name] = rowData[distKey];
+            }
+            if (rowData[parKey]) {
+              hole.par_overrides[tb.name] = rowData[parKey];
+            }
+          });
+        }
+      }
+      setCourse(prev => ({ ...prev, holes: newHoles }));
+    };
+    reader.readAsText(file);
   };
 
   const handleSubmit = (e) => {
@@ -229,21 +301,53 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
                       helperText={course.tee_boxes.some((tb, i) => tb.name.trim() === teeBox.name.trim() && i !== index) ? 'Duplicate name' : ''}
                     />
                     <ToggleButtonGroup
-                      color="primary"
-                      value={teeBox.yards_or_meters_unit}
-                      exclusive
-                      onChange={(e, value) => handleTeeBoxUnitChange(index, value)}
-                      size="small"
-                      sx={{ mt: 1, width: '100%' }}
-                    >
-                      <ToggleButton value="meters" sx={{ flexGrow: 1 }}>Meters</ToggleButton>
-                      <ToggleButton value="yards" sx={{ flexGrow: 1 }}>Yards</ToggleButton>
-                    </ToggleButtonGroup>
+  color="primary"
+  value={teeBox.yards_or_meters_unit}
+  exclusive
+  onChange={(e, value) => handleTeeBoxUnitChange(index, value)}
+  size="small"
+  sx={{ 
+    mt: 1, 
+    width: '100%',
+    '& .MuiToggleButton-root': {
+      flexGrow: 1,
+      '&.Mui-selected': {
+        color: 'white',
+        backgroundColor: 'primary.dark',
+        '&:hover': {
+          backgroundColor: 'primary.dark',
+        },
+      },
+    },
+  }}
+>
+  <ToggleButton value="meters">Meters</ToggleButton>
+  <ToggleButton value="yards">Yards</ToggleButton>
+</ToggleButtonGroup>
                   </Box>
                   <IconButton onClick={() => removeTeeBox(index)} color="error"><DeleteIcon /></IconButton>
                 </Box>
               </Box>
             ))}
+          </Box>
+        </Paper>
+
+        {/* CSV Import/Export */}
+        <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+          <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>Import / Export</Typography>
+          <Box sx={{ display: 'flex', gap: 2 }}>
+            <Button variant="outlined" startIcon={<Download />} onClick={handleDownloadTemplate}>
+              Download Template
+            </Button>
+            <Button component="label" variant="outlined" startIcon={<UploadFile />}>
+              Upload CSV
+              <input
+                type="file"
+                hidden
+                accept=".csv"
+                onChange={handleFileUpload}
+              />
+            </Button>
           </Box>
         </Paper>
 
@@ -256,23 +360,35 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
                 <Typography sx={{ flexShrink: 0, fontWeight: 'medium' }}>Hole {hole.hole_number}</Typography>
                 <Box onClick={(e) => e.stopPropagation()}>
                   <ToggleButtonGroup
-                    color="primary"
-                    value={hole.par}
-                    exclusive
-                    size="small"
-                    onChange={(e, value) => {
-                      if (value !== null) {
-                        handleHoleDataChange(holeIndex, 'par', value);
-                      }
-                    }}
-                  >
-                    <ToggleButton value="2">2</ToggleButton>
-                    <ToggleButton value="3">3</ToggleButton>
-                    <ToggleButton value="4">4</ToggleButton>
-                    <ToggleButton value="5">5</ToggleButton>
-                    <ToggleButton value="6">6</ToggleButton>
-                    <ToggleButton value="7">7</ToggleButton>
-                  </ToggleButtonGroup>
+  color="primary"
+  value={hole.par?.toString()} // Ensure it's a string
+  exclusive
+  size="small"
+  onChange={(e, value) => {
+    if (value !== null) {
+      handleHoleDataChange(holeIndex, 'par', value);
+    }
+  }}
+  sx={{
+    // Target the selected button specifically
+    '& .MuiToggleButton-root': {
+      '&.Mui-selected': {
+        color: 'white',
+        backgroundColor: 'primary.dark',
+        '&:hover': {
+          backgroundColor: 'primary.dark',
+        },
+      },
+    },
+  }}
+>
+  <ToggleButton value="2">2</ToggleButton>
+  <ToggleButton value="3">3</ToggleButton>
+  <ToggleButton value="4">4</ToggleButton>
+  <ToggleButton value="5">5</ToggleButton>
+  <ToggleButton value="6">6</ToggleButton>
+  <ToggleButton value="7">7</ToggleButton>
+</ToggleButtonGroup>
                 </Box>
               </Box>
             </AccordionSummary>
