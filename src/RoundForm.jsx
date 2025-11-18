@@ -15,6 +15,11 @@ import {
   Tooltip,
   useTheme,
   useMediaQuery,
+  Dialog,
+  DialogActions,
+  DialogContent,
+  DialogContentText,
+  DialogTitle,
 } from "@mui/material";
 
 // Import the child components
@@ -77,6 +82,7 @@ const RoundForm = ({
   );
   const [currentHoleIndex, setCurrentHoleIndex] = useState(0);
   const [viewMode, setViewMode] = useState("hole-by-hole");
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
 
   const handleViewChange = (event, newViewMode) => {
     if (newViewMode !== null) {
@@ -324,9 +330,13 @@ const RoundForm = ({
     totalHoleoutWithin3Shots,
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
+  const handleSaveClick = () => {
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirmSave = async () => {
     setLoading(true);
+    setConfirmDialogOpen(false);
 
     // Determine if it's an "eligible" round (>=7 holes for 9, >=14 for 18)
     let is_eligible_round = false;
@@ -492,7 +502,7 @@ const RoundForm = ({
         subtitle="Log your round, including course details and hole-by-hole stats."
       />
       <Paper {...elevatedCardStyles}>
-        <form onSubmit={handleSubmit}>
+        <form>
           <SectionHeader
             title="Course Details"
             subtitle="Enter your round's course information"
@@ -548,11 +558,21 @@ const RoundForm = ({
           </Box>
           <Box sx={{ display: "flex", justifyContent: "center", gap: 2, mt: 4 }}>
             <Button
-              type="submit"
-              variant="contained"
-              color="secondary"
+              type="button"
+              variant="contained"              
+              color="primary"
               disabled={loading}
-              sx={{ py: 1.5, px: 6, fontSize: "1.1rem" }}
+              onClick={handleSaveClick}
+              sx={{ 
+                py: 1.5, 
+                px: 6, 
+                fontSize: "1.1rem",
+                backgroundColor: "primary.main",
+                color: "white",
+                "&:hover": {
+                  backgroundColor: "primary.dark",
+                },
+              }}
             >
               {loading ? (
                 <CircularProgress size={24} color="inherit" />
@@ -568,6 +588,27 @@ const RoundForm = ({
           </Box>
         </form>
       </Paper>
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        open={confirmDialogOpen}
+        onClose={() => setConfirmDialogOpen(false)}
+      >
+        <DialogTitle>Confirm Save Round</DialogTitle>
+        <DialogContent>
+          <DialogContentText>
+            Are you sure you want to save this round? Please ensure you have entered your scores for all holes played before proceeding.
+          </DialogContentText>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setConfirmDialogOpen(false)}>
+            Cancel
+          </Button>
+          <Button onClick={handleConfirmSave} variant="contained" autoFocus>
+            Save Round
+          </Button>
+        </DialogActions>
+      </Dialog>
 
       <Snackbar
         open={snackbar.open}
