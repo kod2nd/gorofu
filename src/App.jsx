@@ -385,7 +385,7 @@ function App() {
                 </PageContainer>
                 <PageContainer active={activePage === 'myStudents'}>
                   <AdminRoute userProfile={userProfile} requireCoach={true}>
-                    <MyStudentsPage impersonatedUser={impersonatedUser} currentUser={userProfile} onImpersonate={handleImpersonate} isActive={activePage === 'myStudents'} />
+                    <MyStudentsPage onImpersonate={handleImpersonate} isActive={activePage === 'myStudents'} />
                   </AdminRoute>
                 </PageContainer>
                 

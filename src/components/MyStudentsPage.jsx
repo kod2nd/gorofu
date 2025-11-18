@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Box,
   Typography,
@@ -28,8 +28,13 @@ const MyStudentsPage = ({ currentUser, onImpersonate, isActive }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  // Refs to prevent re-fetching data unnecessarily on tab switches
+  const hasFetched = useRef(false);
+  const lastFetchedUserId = useRef(null);
+
   useEffect(() => {
-    if (currentUser && isActive) {
+    // Only fetch if the page is active and the user has changed, or it's the first load.
+    if (isActive && currentUser && (!hasFetched.current || lastFetchedUserId.current !== currentUser.user_id)) {
       loadStudents();
     }
   }, [currentUser, isActive]);
@@ -39,6 +44,9 @@ const MyStudentsPage = ({ currentUser, onImpersonate, isActive }) => {
       setLoading(true);
       const studentsData = await userService.getStudentsForCoach(currentUser.user_id);
       setStudents(studentsData);
+      // Mark that we've fetched data for this user
+      hasFetched.current = true;
+      lastFetchedUserId.current = currentUser.user_id;
     } catch (err) {
       setError('Failed to load students: ' + err.message);
     } finally {

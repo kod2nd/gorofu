@@ -211,11 +211,16 @@ STABLE
 SECURITY DEFINER
 AS $$
 DECLARE
-  current_user_id UUID := auth.uid();
+  active_user_id UUID;
   is_student BOOLEAN;
 BEGIN
+  -- Get the user_id of the currently active user (impersonated or logged-in)
+  SELECT user_id INTO active_user_id FROM public.user_profiles 
+  WHERE email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email')
+  LIMIT 1;
+
   -- Only check if the current user is a coach
-  IF NOT (SELECT 'coach' = ANY(roles) FROM public.user_profiles WHERE user_id = current_user_id) THEN
+  IF NOT (SELECT 'coach' = ANY(roles) FROM public.user_profiles WHERE user_id = active_user_id) THEN
     RETURN FALSE;
   END IF;
 
@@ -223,7 +228,7 @@ BEGIN
     SELECT 1
     FROM public.coach_student_mappings csm
     JOIN public.user_profiles sp ON csm.student_user_id = sp.user_id
-    WHERE csm.coach_user_id = current_user_id
+    WHERE csm.coach_user_id = active_user_id
     AND sp.email = student_email_to_check
   ) INTO is_student;
 
@@ -637,7 +642,14 @@ CREATE POLICY "Admins can update change requests" ON course_change_requests FOR 
 
 -- Coach-student mappings policies
 CREATE POLICY "Admins can manage coach-student mappings" ON public.coach_student_mappings FOR ALL USING (has_roles(ARRAY['admin', 'super_admin']));
-CREATE POLICY "Coaches can view their own student mappings" ON public.coach_student_mappings FOR SELECT USING (coach_user_id = auth.uid());
+DROP POLICY IF EXISTS "Coaches can view their own student mappings" ON public.coach_student_mappings;
+CREATE POLICY "Coaches can view their own student mappings" ON public.coach_student_mappings FOR SELECT USING (
+  coach_user_id = (
+    SELECT user_id FROM public.user_profiles 
+    WHERE email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email')
+    LIMIT 1
+  )
+);
 
 -- Rounds: Users can only access their own rounds
 CREATE POLICY "Users can view their own rounds, super admins can view all" ON rounds FOR SELECT USING (user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR is_my_student(user_email) OR has_roles(ARRAY['super_admin']));
