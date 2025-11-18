@@ -310,7 +310,12 @@ const getTeeBoxColor = (teeBoxName, index) => {
                                   <Typography variant="subtitle2" fontWeight="600" sx={{ textTransform: "capitalize" }}>{toProperCase(tb.tee_box)}</Typography>
                                   <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                                     <FlagIcon fontSize="small" sx={{ color: "text.secondary", fontSize: 16 }} />
-                                    <Typography variant="caption" fontWeight="500">{tb.total_distance}{" "}{tb.yards_or_meters_unit === "yards" ? "yds" : "m"}</Typography>
+                                    <Typography variant="caption" fontWeight="500">
+                                      {tb.yards_or_meters_unit === 'yards'
+                                        ? `${tb.total_distance} yds (${Math.round(tb.total_distance * 0.9144)} m)`
+                                        : `${tb.total_distance} m (${Math.round(tb.total_distance * 1.09361)} yds)`
+                                      }
+                                    </Typography>
                                   </Box>
                                 </Box>
                                 <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -318,7 +323,6 @@ const getTeeBoxColor = (teeBoxName, index) => {
                                     <Typography variant="caption" sx={{ backgroundColor: "primary.main", color: "white", px: 1, py: 0.25, borderRadius: 1, fontWeight: "600", fontSize: "0.7rem" }}>Par {tb.total_par}</Typography>
                                     <Typography variant="caption" color="text.secondary">{tb.hole_count} holes</Typography>
                                   </Box>
-                                  <Typography variant="caption" color="text.secondary" fontWeight="500">{Math.round(tb.total_distance / tb.hole_count)}/{tb.yards_or_meters_unit === "yards" ? "yds" : "m"}</Typography>
                                 </Box>
                               </Paper>
                             ))
@@ -359,7 +363,12 @@ const getTeeBoxColor = (teeBoxName, index) => {
                               <Typography variant="subtitle2" fontWeight="600" sx={{ textTransform: "capitalize" }}>{toProperCase(tb.tee_box)}</Typography>
                               <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
                                 <FlagIcon fontSize="small" sx={{ color: "text.secondary", fontSize: 16 }} />
-                                <Typography variant="caption" fontWeight="500">{tb.total_distance}{" "}{tb.yards_or_meters_unit === "yards" ? "yds" : "m"}</Typography>
+                                <Typography variant="caption" fontWeight="500">
+                                  {tb.yards_or_meters_unit === 'yards'
+                                    ? `${tb.total_distance} yds (${Math.round(tb.total_distance * 0.9144)} m)`
+                                    : `${tb.total_distance} m (${Math.round(tb.total_distance * 1.09361)} yds)`
+                                  }
+                                </Typography>
                               </Box>
                             </Box>
                             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
@@ -367,7 +376,12 @@ const getTeeBoxColor = (teeBoxName, index) => {
                                 <Typography variant="caption" sx={{ backgroundColor: "primary.main", color: "white", px: 1, py: 0.25, borderRadius: 1, fontWeight: "600", fontSize: "0.7rem" }}>Par {tb.total_par}</Typography>
                                 <Typography variant="caption" color="text.secondary">{tb.hole_count} holes</Typography>
                               </Box>
-                              <Typography variant="caption" color="text.secondary" fontWeight="500">{Math.round(tb.total_distance / tb.hole_count)}/{tb.yards_or_meters_unit === "yards" ? "yds" : "m"}</Typography>
+                              <Typography variant="caption" color="text.secondary" fontWeight="500">
+                                Avg: {tb.yards_or_meters_unit === 'yards'
+                                  ? `${Math.round(tb.total_distance / tb.hole_count)} yds`
+                                  : `${Math.round(tb.total_distance / tb.hole_count)} m`
+                                }
+                              </Typography>
                             </Box>
                           </Paper>
                         ))
