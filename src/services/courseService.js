@@ -19,6 +19,20 @@ export const courseService = {
     return data;
   },
 
+  async searchCoursesWithStats(searchTerm, countryFilter) {
+    const { data, error } = await supabase.rpc('search_courses_with_stats', {
+      search_term: searchTerm,
+      country_filter: countryFilter,
+    });
+
+    if (error) {
+      console.error('Error searching courses with stats:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
   // Get all courses in a country
   async getCoursesByCountry(country = 'Singapore') {
     const { data, error } = await supabase

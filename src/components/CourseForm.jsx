@@ -223,22 +223,49 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
 
   return (
     <Paper {...elevatedCardStyles}>
-      <Typography variant="h4" component="h1" gutterBottom sx={{ fontWeight: 'bold' }}>
-        {course.id ? 'Edit Course' : 'Add New Course'}
+      <Typography
+        variant="h4"
+        component="h1"
+        gutterBottom
+        sx={{ fontWeight: "bold" }}
+      >
+        {course.id ? "Edit Course" : "Add New Course"}
       </Typography>
       <form onSubmit={handleSubmit}>
         {/* Course Details */}
-        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 2 }}>
-          <Box sx={{ flex: '1 1 100%', '@media (min-width:600px)': { flex: '1 1 calc(50% - 8px)' } }}>
-            <TextField name="name" label="Course Name" value={course.name} onChange={handleCourseChange} fullWidth required />
+        <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
+          <Box
+            sx={{
+              flex: "1 1 100%",
+              "@media (min-width:600px)": { flex: "1 1 calc(50% - 8px)" },
+            }}
+          >
+            <TextField
+              name="name"
+              label="Course Name"
+              value={course.name}
+              onChange={handleCourseChange}
+              fullWidth
+              required
+            />
           </Box>
-          <Box sx={{ flex: '1 1 calc(50% - 8px)', '@media (min-width:600px)': { flex: '1 1 calc(25% - 12px)' } }}>
+          <Box
+            sx={{
+              flex: "1 1 calc(50% - 8px)",
+              "@media (min-width:600px)": { flex: "1 1 calc(25% - 12px)" },
+            }}
+          >
             <Autocomplete
               options={countries}
               getOptionLabel={(option) => option.label}
-              value={countries.find(c => c.label === course.country) || null}
+              value={countries.find((c) => c.label === course.country) || null}
               onChange={(event, newValue) => {
-                handleCourseChange({ target: { name: 'country', value: newValue ? newValue.label : '' } });
+                handleCourseChange({
+                  target: {
+                    name: "country",
+                    value: newValue ? newValue.label : "",
+                  },
+                });
               }}
               renderOption={(props, option) => (
                 <Box component="li" {...props}>
@@ -248,7 +275,7 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
                     src={`https://flagcdn.com/w20/${option.code.toLowerCase()}.png`}
                     srcSet={`https://flagcdn.com/w40/${option.code.toLowerCase()}.png 2x`}
                     alt=""
-                    style={{ marginRight: '10px' }}
+                    style={{ marginRight: "10px" }}
                   />
                   {option.label}
                 </Box>
@@ -261,71 +288,113 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
                   required
                   inputProps={{
                     ...params.inputProps,
-                    autoComplete: 'new-password', // disable autocomplete and autofill
+                    autoComplete: "new-password", // disable autocomplete and autofill
                   }}
                 />
               )}
             />
           </Box>
-          <Box sx={{ flex: '1 1 calc(50% - 8px)', '@media (min-width:600px)': { flex: '1 1 calc(25% - 12px)' } }}>
-            <TextField name="city" label="City" value={course.city} onChange={handleCourseChange} fullWidth />
+          <Box
+            sx={{
+              flex: "1 1 calc(50% - 8px)",
+              "@media (min-width:600px)": { flex: "1 1 calc(25% - 12px)" },
+            }}
+          >
+            <TextField
+              name="city"
+              label="City"
+              value={course.city}
+              onChange={handleCourseChange}
+              fullWidth
+            />
           </Box>
         </Box>
 
         {/* Tee Box Management */}
         <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 'bold' }}>Tee Boxes</Typography>
-            <Button startIcon={<AddCircleOutlineIcon />} onClick={addTeeBox} variant="outlined">
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
+              Tee Boxes
+            </Typography>
+            <Button
+              startIcon={<AddCircleOutlineIcon />}
+              onClick={addTeeBox}
+              variant="outlined"
+            >
               Add Tee Box
             </Button>
           </Box>
-          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
             {course.tee_boxes.map((teeBox, index) => (
               <Box
                 key={index}
                 sx={{
-                  flexBasis: '100%',
-                  '@media (min-width:600px)': { flexBasis: 'calc(50% - 8px)' },
-                  '@media (min-width:900px)': { flexBasis: 'calc(33.33% - 11px)' },
+                  flexBasis: "100%",
+                  "@media (min-width:600px)": { flexBasis: "calc(50% - 8px)" },
+                  "@media (min-width:900px)": {
+                    flexBasis: "calc(33.33% - 11px)",
+                  },
                 }}
               >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Box sx={{ flexGrow: 1 }}>
-                    <TextField 
-                      label={`Tee ${index + 1} Name`} 
-                      value={teeBox.name} 
-                      onChange={(e) => handleTeeBoxNameChange(index, e.target.value)} 
-                      fullWidth 
-                      error={course.tee_boxes.some((tb, i) => tb.name.trim() === teeBox.name.trim() && i !== index)}
-                      helperText={course.tee_boxes.some((tb, i) => tb.name.trim() === teeBox.name.trim() && i !== index) ? 'Duplicate name' : ''}
+                    <TextField
+                      label={`Tee ${index + 1} Name`}
+                      value={teeBox.name}
+                      onChange={(e) =>
+                        handleTeeBoxNameChange(index, e.target.value)
+                      }
+                      fullWidth
+                      error={course.tee_boxes.some(
+                        (tb, i) =>
+                          tb.name.trim() === teeBox.name.trim() && i !== index
+                      )}
+                      helperText={
+                        course.tee_boxes.some(
+                          (tb, i) =>
+                            tb.name.trim() === teeBox.name.trim() && i !== index
+                        )
+                          ? "Duplicate name"
+                          : ""
+                      }
                     />
                     <ToggleButtonGroup
-  color="primary"
-  value={teeBox.yards_or_meters_unit}
-  exclusive
-  onChange={(e, value) => handleTeeBoxUnitChange(index, value)}
-  size="small"
-  sx={{ 
-    mt: 1, 
-    width: '100%',
-    '& .MuiToggleButton-root': {
-      flexGrow: 1,
-      '&.Mui-selected': {
-        color: 'white',
-        backgroundColor: 'primary.dark',
-        '&:hover': {
-          backgroundColor: 'primary.dark',
-        },
-      },
-    },
-  }}
->
-  <ToggleButton value="meters">Meters</ToggleButton>
-  <ToggleButton value="yards">Yards</ToggleButton>
-</ToggleButtonGroup>
+                      color="primary"
+                      value={teeBox.yards_or_meters_unit}
+                      exclusive
+                      onChange={(e, value) =>
+                        handleTeeBoxUnitChange(index, value)
+                      }
+                      size="small"
+                      sx={{
+                        mt: 1,
+                        width: "100%",
+                        "& .MuiToggleButton-root": {
+                          flexGrow: 1,
+                          "&.Mui-selected": {
+                            color: "white",
+                            backgroundColor: "primary.dark",
+                            "&:hover": {
+                              backgroundColor: "primary.dark",
+                            },
+                          },
+                        },
+                      }}
+                    >
+                      <ToggleButton value="meters">Meters</ToggleButton>
+                      <ToggleButton value="yards">Yards</ToggleButton>
+                    </ToggleButtonGroup>
                   </Box>
-                  <IconButton onClick={() => removeTeeBox(index)} color="error"><DeleteIcon /></IconButton>
+                  <IconButton onClick={() => removeTeeBox(index)} color="error">
+                    <DeleteIcon />
+                  </IconButton>
                 </Box>
               </Box>
             ))}
@@ -334,12 +403,22 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
 
         {/* CSV Import/Export */}
         <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
-          <Typography variant="h6" sx={{ fontWeight: 'bold', mb: 2 }}>Import / Export</Typography>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-            <Button variant="outlined" startIcon={<Download />} onClick={handleDownloadTemplate}>
+          <Typography variant="h6" sx={{ fontWeight: "bold", mb: 2 }}>
+            Import / Export
+          </Typography>
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Button
+              variant="outlined"
+              startIcon={<Download />}
+              onClick={handleDownloadTemplate}
+            >
               Download Template
             </Button>
-            <Button component="label" variant="outlined" startIcon={<UploadFile />}>
+            <Button
+              component="label"
+              variant="outlined"
+              startIcon={<UploadFile />}
+            >
               Upload CSV
               <input
                 type="file"
@@ -352,99 +431,153 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
         </Paper>
 
         {/* Hole-by-Hole Data Entry */}
-        <Typography variant="h6" sx={{ mb: 2, fontWeight: 'bold' }}>Hole Information</Typography>
+        <Typography variant="h6" sx={{ mb: 2, fontWeight: "bold" }}>
+          Hole Information
+        </Typography>
         {course.holes.map((hole, holeIndex) => (
           <Accordion key={hole.hole_number}>
             <AccordionSummary expandIcon={<ExpandMoreIcon />}>
-              <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', pr: 2 }}>
-                <Typography sx={{ flexShrink: 0, fontWeight: 'medium' }}>Hole {hole.hole_number}</Typography>
+              <Box
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  width: "100%",
+                  pr: 2,
+                }}
+              >
+                <Typography sx={{ flexShrink: 0, fontWeight: "medium" }}>
+                  Hole {hole.hole_number}
+                </Typography>
                 <Box onClick={(e) => e.stopPropagation()}>
                   <ToggleButtonGroup
-  color="primary"
-  value={hole.par?.toString()} // Ensure it's a string
-  exclusive
-  size="small"
-  onChange={(e, value) => {
-    if (value !== null) {
-      handleHoleDataChange(holeIndex, 'par', value);
-    }
-  }}
-  sx={{
-    // Target the selected button specifically
-    '& .MuiToggleButton-root': {
-      '&.Mui-selected': {
-        color: 'white',
-        backgroundColor: 'primary.dark',
-        '&:hover': {
-          backgroundColor: 'primary.dark',
-        },
-      },
-    },
-  }}
->
-  <ToggleButton value="2">2</ToggleButton>
-  <ToggleButton value="3">3</ToggleButton>
-  <ToggleButton value="4">4</ToggleButton>
-  <ToggleButton value="5">5</ToggleButton>
-  <ToggleButton value="6">6</ToggleButton>
-  <ToggleButton value="7">7</ToggleButton>
-</ToggleButtonGroup>
+                    color="primary"
+                    value={hole.par?.toString()} // Ensure it's a string
+                    exclusive
+                    size="small"
+                    onChange={(e, value) => {
+                      if (value !== null) {
+                        handleHoleDataChange(holeIndex, "par", value);
+                      }
+                    }}
+                    sx={{
+                      // Target the selected button specifically
+                      "& .MuiToggleButton-root": {
+                        "&.Mui-selected": {
+                          color: "white",
+                          backgroundColor: "primary.dark",
+                          "&:hover": {
+                            backgroundColor: "primary.dark",
+                          },
+                        },
+                      },
+                    }}
+                  >
+                    <ToggleButton value="2">2</ToggleButton>
+                    <ToggleButton value="3">3</ToggleButton>
+                    <ToggleButton value="4">4</ToggleButton>
+                    <ToggleButton value="5">5</ToggleButton>
+                    <ToggleButton value="6">6</ToggleButton>
+                    <ToggleButton value="7">7</ToggleButton>
+                  </ToggleButtonGroup>
                 </Box>
               </Box>
             </AccordionSummary>
             <AccordionDetails>
               <Box>
-                <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'bold' }}>Distances</Typography>
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                <Typography
+                  variant="subtitle2"
+                  sx={{ mb: 2, fontWeight: "bold" }}
+                >
+                  Distances
+                </Typography>
+                <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
                   {course.tee_boxes.map((teeBox) => (
                     <Box
                       key={teeBox.name}
                       sx={{
-                        flexBasis: 'calc(50% - 8px)',
-                        '@media (min-width:600px)': {
-                          flexBasis: 'calc(33.33% - 11px)',
+                        flexBasis: "calc(50% - 8px)",
+                        "@media (min-width:600px)": {
+                          flexBasis: "calc(33.33% - 11px)",
                         },
-                        '@media (min-width:900px)': {
-                          flexBasis: 'calc(25% - 12px)',
+                        "@media (min-width:900px)": {
+                          flexBasis: "calc(25% - 12px)",
                         },
                       }}
                     >
                       <TextField
                         label={`${teeBox.name} Distance`}
                         type="number"
-                        value={hole.distances[teeBox.name] || ''}
-                        onChange={(e) => handleDistanceChange(holeIndex, teeBox.name, e.target.value)}
+                        value={hole.distances[teeBox.name] || ""}
+                        onChange={(e) =>
+                          handleDistanceChange(
+                            holeIndex,
+                            teeBox.name,
+                            e.target.value
+                          )
+                        }
                         fullWidth
                       />
                     </Box>
                   ))}
                 </Box>
               </Box>
-              <Button 
-                size="small" 
-                onClick={() => setShowParOverrides(prev => ({ ...prev, [holeIndex]: !prev[holeIndex] }))}
+              <Button
+                size="small"
+                onClick={() =>
+                  setShowParOverrides((prev) => ({
+                    ...prev,
+                    [holeIndex]: !prev[holeIndex],
+                  }))
+                }
                 sx={{ mt: 2 }}
               >
-                {showParOverrides[holeIndex] ? 'Hide' : 'Show'} Par Overrides
+                {showParOverrides[holeIndex] ? "Hide" : "Show"} Par Overrides
               </Button>
               {showParOverrides[holeIndex] && (
-                <Box sx={{ mt: 2, p: 2, border: '1px dashed', borderColor: 'divider', borderRadius: 1 }}>
-                  <Typography variant="subtitle2" sx={{ mb: 2, fontWeight: 'bold' }}>Par Overrides <Typography variant="caption" color="text.secondary">(Optional)</Typography></Typography>
-                  <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+                <Box
+                  sx={{
+                    mt: 2,
+                    p: 2,
+                    border: "1px dashed",
+                    borderColor: "divider",
+                    borderRadius: 1,
+                  }}
+                >
+                  <Typography
+                    variant="subtitle2"
+                    sx={{ mb: 2, fontWeight: "bold" }}
+                  >
+                    Par Overrides{" "}
+                    <Typography variant="caption" color="text.secondary">
+                      (Optional)
+                    </Typography>
+                  </Typography>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
                     {course.tee_boxes.map((teeBox) => (
                       <Box
                         key={`${teeBox.name}-par`}
                         sx={{
-                          flexBasis: 'calc(50% - 8px)',
-                          '@media (min-width:600px)': { flexBasis: 'calc(33.33% - 11px)' },
-                          '@media (min-width:900px)': { flexBasis: 'calc(25% - 12px)' },
+                          flexBasis: "calc(50% - 8px)",
+                          "@media (min-width:600px)": {
+                            flexBasis: "calc(33.33% - 11px)",
+                          },
+                          "@media (min-width:900px)": {
+                            flexBasis: "calc(25% - 12px)",
+                          },
                         }}
                       >
                         <TextField
                           label={`${teeBox.name} Par`}
                           type="number"
-                          value={hole.par_overrides[teeBox.name] || ''}
-                          onChange={(e) => handleParOverrideChange(holeIndex, teeBox.name, e.target.value)}
+                          value={hole.par_overrides[teeBox.name] || ""}
+                          onChange={(e) =>
+                            handleParOverrideChange(
+                              holeIndex,
+                              teeBox.name,
+                              e.target.value
+                            )
+                          }
                           fullWidth
                           size="small"
                         />
@@ -457,17 +590,36 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
           </Accordion>
         ))}
 
-        <Box sx={{ mt: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Box sx={{ display: 'flex', gap: 2 }}>
-          <Button type="submit" variant="contained" color="primary" disabled={hasDuplicateTeeBoxes || course.tee_boxes.some(tb => tb.name.trim() === '')}>
-            Save Course
-          </Button>
-          <Button variant="outlined" onClick={onCancel}>
-            Cancel
-          </Button>
+        <Box
+          sx={{
+            mt: 3,
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+          }}
+        >
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={
+                hasDuplicateTeeBoxes ||
+                course.tee_boxes.some((tb) => tb.name.trim() === "")
+              }
+            >
+              Save Course
+            </Button>
+            <Button variant="outlined" onClick={onCancel}>
+              Cancel
+            </Button>
           </Box>
           {initialCourse && (
-            <Button variant="text" color="error" onClick={() => onDelete(course)}>
+            <Button
+              variant="text"
+              color="error"
+              onClick={() => onDelete(course)}
+            >
               Delete Course
             </Button>
           )}

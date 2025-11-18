@@ -285,6 +285,43 @@ BEGIN
 END;
 $$;
 
+-- Function to search for courses and include aggregated tee box stats
+CREATE OR REPLACE FUNCTION search_courses_with_stats(
+  search_term TEXT DEFAULT '',
+  country_filter TEXT DEFAULT NULL
+)
+RETURNS TABLE(
+  id UUID,
+  name TEXT,
+  country TEXT,
+  city TEXT,
+  tee_box_stats JSONB
+)
+LANGUAGE plpgsql STABLE
+AS $$
+BEGIN
+  RETURN QUERY
+  SELECT
+    c.id,
+    c.name,
+    c.country,
+    c.city,
+    (
+      SELECT jsonb_agg(tbs)
+      FROM (
+        SELECT tee_box, COUNT(hole_number) as hole_count, SUM(par) as total_par, SUM(distance) as total_distance, MAX(yards_or_meters_unit) as yards_or_meters_unit
+        FROM course_tee_boxes ctb
+        WHERE ctb.course_id = c.id
+        GROUP BY ctb.tee_box
+      ) tbs
+    ) as tee_box_stats
+  FROM courses c
+  WHERE (country_filter IS NULL OR c.country = country_filter)
+    AND (search_term = '' OR c.name ILIKE '%' || search_term || '%')
+  ORDER BY c.name;
+END;
+$$;
+
 -- Drop the function first to allow changing the return signature
 DROP FUNCTION IF EXISTS public.get_user_cumulative_stats(TEXT); -- Keep this to ensure idempotency
 
@@ -527,6 +564,7 @@ GRANT EXECUTE ON FUNCTION public.get_recent_rounds_base_stats(TEXT, INT, BOOLEAN
 GRANT EXECUTE ON FUNCTION public.get_recent_rounds_par_type_stats(TEXT, INT, BOOLEAN) TO authenticated, service_role;
 GRANT EXECUTE ON FUNCTION public.get_recent_rounds_advanced_stats(TEXT, INT, BOOLEAN, NUMERIC) TO authenticated, service_role;
 
+GRANT EXECUTE ON FUNCTION public.search_courses_with_stats(TEXT, TEXT) TO authenticated, service_role;
 -- Grant execute permissions for uuid_generate_v4 to allow creating invitation tokens
 -- This function is part of the uuid-ossp extension
 GRANT EXECUTE ON FUNCTION extensions.uuid_generate_v4() TO authenticated, service_role;
