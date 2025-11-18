@@ -114,7 +114,7 @@ const CustomLegend = ({ payload, colors }) => {
     >
       {payload.map((entry, index) => (
         <Box
-          key={`item-${index}`}
+          key={`legend-${entry.dataKey}-${index}`}
           sx={{ display: "flex", alignItems: "center", gap: 0.5 }}
         >
           <Box

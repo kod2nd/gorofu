@@ -215,7 +215,10 @@ const RelativeDistanceAnalysis = ({ recentRounds }) => {
                 onChange={handleSliderChange}
                 valueLabelDisplay="auto"
                 step={isYards ? 5 : 5}
-                marks={marks}
+                marks={marks.map((mark, index) => ({
+                  ...mark,
+                  key: `${mark.value}-${distanceUnit}-${index}` // Add unique key
+                }))}
                 min={isYards ? 10 : 10}
                 max={isYards ? 40 : 40}
                 valueLabelFormat={(value) =>

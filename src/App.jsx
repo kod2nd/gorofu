@@ -182,6 +182,8 @@ function App() {
         return 'Course Management';
       case 'coachManagement':
         return 'Coach Management';
+      case 'myStudents':
+        return 'My Students';
       default:
         return 'GolfStat';
     }
@@ -383,7 +385,7 @@ function App() {
                 </PageContainer>
                 <PageContainer active={activePage === 'myStudents'}>
                   <AdminRoute userProfile={userProfile} requireCoach={true}>
-                    <MyStudentsPage currentUser={userProfile} onImpersonate={handleImpersonate} />
+                    <MyStudentsPage impersonatedUser={impersonatedUser} currentUser={userProfile} onImpersonate={handleImpersonate} isActive={activePage === 'myStudents'} />
                   </AdminRoute>
                 </PageContainer>
                 

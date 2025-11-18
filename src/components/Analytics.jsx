@@ -118,7 +118,7 @@ const DistributionTooltip = ({ active, payload, label }) => {
         {label}
       </Typography>
       {sortedPayload.map((entry, index) => (
-        <Box key={index} sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: 'center' }}>
+        <Box key={`dist-tooltip-${entry.name}-${index}`} sx={{ display: 'flex', justifyContent: 'space-between', gap: 2, alignItems: 'center' }}> {/* Add unique key */}
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
             <Box 
               sx={{ 
