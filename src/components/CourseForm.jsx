@@ -12,6 +12,9 @@ import {
   IconButton,
   ToggleButtonGroup,
   ToggleButton,
+  ButtonBase,
+  MenuItem,
+  Slider,
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
@@ -20,27 +23,29 @@ import { Download, UploadFile } from '@mui/icons-material';
 import { elevatedCardStyles } from '../styles/commonStyles';
 import { countries } from './countries';
 
+const createHolesArray = (numHoles) => Array.from({ length: numHoles }, (_, i) => ({
+  hole_number: i + 1,
+  par: '',
+  par_overrides: {},
+  distances: {},
+}));
+
 const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
-  const [course, setCourse] = useState(
-    initialCourse || {
+  const [course, setCourse] = useState(() => {
+    if (initialCourse) return initialCourse;
+    return {
       name: '',
       country: 'Singapore',
       city: '',
-      // Restructure state to be hole-centric
-      holes: Array.from({ length: 18 }, (_, i) => ({
-        hole_number: i + 1,
-        par: '',
-        par_overrides: {}, // e.g., { 'White': 4, 'Blue': 5 }
-        distances: {}, // e.g., { 'White': 350, 'Blue': 380 }
-      })),
+      holes: createHolesArray(18),
       tee_boxes: [
         { name: 'Red', yards_or_meters_unit: 'meters' },
         { name: 'White', yards_or_meters_unit: 'meters' },
         { name: 'Blue', yards_or_meters_unit: 'meters' },
         { name: 'Black', yards_or_meters_unit: 'meters' },
       ],
-    }
-  );
+    };
+  });
   const [showParOverrides, setShowParOverrides] = useState({});
 
   const handleCourseChange = (e) => {
@@ -123,6 +128,11 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
     setCourse({ ...course, tee_boxes: newTeeBoxes, holes: newHoles });
   };
 
+  const handleNumberOfHolesChange = (numHoles) => {
+    const newNumHoles = parseInt(numHoles, 10);
+    setCourse(prev => ({ ...prev, holes: createHolesArray(newNumHoles) }));
+  };
+
   const handleDownloadTemplate = () => {
     const headers = ['hole_number', 'par'];
     course.tee_boxes.forEach(tb => {
@@ -130,7 +140,7 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
       headers.push(`${tb.name}_par`);
     });
 
-    const rows = Array.from({ length: 18 }, (_, i) => {
+    const rows = Array.from({ length: course.holes.length }, (_, i) => {
       const row = { hole_number: i + 1, par: '' };
       course.tee_boxes.forEach(tb => {
         row[`${tb.name}_distance`] = '';
@@ -156,10 +166,16 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
 
     const reader = new FileReader();
     reader.onload = (e) => {
-      const text = e.target.result;
+      let text = e.target.result;
+      // Remove BOM (Byte Order Mark) if present, which causes parsing issues.
+      if (text.startsWith('\uFEFF')) {
+        text = text.substring(1);
+      }
       const lines = text.split('\n').filter(line => line.trim() !== '');
       const headers = lines[0].split(',').map(h => h.trim());
-      const newHoles = [...course.holes];
+      
+      const numHolesInCsv = lines.length - 1;
+      const newHoles = createHolesArray(numHolesInCsv);
 
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',').map(v => v.trim());
@@ -169,7 +185,7 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
         }, {});
 
         const holeNumber = parseInt(rowData.hole_number, 10);
-        if (holeNumber >= 1 && holeNumber <= 18) {
+        if (holeNumber >= 1 && holeNumber <= newHoles.length) {
           const holeIndex = holeNumber - 1;
           const hole = newHoles[holeIndex];
 
@@ -308,6 +324,36 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
               fullWidth
             />
           </Box>
+          <Box
+            sx={{
+              flex: '1 1 100%',
+              "@media (min-width:600px)": { flex: "1 1 calc(50% - 8px)" },
+              px: { xs: 1, sm: 2 },
+            }}
+          >
+            <Typography id="number-of-holes-slider" gutterBottom>
+              Number of Holes
+            </Typography>
+            <Slider
+              aria-labelledby="number-of-holes-slider"
+              value={course.holes.length}
+              onChange={(e, newValue) => handleNumberOfHolesChange(newValue)}
+              step={1}
+              marks={[
+                { value: 9, label: '9' },
+                { value: 18, label: '18' },
+              ]}
+              min={1}
+              max={18}
+              valueLabelDisplay="auto"
+              disabled={!!initialCourse}
+            />
+            {initialCourse && (
+              <Typography variant="caption" color="text.secondary" sx={{ display: 'block', textAlign: 'center', mt: -1 }}>
+                Cannot change hole count on existing course
+              </Typography>
+            )}
+          </Box>
         </Box>
 
         {/* Tee Box Management */}
@@ -435,8 +481,25 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
           Hole Information
         </Typography>
         {course.holes.map((hole, holeIndex) => (
-          <Accordion key={hole.hole_number}>
-            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+          <Accordion 
+            key={hole.hole_number}
+            // Use slots to override the root component of the summary
+            slots={{ accordionSummary: 'div' }}
+            slotProps={{
+              accordionSummary: {
+                // We make the summary a div, so we need to manually handle the click area
+                // by wrapping the title in a ButtonBase later.
+                // This prevents the <button><button/></button> issue.
+                sx: {
+                  display: 'flex',
+                  alignItems: 'center',
+                  p: '0 16px', // Default padding for AccordionSummary
+                  minHeight: '48px', // Default min-height
+                }
+              }
+            }}
+          >
+            <AccordionSummary>
               <Box
                 sx={{
                   display: "flex",
@@ -446,9 +509,17 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
                   pr: 2,
                 }}
               >
-                <Typography sx={{ flexShrink: 0, fontWeight: "medium" }}>
-                  Hole {hole.hole_number}
-                </Typography>
+                {/* This ButtonBase becomes the new clickable toggle area */}
+                <ButtonBase sx={{ flexGrow: 1, justifyContent: 'flex-start', p: '8px 0' }}>
+                  <Typography sx={{ flexShrink: 0, fontWeight: "medium" }}>
+                    Hole {hole.hole_number}
+                  </Typography>
+                </ButtonBase>
+
+                {/* This ExpandMoreIcon is now outside the main clickable area, but still visually indicates the action */}
+                <ExpandMoreIcon sx={{ color: 'action.active', ml: 'auto' }} />
+
+                {/* The ToggleButtonGroup is no longer inside a button */}
                 <Box onClick={(e) => e.stopPropagation()}>
                   <ToggleButtonGroup
                     color="primary"
