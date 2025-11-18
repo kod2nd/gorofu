@@ -34,7 +34,6 @@ const RoundsHistoryPage = lazy(() => import('./components/RoundsHistoryPage'));
 const RoundDetailsPage = lazy(() => import('./components/RoundDetailsPage'));
 const CourseManagementPage = lazy(() => import('./components/CourseManagementPage'));
 const CoachManagementPage = lazy(() => import('./components/CoachManagementPage'));
-const MyStudentsPage = lazy(() => import('./components/MyStudentsPage'));
 
 const drawerWidth = 240;
 const collapsedWidth = 60;
@@ -182,8 +181,6 @@ function App() {
         return 'Course Management';
       case 'coachManagement':
         return 'Coach Management';
-      case 'myStudents':
-        return 'My Students';
       default:
         return 'GolfStat';
     }
@@ -381,11 +378,6 @@ function App() {
                 <PageContainer active={activePage === 'coachManagement'}>
                   <AdminRoute userProfile={userProfile}>
                     <CoachManagementPage currentUser={userProfile} isActive={activePage === 'coachManagement'} />
-                  </AdminRoute>
-                </PageContainer>
-                <PageContainer active={activePage === 'myStudents'}>
-                  <AdminRoute userProfile={userProfile} requireCoach={true}>
-                    <MyStudentsPage userProfile={impersonatedUser || userProfile} onImpersonate={handleImpersonate} isActive={activePage === 'myStudents'} />
                   </AdminRoute>
                 </PageContainer>
                 
