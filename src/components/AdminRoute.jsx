@@ -24,7 +24,7 @@ const AdminRoute = ({ children, requireSuperAdmin = false, requireCoach = false,
       if (requireSuperAdmin) {
         setHasAccess(profile.roles.includes('super_admin'));
       } else if (requireCoach) {
-        setHasAccess(profile.roles.includes('coach'));
+        setHasAccess(profile.roles.includes('coach') || profile.roles.includes('super_admin'));
       } else {
         setHasAccess(profile.roles.some(r => ['admin', 'super_admin'].includes(r)));
       }

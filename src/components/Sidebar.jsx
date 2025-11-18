@@ -37,7 +37,7 @@ const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, active
       );
     }
 
-    if (isCoach && !isAdmin) { // Show for coaches who are not also admins
+    if (isCoach || isAdmin) { // Show for coaches who are not also admins
       items.push({ text: "My Students", icon: <GroupIcon />, page: "myStudents" });
     }
     return items;
