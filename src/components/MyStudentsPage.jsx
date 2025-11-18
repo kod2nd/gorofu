@@ -23,30 +23,30 @@ const toProperCase = (str) => {
   return str.replace(/\w\S*/g, (txt) => txt.charAt(0).toUpperCase() + txt.substr(1).toLowerCase());
 };
 
-const MyStudentsPage = ({ currentUser, onImpersonate, isActive }) => {
+const MyStudentsPage = ({ userProfile, onImpersonate, isActive }) => {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
   // Refs to prevent re-fetching data unnecessarily on tab switches
   const hasFetched = useRef(false);
-  const lastFetchedUserId = useRef(null);
+  const lastFetchedUserId = useRef(null); // Use userProfile from props
 
   useEffect(() => {
     // Only fetch if the page is active and the user has changed, or it's the first load.
-    if (isActive && currentUser && (!hasFetched.current || lastFetchedUserId.current !== currentUser.user_id)) {
+    if (isActive && userProfile && (!hasFetched.current || lastFetchedUserId.current !== userProfile.user_id)) {
       loadStudents();
     }
-  }, [currentUser, isActive]);
+  }, [userProfile, isActive]);
 
   const loadStudents = async () => {
     try {
-      setLoading(true);
-      const studentsData = await userService.getStudentsForCoach(currentUser.user_id);
+      setLoading(true); // userProfile is now the correct one (impersonated or self)
+      const studentsData = await userService.getStudentsForCoach(userProfile.user_id);
       setStudents(studentsData);
       // Mark that we've fetched data for this user
       hasFetched.current = true;
-      lastFetchedUserId.current = currentUser.user_id;
+      lastFetchedUserId.current = userProfile.user_id;
     } catch (err) {
       setError('Failed to load students: ' + err.message);
     } finally {
