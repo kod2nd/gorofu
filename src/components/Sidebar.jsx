@@ -4,6 +4,7 @@ import { useTheme } from "@mui/material/styles";
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import AddCircleIcon from "@mui/icons-material/AddCircle";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
+import AddComment from "@mui/icons-material/AddComment";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import LogoutIcon from '@mui/icons-material/Logout';
 import HistoryIcon from '@mui/icons-material/History';
@@ -35,6 +36,16 @@ const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, active
         { text: "Course Management", icon: <SportsGolfIcon />, page: "courseManagement" },
         { text: "Coach Management", icon: <SupervisedUserCircleIcon />, page: "coachManagement" }
       );
+    }
+
+    if (isCoach) {
+      items.push({ text: "Student Interactions", icon: <AddComment />, page: "studentInteractions" });
+    } else {
+      // If a user is not a coach and not an admin, they are a student
+      // and should be able to see their notes.
+      if (!isAdmin) {
+        items.push({ text: "My Coach's Notes", icon: <AddComment />, page: "studentInteractions" });
+      }
     }
 
     return items;

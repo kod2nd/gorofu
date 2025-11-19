@@ -146,9 +146,37 @@ CREATE TABLE IF NOT EXISTS public.coach_student_mappings (
   CONSTRAINT unique_coach_student UNIQUE (coach_user_id, student_user_id)
 );
 
+-- Table for coaches to leave notes for students
+CREATE TABLE IF NOT EXISTS public.coach_notes (
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+  coach_id UUID NOT NULL,
+  student_id UUID NOT NULL,
+  note TEXT NOT NULL,
+  subject TEXT,
+  lesson_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  is_favorited BOOLEAN DEFAULT FALSE,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  CONSTRAINT fk_coach_note FOREIGN KEY (coach_id) REFERENCES public.user_profiles(user_id) ON DELETE CASCADE,
+  CONSTRAINT fk_student_note FOREIGN KEY (student_id) REFERENCES public.user_profiles(user_id) ON DELETE CASCADE
+);
+
+-- Enable RLS for the coach_notes table
+ALTER TABLE public.coach_notes ENABLE ROW LEVEL SECURITY;
+
 -- Enable RLS for the new table
 ALTER TABLE public.coach_student_mappings ENABLE ROW LEVEL SECURITY;
 
+-- Create the 'internal' schema if it doesn't already exist.
+-- This schema will hold objects that should not be directly exposed to the API.
+CREATE SCHEMA IF NOT EXISTS internal;
+
+-- Create a view on user_profiles that bypasses RLS for internal checks.
+-- We grant SELECT access only to the 'postgres' role, which is the role that SECURITY DEFINER functions run as.
+CREATE OR REPLACE VIEW internal.user_profiles_unrestricted AS
+SELECT * FROM public.user_profiles;
+
+GRANT SELECT ON internal.user_profiles_unrestricted TO postgres;
 
 -- Create indexes for better performance
 CREATE INDEX idx_courses_country ON courses(country);
@@ -160,23 +188,23 @@ CREATE INDEX idx_round_holes_round_id ON round_holes(round_id);
 CREATE INDEX IF NOT EXISTS idx_course_change_requests_course_id ON course_change_requests(course_id);
 
 -- Helper function to get the role of the current user
--- This function checks if the current user has AT LEAST ONE of the specified roles.
+-- This function checks if the current user has AT LEAST ONE of the specified roles, using the unrestricted view.
 CREATE OR REPLACE FUNCTION has_roles(roles_to_check TEXT[])
 RETURNS BOOLEAN
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = internal, public -- Prioritize the internal schema
 AS $$
 DECLARE
   user_roles_array TEXT[];
 BEGIN
   -- Check for impersonation variable
   IF current_setting('app.impersonated_user_email', true) IS NOT NULL AND current_setting('app.impersonated_user_email', true) <> '' THEN
-    -- If impersonating, return the role of the impersonated user
-    SELECT roles INTO user_roles_array FROM public.user_profiles WHERE email = current_setting('app.impersonated_user_email');
+    -- If impersonating, return the role of the impersonated user from the unrestricted view
+    SELECT roles INTO user_roles_array FROM internal.user_profiles_unrestricted WHERE email = current_setting('app.impersonated_user_email');
   ELSE
     -- Otherwise, get roles for the currently authenticated user
-    SELECT roles INTO user_roles_array FROM public.user_profiles WHERE user_id = auth.uid();
+    SELECT roles INTO user_roles_array FROM internal.user_profiles_unrestricted WHERE user_id = auth.uid();
   END IF;
 
   -- Check for intersection between user's roles and the roles to check
@@ -189,16 +217,16 @@ CREATE OR REPLACE FUNCTION get_my_roles()
 RETURNS TEXT[]
 LANGUAGE plpgsql
 SECURITY DEFINER
-SET search_path = public
+SET search_path = internal, public
 AS $$
 BEGIN
   -- Check for impersonation variable
   IF current_setting('app.impersonated_user_email', true) IS NOT NULL AND current_setting('app.impersonated_user_email', true) <> '' THEN
-    -- If impersonating, return the roles of the impersonated user
-    RETURN (SELECT roles FROM user_profiles WHERE email = current_setting('app.impersonated_user_email'));
+    -- If impersonating, return the roles of the impersonated user from the unrestricted view
+    RETURN (SELECT roles FROM internal.user_profiles_unrestricted WHERE email = current_setting('app.impersonated_user_email'));
   ELSE
     -- Otherwise, return the role of the currently authenticated user
-    RETURN (SELECT roles FROM user_profiles WHERE user_id = auth.uid());
+    RETURN (SELECT roles FROM internal.user_profiles_unrestricted WHERE user_id = auth.uid());
   END IF;
 END;
 $$;
@@ -233,6 +261,36 @@ BEGIN
   ) INTO is_student;
 
   RETURN is_student;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION is_coach_viewing_authorized()
+RETURNS BOOLEAN
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  current_user_email TEXT;
+  user_roles_array TEXT[];
+BEGIN
+  current_user_email := COALESCE(
+    current_setting('app.impersonated_user_email', true),
+    auth.jwt() ->> 'email'
+  );
+
+  IF current_user_email IS NULL THEN
+    RETURN FALSE;
+  END IF;
+
+  -- Get current user's roles
+  SELECT roles INTO user_roles_array 
+  FROM user_profiles 
+  WHERE email = current_user_email;
+
+  -- Return true if user is a coach
+  RETURN 'coach' = ANY(user_roles_array);
 END;
 $$;
 
@@ -605,12 +663,21 @@ ALTER TABLE course_tee_boxes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE course_change_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE rounds ENABLE ROW LEVEL SECURITY;
 ALTER TABLE round_holes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE coach_notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE round_holes ENABLE ROW LEVEL SECURITY;
 
 -- User profiles: Users can view their own profile, admins can view all
 CREATE POLICY "Users can view their own profile" ON user_profiles FOR SELECT USING (user_id = auth.uid());
 CREATE POLICY "Admins can view all profiles" ON user_profiles FOR SELECT USING (has_roles(ARRAY['admin', 'super_admin']));
 CREATE POLICY "Users can update their own profile" ON user_profiles FOR UPDATE USING (user_id = auth.uid());
+-- Coaches can view profiles of other coaches and students for note display and mapping
+CREATE POLICY "Coaches can view relevant user profiles" ON public.user_profiles FOR SELECT USING (
+  has_roles(ARRAY['coach']) AND (
+    user_id = auth.uid() OR -- Their own profile
+    'coach' = ANY(roles) OR -- Allow viewing any coach profile
+    EXISTS (SELECT 1 FROM public.coach_student_mappings WHERE student_user_id = user_profiles.user_id) -- Allow viewing any student profile (if they are a student in any mapping)
+  )
+);
 CREATE POLICY "Admins can update any profile" ON user_profiles FOR UPDATE USING (has_roles(ARRAY['admin', 'super_admin']));
 CREATE POLICY "Admins can create profiles" ON user_profiles FOR INSERT WITH CHECK (has_roles(ARRAY['admin', 'super_admin']));
 
@@ -649,6 +716,28 @@ CREATE POLICY "Coaches can view their own student mappings" ON public.coach_stud
     WHERE email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email')
     LIMIT 1
   )
+);
+
+-- Coach notes policies
+CREATE POLICY "Students can view their own notes" ON public.coach_notes FOR SELECT USING (
+  student_id = (SELECT user_id FROM public.user_profiles WHERE email = auth.jwt() ->> 'email' LIMIT 1)
+);
+
+CREATE POLICY "Coaches can view notes for their students or any student" ON public.coach_notes FOR SELECT USING (
+  has_roles(ARRAY['coach'])
+);
+
+CREATE POLICY "Coaches can create notes" ON public.coach_notes FOR INSERT WITH CHECK (
+  has_roles(ARRAY['coach']) AND coach_id = (SELECT user_id FROM public.user_profiles WHERE email = auth.jwt() ->> 'email' LIMIT 1)
+);
+
+CREATE POLICY "Coaches can update their own notes" ON public.coach_notes FOR UPDATE USING (
+  has_roles(ARRAY['coach']) AND coach_id = (SELECT user_id FROM public.user_profiles WHERE email = auth.jwt() ->> 'email' LIMIT 1)
+);
+
+CREATE POLICY "Coaches can delete any note, admins can delete any" ON public.coach_notes FOR DELETE USING (
+  has_roles(ARRAY['coach']) OR
+  has_roles(ARRAY['admin', 'super_admin'])
 );
 
 -- Rounds: Users can only access their own rounds

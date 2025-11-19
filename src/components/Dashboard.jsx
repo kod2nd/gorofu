@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { Box, Paper, Alert, Typography } from "@mui/material";
+import { userService } from "../services/userService";
 import { roundService } from "../services/roundService";
 import { elevatedCardStyles } from "../styles/commonStyles";
 import RoundsTable from "./RoundsTable";
@@ -9,8 +10,9 @@ import PageHeader from "./PageHeader";
 import DashboardFilters from "./DashboardFilters";
 import RecentInsights from "./RecentInsights";
 import FlippingGolfIcon from "./FlippingGolfIcon";
+import CoachNotes from "./CoachNotes";
 
-const Dashboard = ({ user, onViewRound, isActive, impersonatedUser }) => {
+const Dashboard = ({ user, onViewRound, isActive, impersonatedUser, userProfile }) => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [isFiltering, setIsFiltering] = useState(false);
   const [error, setError] = useState("");
@@ -21,6 +23,7 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser }) => {
   const [recentRounds, setRecentRounds] = useState([]);
   const [roundLimit, setRoundLimit] = useState(5);
   const [showEligibleRoundsOnly, setShowEligibleRoundsOnly] = useState(false);
+  const [coach, setCoach] = useState(null);
 
   const isInitialMount = useRef(true);
   const hasFetchedAllTime = useRef(false);
@@ -41,7 +44,7 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser }) => {
 
   useEffect(() => {
     const fetchAllTimeDataIfNeeded = async () => {
-      const fetchAllTimeData = async () => {
+      const fetchAllTimeData = async (isImpersonating) => {
         try {
           const [szirStreakData, szParStreakData, allTimeStats] =
             await Promise.all([
@@ -49,10 +52,20 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser }) => {
               roundService.getCurrentSzParStreak(user.email),
               roundService.getCumulativeStats(user.email, false),
             ]);
+
+          // Only check for a coach if not impersonating (admins don't have coaches)
+          if (!isImpersonating) {
+            // Use the coach_id from the user's profile to fetch coach details
+            if (userProfile?.coach_id) {
+              const coachData = await userService.getUserProfileById(userProfile.coach_id);
+              setCoach(coachData);
+            }
+          }
+
           setSzirStreak(szirStreakData);
           setCumulativeStats(allTimeStats);
           setSzParStreak(szParStreakData);
-          hasFetchedAllTime.current = true;
+          hasFetchedAllTime.current = true;          
         } catch (err) {
           setError("Failed to load all-time stats: " + err.message);
         }
@@ -61,12 +74,12 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser }) => {
       // Fetch if the component is now active and wasn't before,
       // or if the user/impersonatedUser has changed.
       if (isActive && user && (isActive !== wasActive.current || !hasFetchedAllTime.current)) {
-        await fetchAllTimeData();
+        await fetchAllTimeData(!!impersonatedUser);
       }
     };
     fetchAllTimeDataIfNeeded();
     wasActive.current = isActive;
-  }, [user, isActive, impersonatedUser]);
+  }, [user, isActive, impersonatedUser, userProfile]);
 
   useEffect(() => {
     // Effect 2: Fetch filter-dependent data ONLY when filters actually change or first mount
@@ -186,6 +199,10 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser }) => {
           <Paper {...elevatedCardStyles}>
             <RecentInsights recentStats={recentStats} isFiltering={isFiltering} />
           </Paper>
+          {/* Conditionally render Coach's Notes for students */}
+          {coach && !impersonatedUser && (
+            <CoachNotes studentId={user.id} />
+          )}
         </Box>
 
         {/* Right Column */}

@@ -45,6 +45,7 @@ import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import { userService } from '../services/userService';
 import { elevatedCardStyles } from '../styles/commonStyles';
+import FlippingGolfIcon from "./FlippingGolfIcon";
 
 const toProperCase = (str) => {
   if (!str) return '';
@@ -132,7 +133,7 @@ const CoachManagementPage = ({ currentUser, isActive }) => {
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: 200 }}>
-        <CircularProgress />
+        <FlippingGolfIcon />
       </Box>
     );
   }

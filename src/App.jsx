@@ -34,6 +34,7 @@ const RoundsHistoryPage = lazy(() => import('./components/RoundsHistoryPage'));
 const RoundDetailsPage = lazy(() => import('./components/RoundDetailsPage'));
 const CourseManagementPage = lazy(() => import('./components/CourseManagementPage'));
 const CoachManagementPage = lazy(() => import('./components/CoachManagementPage'));
+const StudentInteractionsPage = lazy(() => import('./components/StudentInteractionsPage'));
 
 const drawerWidth = 240;
 const collapsedWidth = 60;
@@ -181,6 +182,8 @@ function App() {
         return 'Course Management';
       case 'coachManagement':
         return 'Coach Management';
+      case 'studentInteractions':
+        return 'Lesson Notes';
       default:
         return 'GolfStat';
     }
@@ -396,6 +399,13 @@ function App() {
                     user={activeUser}
                     onEdit={handleEditRound}
                     onBack={() => { setViewingRoundId(null); setActivePage('roundsHistory'); }}
+                  />
+                </PageContainer>
+
+                <PageContainer active={activePage === 'studentInteractions'}>
+                  <StudentInteractionsPage
+                    userProfile={userProfile}
+                    isActive={activePage === 'studentInteractions'}
                   />
                 </PageContainer>
               </Suspense>

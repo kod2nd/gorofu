@@ -323,6 +323,35 @@ export const userService = {
     return data;
   },
 
+  // Get all users with the 'student' role, for coaches to view
+  async getAllStudents() {
+    // A user is a student if they exist in the coach_student_mappings table.
+    // Step 1: Get all unique student IDs from the mapping table.
+    const { data: studentIdsData, error: idsError } = await supabase
+      .from('coach_student_mappings')
+      .select('student_user_id');
+
+    if (idsError) throw idsError;
+
+    // Create a unique set of IDs.
+    const studentIds = [...new Set(studentIdsData.map(mapping => mapping.student_user_id))];
+
+    if (studentIds.length === 0) {
+      return []; // No students found
+    }
+
+    // Step 2: Fetch the profiles for those student IDs.
+    const { data: students, error: profilesError } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .in('user_id', studentIds)
+      .order('full_name', { ascending: true });
+
+    if (profilesError) throw profilesError;
+
+    return students;
+  },
+
   // Admin: Assign a list of students to a coach
   async assignStudentsToCoach(coachId, studentIds, adminEmail) {
     // Step 1: Remove all existing assignments for this coach to ensure a clean slate.
@@ -364,5 +393,118 @@ export const userService = {
 
     if (error) throw error;
     return data;
+  },
+
+  // Get a user's profile by their ID
+  async getUserProfileById(userId) {
+    if (!userId) return null;
+
+    const { data, error } = await supabase
+      .from('user_profiles')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') {
+      // PGRST116 means no rows found, which is not a critical error here.
+      console.error('Error fetching user profile by ID:', error);
+      throw error;
+    }
+
+    return data;
+  },
+
+  // Get all notes for a specific student
+  async getNotesForStudent(options) {
+    const { studentId, searchTerm, startDate, endDate, page = 0, limit = 10, sortOrder = 'desc', showFavoritesOnly = false } = options;
+    if (!studentId) return [];
+
+    let query = supabase
+      .from('coach_notes')
+      .select('*, coach:user_profiles!coach_id(full_name, email)', { count: 'exact' })
+      .eq('student_id', studentId);
+
+    if (showFavoritesOnly) {
+      query = query.eq('is_favorited', true);
+    }
+
+    if (searchTerm) {
+      // Search in both subject and note content
+      query = query.or(`subject.ilike.%${searchTerm}%,note.ilike.%${searchTerm}%`);
+    }
+
+    if (startDate) {
+      query = query.gte('lesson_date', startDate.toISOString());
+    }
+
+    if (endDate) {
+      // Add 1 day to the end date to make it inclusive of the selected day
+      const inclusiveEndDate = new Date(endDate);
+      inclusiveEndDate.setDate(inclusiveEndDate.getDate() + 1);
+      query = query.lt('lesson_date', inclusiveEndDate.toISOString());
+    }
+
+    const from = page * limit;
+    const to = from + limit - 1;
+    query = query.range(from, to).order('lesson_date', { ascending: sortOrder === 'asc' });
+
+    const { data, error, count } = await query;
+    if (error) throw error;
+
+    return { notes: data, hasMore: to < count - 1 };
+  },
+
+  // Save a new note for a student
+  async saveNoteForStudent(noteData) {
+    const { data, error } = await supabase
+      .from('coach_notes')
+      .insert(noteData)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  // Update an existing note for a student
+  async updateNoteForStudent(noteId, noteData) {
+    const { data, error } = await supabase
+      .from('coach_notes')
+      .update({ ...noteData, updated_at: new Date().toISOString() })
+      .eq('id', noteId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  // Toggle the favorite status of a note
+  async toggleNoteFavorite(noteId) {
+    const { data: currentNote, error: fetchError } = await supabase
+      .from('coach_notes')
+      .select('is_favorited')
+      .eq('id', noteId)
+      .single();
+    if (fetchError) throw fetchError;
+
+    const { data, error } = await supabase
+      .from('coach_notes')
+      .update({ is_favorited: !currentNote.is_favorited, updated_at: new Date().toISOString() })
+      .eq('id', noteId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  },
+
+  // Delete a specific note
+  async deleteNote(noteId) {
+    const { error } = await supabase
+      .from('coach_notes')
+      .delete()
+      .eq('id', noteId);
+    if (error) throw error;
   },
 };
