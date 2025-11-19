@@ -421,7 +421,7 @@ export const userService = {
 
     let query = supabase
       .from('coach_notes')
-      .select('*, coach:user_profiles!coach_id(full_name, email)', { count: 'exact' })
+      .select('*, author:user_profiles!author_id(full_name, email, roles)', { count: 'exact' })
       .eq('student_id', studentId);
 
     if (showFavoritesOnly) {

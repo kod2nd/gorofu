@@ -149,15 +149,16 @@ CREATE TABLE IF NOT EXISTS public.coach_student_mappings (
 -- Table for coaches to leave notes for students
 CREATE TABLE IF NOT EXISTS public.coach_notes (
   id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  coach_id UUID NOT NULL,
+  author_id UUID NOT NULL,
   student_id UUID NOT NULL,
+  parent_note_id UUID REFERENCES public.coach_notes(id) ON DELETE CASCADE,
   note TEXT NOT NULL,
   subject TEXT,
-  lesson_date TIMESTAMP WITH TIME ZONE NOT NULL,
+  lesson_date TIMESTAMP WITH TIME ZONE,
   is_favorited BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  CONSTRAINT fk_coach_note FOREIGN KEY (coach_id) REFERENCES public.user_profiles(user_id) ON DELETE CASCADE,
+  CONSTRAINT fk_author_note FOREIGN KEY (author_id) REFERENCES public.user_profiles(user_id) ON DELETE CASCADE,
   CONSTRAINT fk_student_note FOREIGN KEY (student_id) REFERENCES public.user_profiles(user_id) ON DELETE CASCADE
 );
 
@@ -723,19 +724,26 @@ CREATE POLICY "Students can view their own notes" ON public.coach_notes FOR SELE
   student_id = (SELECT user_id FROM public.user_profiles WHERE email = auth.jwt() ->> 'email' LIMIT 1)
 );
 
-CREATE POLICY "Coaches can view notes for their students or any student" ON public.coach_notes FOR SELECT USING (
+CREATE POLICY "Users can view relevant notes" ON public.coach_notes FOR SELECT USING (
+  (student_id = auth.uid()) OR
   has_roles(ARRAY['coach'])
 );
 
-CREATE POLICY "Coaches can create notes" ON public.coach_notes FOR INSERT WITH CHECK (
-  has_roles(ARRAY['coach']) AND coach_id = (SELECT user_id FROM public.user_profiles WHERE email = auth.jwt() ->> 'email' LIMIT 1)
+CREATE POLICY "Users can create notes or replies" ON public.coach_notes FOR INSERT WITH CHECK (
+  author_id = auth.uid() AND (
+    -- Coaches can create new top-level notes for any student
+    (parent_note_id IS NULL AND has_roles(ARRAY['coach'])) OR
+    -- Students can reply to their own threads, and coaches can reply to any thread
+    (parent_note_id IS NOT NULL AND (student_id = auth.uid() OR has_roles(ARRAY['coach'])))
+  )
 );
 
-CREATE POLICY "Coaches can update their own notes" ON public.coach_notes FOR UPDATE USING (
-  has_roles(ARRAY['coach']) AND coach_id = (SELECT user_id FROM public.user_profiles WHERE email = auth.jwt() ->> 'email' LIMIT 1)
+CREATE POLICY "Users can update their own notes" ON public.coach_notes FOR UPDATE USING (
+  author_id = auth.uid()
 );
 
-CREATE POLICY "Coaches can delete any note, admins can delete any" ON public.coach_notes FOR DELETE USING (
+CREATE POLICY "Users can delete notes" ON public.coach_notes FOR DELETE USING (
+  (author_id = auth.uid()) OR
   has_roles(ARRAY['coach']) OR
   has_roles(ARRAY['admin', 'super_admin'])
 );

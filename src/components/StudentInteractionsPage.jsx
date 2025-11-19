@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   Box,
   Typography,
@@ -16,6 +16,9 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
   DialogContentText,
   IconButton,
   Card,
@@ -38,7 +41,7 @@ import { useDebounce } from '../hooks/useDebounce';
 import {
   FormatBold, FormatItalic, FormatUnderlined, Link as LinkIcon,
   FormatListBulleted, FormatListNumbered, AddComment, Edit as EditIcon, 
-  Close as CloseIcon, Search as SearchIcon, CalendarToday, Person, Star, StarBorder, Delete as DeleteIcon,
+  Close as CloseIcon, Search as SearchIcon, CalendarToday, Person, Star, StarBorder, Delete as DeleteIcon, Reply as ReplyIcon,
   ExpandMore, FilterList, ClearAll
 } from '@mui/icons-material';
 import { elevatedCardStyles } from '../styles/commonStyles';
@@ -158,6 +161,126 @@ const MenuBar = ({ editor }) => {
     </Box>
   );
 };
+
+const NoteCard = React.forwardRef(({ note, userProfile, onReply, onEdit, onDelete, onFavorite, isTopLevel = false, isViewingSelfAsCoach }, ref) => {
+  const [showReplyForm, setShowReplyForm] = useState(false);
+  const [replyContent, setReplyContent] = useState('');
+
+  const editor = useEditor({
+    extensions: [StarterKit],
+    content: replyContent,
+    editable: showReplyForm,
+    onUpdate: ({ editor }) => {
+      setReplyContent(editor.getHTML());
+    },
+  });
+
+  useEffect(() => {
+    if (editor) {
+      editor.setEditable(showReplyForm);
+    }
+  }, [showReplyForm, editor]);
+
+  const handleReplySubmit = () => {
+    if (!replyContent.trim()) return;
+    onReply(note, replyContent);
+    setReplyContent('');
+    setShowReplyForm(false);
+    if (editor) editor.commands.clearContent();
+  };
+
+  const canEdit = note.author_id === userProfile.user_id;
+  const canDelete = note.author_id === userProfile.user_id || userProfile.roles.includes('coach');
+  const canFavorite = isTopLevel && !isViewingSelfAsCoach;
+  const canReply = !isViewingSelfAsCoach;
+
+  return (
+    <Card 
+      ref={ref}
+      variant="outlined"
+      sx={{
+        borderRadius: 2,
+        borderWidth: isTopLevel ? 2 : 1,
+        transition: 'all 0.2s',
+        '&:hover': { boxShadow: 3, borderColor: 'primary.main' },
+        backgroundColor: isTopLevel ? 'white' : '#f8f9fa',
+      }}
+    >
+      <CardContent sx={{ pb: 1 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+          <Box>
+            {isTopLevel && (
+              <Typography variant="h6" fontWeight={600} color="primary.main">
+                {new Date(note.lesson_date).toLocaleDateString('en-UK', { year: '2-digit', month: 'short', day: 'numeric' })} - {note.subject || 'No Subject'}
+              </Typography>
+            )}
+            <Typography variant="caption" color="text.secondary" fontWeight={500}>
+              By: {toProperCase(note.author?.full_name) || 'Unknown User'} on {new Date(note.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </Typography>
+          </Box>
+          <Box>
+            {canFavorite && (
+              <Tooltip title={note.is_favorited ? "Remove from favorites" : "Add to favorites"}>
+                <IconButton size="small" onClick={() => onFavorite(note)}>
+                  {note.is_favorited ? <Star sx={{ color: 'warning.main' }} /> : <StarBorder />}
+                </IconButton>
+              </Tooltip>
+            )}
+            {canEdit && (
+              <Tooltip title="Edit note">
+                <IconButton size="small" onClick={() => onEdit(note)} sx={{ ml: 1 }}><EditIcon fontSize="small" /></IconButton>
+              </Tooltip>
+            )}
+            {canDelete && (
+              <Tooltip title="Delete note">
+                <IconButton size="small" onClick={() => onDelete(note)} sx={{ ml: 1 }}><DeleteIcon fontSize="small" /></IconButton>
+              </Tooltip>
+            )}
+          </Box>
+        </Box>
+        <Box component="div" dangerouslySetInnerHTML={{ __html: note.note }} sx={{ my: 2, lineHeight: 1.7, '& p': { m: 0, mb: 1 }, '& ul, & ol': { pl: 3, my: 1 }, '& a': { color: 'primary.main', textDecoration: 'underline' }, color: 'text.secondary' }} className="tiptap-display" />
+      </CardContent>
+      <CardActions sx={{ justifyContent: 'flex-end', p: 2, pt: 0 }}>
+        {canReply && (
+          <Button size="small" startIcon={<ReplyIcon />} onClick={() => setShowReplyForm(!showReplyForm)}>
+            {showReplyForm ? 'Cancel' : 'Reply'}
+          </Button>
+        )}
+      </CardActions>
+      {showReplyForm && (
+        <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+          <EditorContent editor={editor} style={{ border: '1px solid #ccc', borderRadius: '4px', padding: '8px', minHeight: '100px', marginBottom: '8px' }} />
+          <Button variant="contained" size="small" onClick={handleReplySubmit}>Submit Reply</Button>
+        </Box>
+      )}
+      {note.replies && note.replies.length > 0 && (
+        <Accordion sx={{ boxShadow: 'none', '&:before': { display: 'none' }, borderTop: '1px solid', borderColor: 'divider' }}>
+          <AccordionSummary expandIcon={<ExpandMore />} sx={{ '& .MuiAccordionSummary-content': { my: 1 } }}>
+            <Typography variant="body2" color="primary.main" fontWeight="bold">
+              {note.replies.length} {note.replies.length > 1 ? 'Replies' : 'Reply'}
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails sx={{ p: 2, pt: 0, backgroundColor: '#fafafa' }}>
+            {note.replies.map(reply => (
+              <Box key={reply.id} sx={{ mt: 2 }}>
+                <NoteCard 
+                  note={reply} 
+                  userProfile={userProfile}
+                  onReply={onReply}
+                  onEdit={onEdit}
+                  onDelete={onDelete}
+                  onFavorite={onFavorite}
+                  isViewingSelfAsCoach={isViewingSelfAsCoach}
+                />
+              </Box>
+            ))}
+          </AccordionDetails>
+        </Accordion>
+      )}
+    </Card>
+  );
+});
+
 
 const StudentInteractionsPage = ({ userProfile, isActive }) => {
   const [students, setStudents] = useState([]);
@@ -356,6 +479,24 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
     return allUsers.filter(u => coachIds.includes(u.user_id));
   };
 
+    const handleSaveReply = async (parentNote, content) => {
+    try {
+      const replyData = {
+        author_id: userProfile.user_id,
+        student_id: parentNote.student_id,
+        parent_note_id: parentNote.id,
+        note: content,
+        subject: null, // Replies don't have subjects
+        lesson_date: null, // Or inherit from parent if needed
+      };
+      await userService.saveNoteForStudent(replyData);
+      // Refresh the entire thread to show the new reply
+      loadNotesForStudent(selectedStudentId, 0, true);
+    } catch (err) {
+      setError('Failed to save reply: ' + err.message);
+    }
+  };
+
     const handleDeleteRequest = (note) => {
     setDeleteConfirm({ open: true, note: note });
   };
@@ -373,14 +514,35 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
   };
 
   // Add this function before the return statement
-const handleToggleFavorite = async (note) => {
-  try {
-    await userService.toggleNoteFavorite(note.id);
-    loadNotesForStudent(selectedStudentId, 0, true);
-  } catch (err) {
-    setError('Failed to update favorite: ' + err.message);
-  }
-};
+  const handleToggleFavorite = async (note) => {
+    try {
+      await userService.updateNoteForStudent(note.id, { is_favorited: !note.is_favorited });
+      setNotes(prevNotes => 
+        prevNotes.map(n => 
+          n.id === note.id ? { ...n, is_favorited: !n.is_favorited } : n
+        )
+      );
+    } catch (err) {
+      setError('Failed to update favorite status: ' + err.message);
+    }
+  };
+
+    const threadedNotes = useMemo(() => {
+    const noteMap = {};
+    const topLevelNotes = [];
+    notes.forEach(note => {
+      noteMap[note.id] = { ...note, replies: [] };
+    });
+    notes.forEach(note => {
+      if (note.parent_note_id && noteMap[note.parent_note_id]) {
+        noteMap[note.parent_note_id].replies.push(noteMap[note.id]);
+      } else {
+        topLevelNotes.push(noteMap[note.id]);
+      }
+    });
+    Object.values(noteMap).forEach(note => note.replies.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)));
+    return topLevelNotes;
+  }, [notes]);
 
   if (loading) {
     return (
@@ -719,98 +881,19 @@ const handleToggleFavorite = async (note) => {
                 </Typography>
               </Card>
             ) : (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {notes.map((note, index) => (
+              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                {threadedNotes.map((note, index) => (
                   <Fade in key={note.id} timeout={300 * (index % 5)}>
-                    <Card 
-                      variant="outlined"
-                      sx={{
-                        borderRadius: 2,
-                        borderWidth: 2,
-                        transition: 'all 0.2s',
-                        '&:hover': {
-                          boxShadow: 3,
-                          borderColor: 'primary.main',
-                        },
-                      }}
-                    >
-                      <CardContent sx={{ pb: 1 }}>
-                        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
-                          <Typography variant="h6" fontWeight={600} color="primary.main">
-                            {new Date(note.lesson_date).toLocaleDateString('en-UK', {
-                              year: '2-digit', month: 'short', day: 'numeric'
-                            })} - {note.subject || 'No Subject'}
-                          </Typography>
-                          <Box>
-                            {isCoach && !isViewingSelfAsCoach && (
-                              <Tooltip title={note.is_favorited ? "Remove from favorites" : "Add to favorites"}>
-                                <IconButton size="small" onClick={() => handleToggleFavorite(note)}>
-                                  {note.is_favorited ? <Star sx={{ color: 'warning.main' }} /> : <StarBorder />}
-                                </IconButton>
-                              </Tooltip>
-                            )}
-                            {isCoach && !isViewingSelfAsCoach && (
-                              <Tooltip title="Edit note">
-                                <IconButton 
-                                  size="small" 
-                                  onClick={() => handleOpenForm(note)}
-                                  sx={{
-                                    ml: 1,
-                                    '&:hover': {
-                                      backgroundColor: 'primary.main',
-                                      color: 'white',
-                                    },
-                                }}
-                                >
-                                  <EditIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            )}
-                            {isCoach && !isViewingSelfAsCoach && (
-                              <Tooltip title="Delete note">
-                                <IconButton 
-                                  size="small" 
-                                  onClick={() => handleDeleteRequest(note)}
-                                  sx={{
-                                    ml: 1,
-                                    '&:hover': { backgroundColor: 'error.light', color: 'white' },
-                                  }}>
-                                  <DeleteIcon fontSize="small" />
-                                </IconButton>
-                              </Tooltip>
-                            )}
-                          </Box>
-                        </Box>
-                        <Box 
-                          component="div" 
-                          dangerouslySetInnerHTML={{ __html: note.note }} 
-                          sx={{ 
-                            my: 2,
-                            lineHeight: 1.7,
-                            '& p': { m: 0, mb: 1 },
-                            '& ul, & ol': { pl: 3, my: 1 },
-                            '& a': { color: 'primary.main', textDecoration: 'underline' },
-                            color: 'text.secondary',
-                          }} 
-                          className="tiptap-display"
-                        />
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 2 }}>
-                          <Tooltip title="Lesson Date">
-                            <CalendarToday sx={{ fontSize: 16, color: 'text.disabled' }} />
-                          </Tooltip>
-                          <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                            {new Date(note.lesson_date).toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' })}
-                          </Typography>
-                          <Divider orientation="vertical" flexItem sx={{ mx: 1 }} />
-                          <Tooltip title="Last Updated By">
-                            <Person sx={{ fontSize: 16, color: 'text.disabled' }} />
-                          </Tooltip>
-                          <Typography variant="caption" color="text.secondary" fontWeight={500}>
-                            {toProperCase(note.coach?.full_name) || 'Unknown Coach'} on {new Date(note.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
-                          </Typography>
-                        </Box>
-                      </CardContent>
-                    </Card>
+                    <NoteCard 
+                      note={note} 
+                      userProfile={userProfile}
+                      onReply={handleSaveReply}
+                      onEdit={handleOpenForm}
+                      onDelete={handleDeleteRequest}
+                      onFavorite={handleToggleFavorite}
+                      isTopLevel={true}
+                      isViewingSelfAsCoach={isViewingSelfAsCoach}
+                    />
                   </Fade>
                 ))}
               </Box>
