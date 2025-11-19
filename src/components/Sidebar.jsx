@@ -30,22 +30,19 @@ const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, active
     const isAdmin = userRoles?.some(role => ['admin', 'super_admin'].includes(role));
     const isCoach = userRoles?.includes('coach');
 
-    if (isAdmin) {
-      items.push(
-        { text: "User Management", icon: <GroupIcon />, page: "userManagement" },
-        { text: "Course Management", icon: <SportsGolfIcon />, page: "courseManagement" },
-        { text: "Coach Management", icon: <SupervisedUserCircleIcon />, page: "coachManagement" }
-      );
+    if (isCoach || isAdmin) {
+      items.push({ text: "Lesson Notes", icon: <AddComment />, page: "studentInteractions" });
+    } else {
+      items.push({ text: "Lesson Notes", icon: <AddComment />, page: "studentInteractions" });
     }
 
-    if (isCoach) {
-      items.push({ text: "Student Interactions", icon: <AddComment />, page: "studentInteractions" });
-    } else {
-      // If a user is not a coach and not an admin, they are a student
-      // and should be able to see their notes.
-      if (!isAdmin) {
-        items.push({ text: "My Coach's Notes", icon: <AddComment />, page: "studentInteractions" });
-      }
+    if (isAdmin) {
+      items.push({ type: 'divider' }); // Add a divider before admin items
+      items.push(
+        { text: "User Mgmt", icon: <GroupIcon />, page: "userManagement" },
+        { text: "Course Mgmt", icon: <SportsGolfIcon />, page: "courseManagement" },
+        { text: "Coach Mgmt", icon: <SupervisedUserCircleIcon />, page: "coachManagement" }
+      );
     }
 
     return items;
@@ -82,40 +79,41 @@ const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, active
           </IconButton>
         )}
       </Box>
-      {isExpanded && (
-        <Typography variant="body2" color="rgba(255,255,255,0.7)" sx={{textAlign: 'center', mt: -2, mb: 2}}>
-          Improve your game.
-        </Typography>
-      )}
       <Divider sx={{ borderColor: 'rgba(255,255,255,0.5)', mb: 2 }} />
       <List sx={{ flexGrow: 1 }}>
-        {menuItems.map((item) => (
-          !item.hidden && <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
-            <ListItemButton
-              onClick={() => onNavClick(item.page)}
-              sx={{
-                borderRadius: theme.shape.borderRadius,
-                '&.Mui-selected': {
-                  backgroundColor: 'rgba(255,255,255,0.2)',
-                  '&:hover': {
-                    backgroundColor: 'rgba(255,255,255,0.3)',
+        {menuItems.map((item, index) => {
+          if (item.type === 'divider') {
+            return <Divider key={`divider-${index}`} sx={{ my: 2, borderColor: 'rgba(255,255,255,0.5)' }} />;
+          }
+          
+          return !item.hidden && (
+            <ListItem key={item.text} disablePadding sx={{ mb: 1 }}>
+              <ListItemButton
+                onClick={() => onNavClick(item.page)}
+                sx={{
+                  borderRadius: theme.shape.borderRadius,
+                  '&.Mui-selected': {
+                    backgroundColor: 'rgba(255,255,255,0.2)',
+                    '&:hover': {
+                      backgroundColor: 'rgba(255,255,255,0.3)',
+                    },
                   },
-                },
-                '&:hover': {
-                  backgroundColor: 'rgba(255,255,255,0.1)',
-                },
-                justifyContent: isExpanded ? 'initial' : 'center',
-                px: 2.5,
-              }}
-              selected={item.page === activePage}
-            >
-              <ListItemIcon sx={{ color: 'white', minWidth: 0, mr: isExpanded ? 3 : 'auto' }}>
-                {item.icon}
-              </ListItemIcon>
-              {isExpanded && <ListItemText primary={item.text} sx={{ color: 'white' }} />}
-            </ListItemButton>
-          </ListItem>
-        ))}
+                  '&:hover': {
+                    backgroundColor: 'rgba(255,255,255,0.1)',
+                  },
+                  justifyContent: isExpanded ? 'initial' : 'center',
+                  px: 2.5,
+                }}
+                selected={item.page === activePage}
+              >
+                <ListItemIcon sx={{ color: 'white', minWidth: 0, mr: isExpanded ? 1 : 'auto' }}>
+                  {item.icon}
+                </ListItemIcon>
+                {isExpanded && <ListItemText primary={item.text} sx={{ color: 'white' }} />}
+              </ListItemButton>
+            </ListItem>
+          );
+        })}
       </List>
       <Box>
         <Divider sx={{ borderColor: 'rgba(255,255,255,0.5)', mt: 2 }} />
