@@ -64,7 +64,7 @@ const NoteThreadDetailView = ({ note, onBack, userProfile, ...handlers }) => {
           <Box sx={{ pr: 6 }}> {/* Add padding to the right to avoid overlap with buttons */}
             <Typography variant="h4" fontWeight={700} gutterBottom>{note.subject}</Typography>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
-              By {toProperCase(note.author?.full_name)} on {new Date(note.lesson_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+              By {toProperCase(note.author?.full_name)} on {new Date(note.lesson_date).toLocaleDateString('en-UK', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </Typography>
           </Box>
           <Divider sx={{ mb: 3 }} />

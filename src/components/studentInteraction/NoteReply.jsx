@@ -23,7 +23,7 @@ const NoteReply = ({ note, userProfile, onEdit, onDelete }) => {
         </Typography>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
           <Typography variant="caption" color="text.secondary">
-            {new Date(note.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+            {new Date(note.created_at).toLocaleString('en-UK', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
           </Typography>
           {canEdit && (
             <Tooltip title="Edit reply">

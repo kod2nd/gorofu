@@ -341,7 +341,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
     threadedNotes.forEach(note => {
       const date = new Date(note.lesson_date);
       const year = date.getFullYear();
-      const month = date.toLocaleString('en-US', { month: 'long' });
+      const month = date.toLocaleString('en-UK', { month: 'long' });
 
       if (!groups[year]) {
         groups[year] = {};

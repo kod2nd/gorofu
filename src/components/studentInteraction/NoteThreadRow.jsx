@@ -62,7 +62,7 @@ const NoteThreadRow = ({ note, onClick, onFavorite, onPin, isViewingSelfAsCoach,
             {note.subject || 'No Subject'}
           </Typography>
           <Typography variant="caption" color="text.secondary">
-            Started by {toProperCase(note.author?.full_name)} on {new Date(note.lesson_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} &bull; {note.replies?.length || 0} {note.replies?.length === 1 ? 'Reply' : 'Replies'}
+            Started by {toProperCase(note.author?.full_name)} on {new Date(note.lesson_date).toLocaleDateString('en-UK', { month: 'short', day: 'numeric', year: 'numeric' })} &bull; {note.replies?.length || 0} {note.replies?.length === 1 ? 'Reply' : 'Replies'}
           </Typography>
           <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontStyle: 'italic' }}>
             {stripHtmlAndTruncate(note.note, 50)}

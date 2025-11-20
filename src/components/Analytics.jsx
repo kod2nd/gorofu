@@ -174,7 +174,7 @@ const Analytics = ({ recentRounds, recentStats, onRelativeDistanceThresholdChang
   };
 
   const performanceData = recentRounds.map(r => ({
-    date: new Date(r.round_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    date: new Date(r.round_date).toLocaleDateString('en-UK', { month: 'short', day: 'numeric' }),
     'Par 3 Avg Score': getParTypeStatsForRound(r, 3)?.score,
     'Par 3 Avg Putts': getParTypeStatsForRound(r, 3)?.putts,
     'Par 4 Avg Score': getParTypeStatsForRound(r, 4)?.score,
@@ -184,7 +184,7 @@ const Analytics = ({ recentRounds, recentStats, onRelativeDistanceThresholdChang
   })).reverse();
 
   const shortMissesData = recentRounds.map(r => ({
-    date: new Date(r.round_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+    date: new Date(r.round_date).toLocaleDateString('en-UK', { month: 'short', day: 'numeric' }),
     'Short Misses (< 4ft)': r.round_holes.filter(h => h.putts_within4ft > 1).length,
   })).reverse();
 

@@ -177,7 +177,7 @@ const RoundDetailsPage = ({ roundId, user, userProfile, onEdit, onBack }) => {
               {round.courses.name}
             </Typography>
             <Typography variant="body1" sx={{ opacity: 0.9, mb: 1 }}>
-              {new Date(round.round_date).toLocaleDateString("en-US", {
+              {new Date(round.round_date).toLocaleDateString("en-UK", {
                 year: "numeric",
                 month: "long",
                 day: "numeric",
