@@ -424,9 +424,11 @@ export const userService = {
       .select('*, author:user_profiles!author_id(full_name, email, roles)', { count: 'exact' })
       .eq('student_id', studentId);
 
-    // If personalNotesOnly is true, only fetch notes where the author is the student.
-    // Otherwise, fetch notes where the author is NOT the student (i.e., lesson notes from a coach).
-    query = personalNotesOnly ? query.eq('author_id', studentId) : query.neq('author_id', studentId);
+    if (personalNotesOnly === true) {
+      // If personalNotesOnly is true, only fetch notes where the author is the student.
+      // Otherwise, fetch notes where the author is NOT the student (i.e., lesson notes from a coach).
+      query = personalNotesOnly ? query.eq('author_id', studentId) : query.neq('author_id', studentId);
+    }
 
     if (showFavoritesOnly) {
       query = query.eq('is_favorited', true);

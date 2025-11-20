@@ -10,7 +10,7 @@ import PageHeader from "./PageHeader";
 import DashboardFilters from "./DashboardFilters";
 import RecentInsights from "./RecentInsights";
 import FlippingGolfIcon from "./FlippingGolfIcon";
-import CoachNotes from "./CoachNotes";
+import PinnedNotes from "./PinnedNotes";
 
 const Dashboard = ({ user, onViewRound, isActive, impersonatedUser, userProfile }) => {
   const [initialLoading, setInitialLoading] = useState(true);
@@ -213,9 +213,9 @@ useEffect(() => {
           <Paper {...elevatedCardStyles}>
             <RecentInsights recentStats={recentStats} isFiltering={isFiltering} />
           </Paper>
-          {/* Conditionally render Coach's Notes for students */}
-          {coach && (
-            <CoachNotes studentId={user.id} userProfile={userProfile} />
+          {/* Render Pinned Notes if a coach is assigned OR if the user is viewing their own dashboard */}
+          {(coach || !impersonatedUser) && (
+            <PinnedNotes studentId={user.id} userProfile={userProfile} />
           )}
         </Box>
 

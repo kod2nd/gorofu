@@ -15,7 +15,7 @@ import FlippingGolfIcon from './FlippingGolfIcon';
 import NoteThreadRow from './studentInteraction/NoteThreadRow';
 import NoteThreadDetailView from './studentInteraction/NoteThreadDetailView';
 
-const CoachNotes = ({ studentId, userProfile, personalNotesOnly = false }) => {
+const PinnedNotes = ({ studentId, userProfile }) => {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -36,7 +36,6 @@ const CoachNotes = ({ studentId, userProfile, personalNotesOnly = false }) => {
       const { notes: notesData } = await userService.getNotesForStudent({
         studentId,
         pinnedOnly: true,
-        personalNotesOnly,
       });
 
       // We need to get the full thread for each pinned note
@@ -82,10 +81,10 @@ const CoachNotes = ({ studentId, userProfile, personalNotesOnly = false }) => {
   return (
     <Paper {...elevatedCardStyles} sx={{ p: 2, mt: 3 }}>
       <Typography variant="h6" component="h2" sx={{ fontWeight: 'bold', mb: 2 }}>
-        {personalNotesOnly ? 'My Pinned Notes' : 'Pinned Lesson Notes'}
+        Pinned Notes
       </Typography>
       {notes.length === 0 ? (
-        <Typography color="text.secondary">No notes have been pinned to your dashboard yet.</Typography>
+        <Typography color="text.secondary">No notes have been pinned to the dashboard yet.</Typography>
       ) : (
         <Stack spacing={1.5}>
           {notes.map((note) => (
@@ -131,4 +130,4 @@ const CoachNotes = ({ studentId, userProfile, personalNotesOnly = false }) => {
   );
 };
 
-export default CoachNotes;
+export default PinnedNotes;
