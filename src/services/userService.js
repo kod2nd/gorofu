@@ -534,4 +534,30 @@ export const userService = {
     // Fetch the coach's profile using the retrieved coach_user_id
     return this.getUserProfileById(mapping.coach_user_id);
   },
+
+  // Get a single note thread (parent and all replies)
+  async getNoteThread(noteId) {
+    // First, get the parent note
+    const { data: parentNote, error: parentError } = await supabase
+      .from('coach_notes')
+      .select('*, author:user_profiles!author_id(full_name, email, roles)')
+      .eq('id', noteId)
+      .single();
+
+    if (parentError) throw parentError;
+
+    // Then, get all replies for that parent note
+    const { data: replies, error: repliesError } = await supabase
+      .from('coach_notes')
+      .select('*, author:user_profiles!author_id(full_name, email, roles)')
+      .eq('parent_note_id', noteId)
+      .order('created_at', { ascending: true });
+
+    if (repliesError) throw repliesError;
+
+    return {
+      ...parentNote,
+      replies: replies || [],
+    };
+  },
 };

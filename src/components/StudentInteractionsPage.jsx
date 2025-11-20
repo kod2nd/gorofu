@@ -590,7 +590,15 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                           </Typography>
                           <Stack spacing={1.5}>
                             {groupedNotes[year][month].map(note => (
-                              <NoteThreadRow key={note.id} note={note} onClick={setViewingThreadId} userProfile={userProfile} onFavorite={handleToggleFavorite} isViewingSelfAsCoach={isViewingSelfAsCoach} />
+                              <NoteThreadRow
+                                key={note.id}
+                                note={note}
+                                onClick={setViewingThreadId}
+                                userProfile={userProfile}
+                                onPin={handlePinToDashboard}
+                                onFavorite={handleToggleFavorite}
+                                isViewingSelfAsCoach={isViewingSelfAsCoach}
+                              />
                             ))}
                           </Stack>
                         </Box>

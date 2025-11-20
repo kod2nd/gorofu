@@ -341,6 +341,7 @@ function App() {
                     onViewRound={handleViewRound} 
                     isActive={activePage === 'dashboard'} 
                     impersonatedUser={impersonatedUser}
+                    userProfile={userProfile}
                   />
                 </PageContainer>
                 

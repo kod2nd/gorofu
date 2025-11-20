@@ -78,6 +78,9 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser, userProfile 
 useEffect(() => {
     const loadCoach = async () => {
       // If the user has a profile, try to load their coach.
+      console.log("👨‍🏫 Fetching coach data for impersonatedUser:", impersonatedUser);
+      console.log("👨‍🏫 Fetching coach data for user:", user);
+      console.log("👨‍🏫 Fetching coach data for userProfile:", userProfile);
       if (user?.id) {
         try {
           // Use the service to get the coach details
@@ -168,6 +171,7 @@ useEffect(() => {
   }
 
   if (error) return <Alert severity="error">{error}</Alert>;
+
   return (
     <Box>
       <PageHeader
@@ -213,9 +217,8 @@ useEffect(() => {
             <RecentInsights recentStats={recentStats} isFiltering={isFiltering} />
           </Paper>
           {/* Conditionally render Coach's Notes for students */}
-
           {coach && (
-            <CoachNotes studentId={currentUser.user_id} />
+            <CoachNotes studentId={user.id} userProfile={userProfile} />
           )}
         </Box>
 
