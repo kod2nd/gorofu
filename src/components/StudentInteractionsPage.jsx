@@ -673,108 +673,84 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
 
         {selectedStudentId && (
           <>
-            <Box sx={{ mb: 3 }}>
-              <Button
-                startIcon={<FilterList />}
-                endIcon={<ExpandMore sx={{ transform: showFilters ? 'rotate(180deg)' : 'none', transition: '0.3s' }} />}
-                onClick={() => setShowFilters(!showFilters)}
-                variant="outlined"
-                sx={{ 
-                  borderRadius: 2,
-                  borderWidth: 2,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                }}
-              >
-                {showFilters ? 'Hide Sort / Filters' : 'Show Sort / Filters'}
-                {hasActiveFilters && (
-                  <Chip 
-                    label={[searchTerm && '1', filterStartDate && '1', filterEndDate && '1'].filter(Boolean).length}
-                    size="small" 
-                    color="primary" 
-                    sx={{ ml: 1, height: 20, fontSize: '0.7rem' }}
-                  />
-                )}
-              </Button>
-            </Box>
-
-            <Fade in={showFilters}>
-              <Box sx={{ display: showFilters ? 'block' : 'none' }}>
-                <LocalizationProvider dateAdapter={AdapterDateFns}>
-                  <Paper 
-                    variant="outlined" 
-                    sx={{ 
-                      p: 3, 
-                      mb: 3,
-                      borderRadius: 2,
-                      borderWidth: 2,
-                      backgroundColor: 'rgba(25, 118, 210, 0.02)',
-                      borderColor: 'primary.light',
-                    }}
-                  >
+            {/* Filters Section */}
+            <Paper
+              sx={{
+                p: 3,
+                borderRadius: 4,
+                mb: 3,
+                background: 'white',
+                boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+              }}
+            >
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+                <TextField
+                  fullWidth
+                  placeholder="Search notes..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <SearchIcon />
+                      </InputAdornment>
+                    ),
+                  }}
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 3,
+                    },
+                  }}
+                />
+                <Button
+                  variant="outlined"
+                  startIcon={<FilterList />}
+                  onClick={() => setShowFilters(!showFilters)}
+                  sx={{ borderRadius: 3, minWidth: 120, textTransform: 'none' }}
+                >
+                  Filters
+                </Button>
+                <FormControlLabel
+                  control={<Switch checked={showFavorites} onChange={(e) => setShowFavorites(e.target.checked)} />}
+                  label="Favorites"
+                  sx={{ pr: 1 }}
+                />
+              </Box>
+              <Fade in={showFilters}>
+                <Box sx={{ display: showFilters ? 'block' : 'none', pt: 3 }}>
+                  <LocalizationProvider dateAdapter={AdapterDateFns}>
                     <Stack spacing={2}>
-                      <TextField
-                        label="Search Notes"
-                        variant="outlined"
-                        value={searchTerm}
-                        onChange={(e) => setSearchTerm(e.target.value)}
-                        InputProps={{
-                          startAdornment: (
-                            <InputAdornment position="start">
-                              <SearchIcon color="action" />
-                            </InputAdornment>
-                          ),
-                        }}
-                        sx={{
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: 2,
-                          },
-                        }}
-                        fullWidth
-                      />
-                    <FormControl 
-                      size="small" 
-                      sx={{ 
-                        flex: 1, 
-                        minWidth: '200px',
-                        '& .MuiOutlinedInput-root': {
-                          borderRadius: 2,
-                        }
-                      }}
-                    >
-                      <InputLabel>Sort By</InputLabel>
-                      <Select
-                        value={sortOrder}
-                        label="Sort By"
-                        onChange={(e) => setSortOrder(e.target.value)}
-                      >
-                        <MenuItem value="desc">Most Recent</MenuItem>
-                        <MenuItem value="asc">Oldest</MenuItem>
-                      </Select>
-                    </FormControl>
                       <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                      <FormControlLabel
-                        control={
-                          <Switch
-                            checked={showFavorites}
-                            onChange={(e) => setShowFavorites(e.target.checked)}
-                          />
-                        }
-                        label="Show Favorites Only"
-                      />
+                        <FormControl 
+                          size="small" 
+                          sx={{ 
+                            flex: 1, 
+                            minWidth: '200px',
+                            '& .MuiOutlinedInput-root': { borderRadius: 2 }
+                          }}
+                        >
+                          <InputLabel>Sort By</InputLabel>
+                          <Select
+                            value={sortOrder}
+                            label="Sort By"
+                            onChange={(e) => setSortOrder(e.target.value)}
+                          >
+                            <MenuItem value="desc">Most Recent</MenuItem>
+                            <MenuItem value="asc">Oldest</MenuItem>
+                          </Select>
+                        </FormControl>
                         <DatePicker
                           label="Start Date"
                           value={filterStartDate}
                           onChange={setFilterStartDate}
                           slotProps={{ 
                             textField: { 
+                              size: 'small',
                               fullWidth: true,
                               sx: { 
                                 flex: 1,
                                 minWidth: '200px',
-                                '& .MuiOutlinedInput-root': {
-                                  borderRadius: 2,
-                                }
+                                '& .MuiOutlinedInput-root': { borderRadius: 2 }
                               }
                             } 
                           }}
@@ -785,13 +761,12 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                           onChange={setFilterEndDate}
                           slotProps={{ 
                             textField: { 
+                              size: 'small',
                               fullWidth: true,
                               sx: { 
                                 flex: 1,
                                 minWidth: '200px',
-                                '& .MuiOutlinedInput-root': {
-                                  borderRadius: 2,
-                                }
+                                '& .MuiOutlinedInput-root': { borderRadius: 2 }
                               }
                             } 
                           }}
@@ -801,7 +776,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                         <Button 
                           onClick={handleClearFilters} 
                           startIcon={<ClearAll />}
-                          variant="outlined"
+                          variant="text"
                           sx={{ 
                             alignSelf: 'flex-start',
                             borderRadius: 2,
@@ -812,10 +787,10 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                         </Button>
                       )}
                     </Stack>
-                  </Paper>
-                </LocalizationProvider>
-              </Box>
-            </Fade>
+                  </LocalizationProvider>
+                </Box>
+              </Fade>
+            </Paper>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
               <Typography 
