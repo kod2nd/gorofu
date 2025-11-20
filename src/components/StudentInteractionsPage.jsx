@@ -544,6 +544,28 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
     return topLevelNotes;
   }, [notes]);
 
+  const groupedNotes = useMemo(() => {
+    const groups = {};
+    // The order of months is important, so we define it here.
+    const monthOrder = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+
+    threadedNotes.forEach(note => {
+      const date = new Date(note.lesson_date);
+      const year = date.getFullYear();
+      const month = date.toLocaleString('en-US', { month: 'long' });
+
+      if (!groups[year]) {
+        groups[year] = {};
+      }
+      if (!groups[year][month]) {
+        groups[year][month] = [];
+      }
+      groups[year][month].push(note);
+    });
+
+    return groups;
+  }, [threadedNotes]);
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
@@ -856,22 +878,40 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                 </Typography>
               </Card>
             ) : (
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                {threadedNotes.map((note, index) => (
-                  <Fade in key={note.id} timeout={300 * (index % 5)}>
-                    <NoteCard 
-                      note={note} 
-                      userProfile={userProfile}
-                      onReply={handleSaveReply}
-                      onEdit={handleOpenForm}
-                      onDelete={handleDeleteRequest}
-                      onFavorite={handleToggleFavorite}
-                      isTopLevel={true}
-                      isViewingSelfAsCoach={isViewingSelfAsCoach}
-                    />
-                  </Fade>
+              <Stack spacing={4}>
+                {Object.keys(groupedNotes).map(year => (
+                  <Box key={year}>
+                    <Divider sx={{ mb: 2, '&::before, &::after': { borderWidth: '2px' } }}>
+                      <Chip label={year} sx={{ fontWeight: 'bold', fontSize: '1.1rem' }} />
+                    </Divider>
+                    <Stack spacing={3}>
+                      {Object.keys(groupedNotes[year]).map(month => (
+                        <Box key={month}>
+                          <Typography variant="h6" color="text.secondary" sx={{ mb: 2, ml: 1, fontWeight: 500 }}>
+                            {month}
+                          </Typography>
+                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+                            {groupedNotes[year][month].map((note, index) => (
+                              <Fade in key={note.id} timeout={300 * (index % 5)}>
+                                <NoteCard 
+                                  note={note} 
+                                  userProfile={userProfile}
+                                  onReply={handleSaveReply}
+                                  onEdit={handleOpenForm}
+                                  onDelete={handleDeleteRequest}
+                                  onFavorite={handleToggleFavorite}
+                                  isTopLevel={true}
+                                  isViewingSelfAsCoach={isViewingSelfAsCoach}
+                                />
+                              </Fade>
+                            ))}
+                          </Box>
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Box>
                 ))}
-              </Box>
+              </Stack>
             )}
 
             {hasMore && !notesLoading && (
