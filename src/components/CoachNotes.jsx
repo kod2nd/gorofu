@@ -11,11 +11,14 @@ import {
 } from '@mui/material';
 import { elevatedCardStyles } from '../styles/commonStyles';
 import { userService } from '../services/userService';
+import FlippingGolfIcon from './FlippingGolfIcon';
 
 const CoachNotes = ({ studentId }) => {
+  console.log('CoachNotes studentId:', studentId)
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+
 
   useEffect(() => {
     if (studentId) {
@@ -26,9 +29,14 @@ const CoachNotes = ({ studentId }) => {
   const loadNotes = async () => {
     try {
       setLoading(true);
-      const notesData = await userService.getNotesForStudent(studentId);
-      // Show the 3 most recent notes
-      setNotes(notesData.sort((a, b) => new Date(b.created_at) - new Date(a.created_at)).slice(0, 3));
+      // Fetch only notes that are pinned to the dashboard
+      const { notes: notesData } = await userService.getNotesForStudent({
+        studentId,
+        pinnedOnly: true,
+      });
+
+      console.log('Fetched notes:', notesData)
+      setNotes(notesData);
     } catch (err) {
       setError('Failed to load coach notes: ' + err.message);
     } finally {
@@ -42,22 +50,26 @@ const CoachNotes = ({ studentId }) => {
   return (
     <Paper {...elevatedCardStyles} sx={{ p: 2, mt: 3 }}>
       <Typography variant="h6" component="h2" sx={{ fontWeight: 'bold', mb: 2 }}>
-        Coach's Notes
+        Pinned Notes
       </Typography>
       {notes.length === 0 ? (
-        <Typography color="text.secondary">No recent notes from your coach.</Typography>
+        <Typography color="text.secondary">No notes have been pinned to your dashboard yet.</Typography>
       ) : (
         <List disablePadding>
           {notes.map((note, index) => (
             <React.Fragment key={note.id}>
               <ListItem alignItems="flex-start" sx={{ px: 0 }}>
                 <ListItemText
-                  primary={
-                    <Typography variant="body2" style={{ whiteSpace: 'pre-wrap' }}>
-                      {note.note}
-                    </Typography>
+                  primary={note.subject || 'No Subject'}
+                  secondary={
+                    <Typography
+                      component="div"
+                      variant="body2"
+                      color="text.secondary"
+                      dangerouslySetInnerHTML={{ __html: note.note }}
+                      className="tiptap-display"
+                    />
                   }
-                  secondary={`- ${new Date(note.lesson_date).toLocaleDateString()}`}
                 />
               </ListItem>
               {index < notes.length - 1 && <Divider component="li" />}

@@ -15,11 +15,18 @@ import {
   Dialog,
   DialogTitle,
   DialogContent,
-  DialogContentText,
-  Divider,
   DialogActions,
   IconButton,
+  DialogContentText,
+  Divider,
+  InputAdornment,
+  Fade,
+  FormControlLabel,
+  Switch,
+  Tooltip,
   Stack,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -29,8 +36,9 @@ import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import { useDebounce } from '../hooks/useDebounce';
 import {
-  AddComment,
-  Close as CloseIcon, Person,
+  AddComment, Edit as EditIcon, Close as CloseIcon, Search as SearchIcon,
+  Person, Delete as DeleteIcon, ViewList, ViewModule, ArrowDownward, ArrowUpward, Reply as ReplyIcon, PushPin, PushPinOutlined,
+  FilterList, ClearAll
 } from '@mui/icons-material';
 import { elevatedCardStyles } from '../styles/commonStyles';
 import { userService } from '../services/userService';
@@ -169,6 +177,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
       });
 
       setNotes(prevNotes => isReset ? newNotes : [...prevNotes, ...newNotes]);
+      console.log("Fetched notes with coach info:", newNotes); // Add this line to inspect data
       setHasMore(moreNotesExist);
       setCurrentPage(pageToLoad);
     } catch (err) {
@@ -291,6 +300,19 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
       );
     } catch (err) {
       setError('Failed to update favorite status: ' + err.message);
+    }
+  };
+
+  const handlePinToDashboard = async (note) => {
+    try {
+      await userService.updateNoteForStudent(note.id, { is_pinned_to_dashboard: !note.is_pinned_to_dashboard });
+      setNotes(prevNotes =>
+        prevNotes.map(n =>
+          n.id === note.id ? { ...n, is_pinned_to_dashboard: !n.is_pinned_to_dashboard } : n
+        )
+      );
+    } catch (err) {
+      setError('Failed to update pin status: ' + err.message);
     }
   };
 
@@ -550,6 +572,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                 onEdit={handleOpenForm}
                 onDelete={handleDeleteRequest}
                 onFavorite={handleToggleFavorite}
+                onPin={handlePinToDashboard}
                 isViewingSelfAsCoach={isViewingSelfAsCoach}
               />
             ) : viewMode === 'grouped' ? (
@@ -584,6 +607,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                     note={note}
                     onClick={setViewingThreadId}
                     userProfile={userProfile}
+                    onPin={handlePinToDashboard}
                     onFavorite={handleToggleFavorite}
                     isViewingSelfAsCoach={isViewingSelfAsCoach}
                   />

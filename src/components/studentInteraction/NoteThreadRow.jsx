@@ -1,10 +1,11 @@
 import React from 'react';
 import { Paper, Box, Typography, Tooltip, IconButton } from '@mui/material';
-import { Star, StarBorder, AddComment } from '@mui/icons-material';
+import { Star, StarBorder, AddComment, PushPin, PushPinOutlined } from '@mui/icons-material';
 import { toProperCase, stripHtmlAndTruncate } from './utils';
 
-const NoteThreadRow = ({ note, onClick, onFavorite, isViewingSelfAsCoach, userProfile }) => {
+const NoteThreadRow = ({ note, onClick, onFavorite, onPin, isViewingSelfAsCoach, userProfile }) => {
   const canFavorite = !isViewingSelfAsCoach;
+  const canPin = userProfile.roles.includes('coach') && !isViewingSelfAsCoach;
 
   return (
     <Paper
@@ -27,21 +28,35 @@ const NoteThreadRow = ({ note, onClick, onFavorite, isViewingSelfAsCoach, userPr
       }}
     >
       <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
-        {canFavorite ? (
-          <Tooltip title={note.is_favorited ? "Remove from favorites" : "Add to favorites"}>
-            <IconButton
-              size="small"
-              onClick={(e) => {
-                e.stopPropagation(); // Prevent row click from firing
-                onFavorite(note);
-              }}
-            >
-              {note.is_favorited ? <Star sx={{ color: 'warning.main' }} /> : <StarBorder />}
-            </IconButton>
-          </Tooltip>
-        ) : (
-          <AddComment color="action" sx={{ opacity: 0.6, ml: 1 }} />
-        )}
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+          {canPin && (
+            <Tooltip title={note.is_pinned_to_dashboard ? "Remove from Dashboard" : "Add to Dashboard"}>
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onPin(note);
+                }}
+              >
+                {note.is_pinned_to_dashboard ? <PushPin sx={{ color: 'primary.main' }} /> : <PushPinOutlined />}
+              </IconButton>
+            </Tooltip>
+          )}
+          {canFavorite && (
+            <Tooltip title={note.is_favorited ? "Remove from favorites" : "Add to favorites"}>
+              <IconButton
+                size="small"
+                onClick={(e) => {
+                  e.stopPropagation(); // Prevent row click from firing
+                  onFavorite(note);
+                }}
+              >
+                {note.is_favorited ? <Star sx={{ color: 'warning.main' }} /> : <StarBorder />}
+              </IconButton>
+            </Tooltip>
+          )}
+          {!canFavorite && !canPin && <AddComment color="action" sx={{ opacity: 0.6, ml: 1 }} />}
+        </Box>
         <Box>
           <Typography variant="body1" fontWeight={600}>
             {note.subject || 'No Subject'}

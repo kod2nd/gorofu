@@ -415,9 +415,9 @@ export const userService = {
   },
 
   // Get all notes for a specific student
-  async getNotesForStudent(options) {
-    const { studentId, searchTerm, startDate, endDate, page = 0, limit = 10, sortOrder = 'desc', showFavoritesOnly = false } = options;
-    if (!studentId) return [];
+  async   getNotesForStudent(options) {
+    const { studentId, searchTerm, startDate, endDate, page = 0, limit = 10, sortOrder = 'desc', showFavoritesOnly = false, pinnedOnly = false } = options;
+    if (!studentId) return { notes: [], hasMore: false };
 
     let query = supabase
       .from('coach_notes')
@@ -426,6 +426,10 @@ export const userService = {
 
     if (showFavoritesOnly) {
       query = query.eq('is_favorited', true);
+    }
+
+    if (pinnedOnly) {
+      query = query.eq('is_pinned_to_dashboard', true);
     }
 
     if (searchTerm) {
@@ -506,5 +510,28 @@ export const userService = {
       .delete()
       .eq('id', noteId);
     if (error) throw error;
+  },
+
+  // Get a user's assigned coach by the student's ID
+  async getCoachForStudent(studentId) {
+    if (!studentId) return null;
+
+    // Find the mapping for the current student
+    const { data: mapping, error: mappingError } = await supabase
+      .from('coach_student_mappings')
+      .select('coach_user_id')
+      .eq('student_user_id', studentId)
+      .single();
+
+    if (mappingError && mappingError.code !== 'PGRST116') { // PGRST116: No rows found
+      throw mappingError;
+    }
+
+    if (!mapping) {
+      return null; // No coach assigned
+    }
+
+    // Fetch the coach's profile using the retrieved coach_user_id
+    return this.getUserProfileById(mapping.coach_user_id);
   },
 };

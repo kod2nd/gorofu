@@ -5,7 +5,7 @@ import {
 } from '@mui/material';
 import {
   ArrowBack, Edit as EditIcon, Delete as DeleteIcon,
-  Star, StarBorder, Reply as ReplyIcon
+  Star, StarBorder, Reply as ReplyIcon, PushPin, PushPinOutlined
 } from '@mui/icons-material';
 import NoteReply from './NoteReply';
 import { toProperCase } from './utils';
@@ -16,6 +16,7 @@ const NoteThreadDetailView = ({ note, onBack, userProfile, ...handlers }) => {
   const canEdit = note.author_id === userProfile.user_id;
   const canDelete = note.author_id === userProfile.user_id || userProfile.roles.includes('coach');
   const canFavorite = !handlers.isViewingSelfAsCoach;
+  const canPin = userProfile.roles.includes('coach') && !handlers.isViewingSelfAsCoach;
 
   return (
     <Box>
@@ -31,6 +32,15 @@ const NoteThreadDetailView = ({ note, onBack, userProfile, ...handlers }) => {
       <Card variant="outlined" sx={{ borderRadius: 3, borderWidth: 2, borderColor: 'primary.main' }}>
         <CardContent sx={{ p: 3, position: 'relative' }}>
           <Box sx={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 0.5 }}>
+            {canPin && (
+              <Tooltip title={note.is_pinned_to_dashboard ? "Remove from Dashboard" : "Add to Dashboard"}>
+                <IconButton
+                  size="small"
+                  onClick={() => handlers.onPin(note)}>
+                  {note.is_pinned_to_dashboard ? <PushPin sx={{ color: 'primary.main' }} /> : <PushPinOutlined />}
+                </IconButton>
+              </Tooltip>
+            )}
             {canFavorite && (
               <Tooltip title={note.is_favorited ? "Remove from favorites" : "Add to favorites"}>
                 <IconButton

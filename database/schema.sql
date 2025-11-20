@@ -156,6 +156,7 @@ CREATE TABLE IF NOT EXISTS public.coach_notes (
   subject TEXT,
   lesson_date TIMESTAMP WITH TIME ZONE,
   is_favorited BOOLEAN DEFAULT FALSE,
+  is_pinned_to_dashboard BOOLEAN DEFAULT FALSE;
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   CONSTRAINT fk_author_note FOREIGN KEY (author_id) REFERENCES public.user_profiles(user_id) ON DELETE CASCADE,

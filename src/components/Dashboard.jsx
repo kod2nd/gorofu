@@ -33,6 +33,9 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser, userProfile 
   const lastFetchedFilters = useRef(null);
   const lastFetchedUser = useRef(null);
 
+    // ✅ Use impersonated user data when available
+  const currentUser = impersonatedUser || user;
+
   useEffect(() => {
     // When the user being viewed changes (due to impersonation), reset flags
     if (impersonatedUser !== lastFetchedUser.current) {
@@ -53,15 +56,6 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser, userProfile 
               roundService.getCumulativeStats(user.email, false),
             ]);
 
-          // Only check for a coach if not impersonating (admins don't have coaches)
-          if (!isImpersonating) {
-            // Use the coach_id from the user's profile to fetch coach details
-            if (userProfile?.coach_id) {
-              const coachData = await userService.getUserProfileById(userProfile.coach_id);
-              setCoach(coachData);
-            }
-          }
-
           setSzirStreak(szirStreakData);
           setCumulativeStats(allTimeStats);
           setSzParStreak(szParStreakData);
@@ -80,6 +74,26 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser, userProfile 
     fetchAllTimeDataIfNeeded();
     wasActive.current = isActive;
   }, [user, isActive, impersonatedUser, userProfile]);
+
+useEffect(() => {
+    const loadCoach = async () => {
+      // If the user has a profile, try to load their coach.
+      if (user?.id) {
+        try {
+          // Use the service to get the coach details
+          const coachData = await userService.getCoachForStudent(user.id);
+          setCoach(coachData); // This will be null if no coach is found
+        } catch (err) {
+          console.error("Failed to load coach details:", err);
+          setCoach(null); // Clear coach on error
+        }
+      } else {
+        setCoach(null); // No user profile, so no coach
+      }
+    };
+    loadCoach();
+  }, [userProfile, user]);
+
 
   useEffect(() => {
     // Effect 2: Fetch filter-dependent data ONLY when filters actually change or first mount
@@ -154,7 +168,6 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser, userProfile 
   }
 
   if (error) return <Alert severity="error">{error}</Alert>;
-
   return (
     <Box>
       <PageHeader
@@ -200,8 +213,9 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser, userProfile 
             <RecentInsights recentStats={recentStats} isFiltering={isFiltering} />
           </Paper>
           {/* Conditionally render Coach's Notes for students */}
-          {coach && !impersonatedUser && (
-            <CoachNotes studentId={user.id} />
+
+          {coach && (
+            <CoachNotes studentId={currentUser.user_id} />
           )}
         </Box>
 
