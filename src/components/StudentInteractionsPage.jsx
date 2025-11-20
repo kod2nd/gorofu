@@ -40,7 +40,7 @@ import Link from '@tiptap/extension-link';
 import { useDebounce } from '../hooks/useDebounce';
 import {
   FormatBold, FormatItalic, FormatUnderlined, Link as LinkIcon,
-  FormatListBulleted, FormatListNumbered, AddComment, Edit as EditIcon, 
+  FormatListBulleted, FormatListNumbered, AddComment, Edit as EditIcon, ArrowBack,
   Close as CloseIcon, Search as SearchIcon, CalendarToday, Person, Star, StarBorder, Delete as DeleteIcon, Reply as ReplyIcon,
   ExpandMore, FilterList, ClearAll
 } from '@mui/icons-material';
@@ -162,7 +162,7 @@ const MenuBar = ({ editor }) => {
   );
 };
 
-const NoteCard = React.forwardRef(({ note, userProfile, onReply, onEdit, onDelete, onFavorite, isTopLevel = false, isViewingSelfAsCoach }, ref) => {
+const NoteCard = React.forwardRef(({ note, userProfile, onReply, onEdit, onDelete, onFavorite, onView, isTopLevel = false, isViewingSelfAsCoach }, ref) => {
   const [showReplyForm, setShowReplyForm] = useState(false);
   const [replyContent, setReplyContent] = useState('');
 
@@ -198,27 +198,37 @@ const NoteCard = React.forwardRef(({ note, userProfile, onReply, onEdit, onDelet
     <Card 
       ref={ref}
       variant="outlined"
+      onClick={(e) => {
+        // Prevent dialog from opening if an icon button, the reply form, or the reply accordion was clicked
+        if (e.target.closest('button, .MuiAccordionSummary-root, .tiptap-editor')) {
+          return;
+        }
+        if (onView) onView(note);
+      }}
       sx={{
         borderRadius: 2,
         borderWidth: isTopLevel ? 2 : 1,
         transition: 'all 0.2s',
-        '&:hover': { boxShadow: 3, borderColor: 'primary.main' },
+        '&:hover': { boxShadow: 3, borderColor: 'primary.main', cursor: onView ? 'pointer' : 'default' },
         backgroundColor: isTopLevel ? 'white' : '#f8f9fa',
+        height: '280px', // Fixed height for all cards
+        display: 'flex',
+        flexDirection: 'column',
       }}
     >
-      <CardContent sx={{ pb: 1 }}>
+      <CardContent sx={{ pb: 1, flexGrow: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
           <Box>
             {isTopLevel && (
-              <Typography variant="h6" fontWeight={600} color="primary.main">
+              <Typography variant="h6" fontWeight={600} color="primary.main" noWrap>
                 {new Date(note.lesson_date).toLocaleDateString('en-UK', { year: '2-digit', month: 'short', day: 'numeric' })} - {note.subject || 'No Subject'}
               </Typography>
             )}
-            <Typography variant="caption" color="text.secondary" fontWeight={500}>
+            <Typography variant="caption" color="text.secondary" fontWeight={500} noWrap>
               By: {toProperCase(note.author?.full_name) || 'Unknown User'} on {new Date(note.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
             </Typography>
           </Box>
-          <Box>
+          <Box sx={{ display: 'flex', alignItems: 'center' }}>
             {canFavorite && (
               <Tooltip title={note.is_favorited ? "Remove from favorites" : "Add to favorites"}>
                 <IconButton size="small" onClick={() => onFavorite(note)}>
@@ -238,9 +248,23 @@ const NoteCard = React.forwardRef(({ note, userProfile, onReply, onEdit, onDelet
             )}
           </Box>
         </Box>
-        <Box component="div" dangerouslySetInnerHTML={{ __html: note.note }} sx={{ my: 2, lineHeight: 1.7, '& p': { m: 0, mb: 1 }, '& ul, & ol': { pl: 3, my: 1 }, '& a': { color: 'primary.main', textDecoration: 'underline' }, color: 'text.secondary' }} className="tiptap-display" />
+        <Box sx={{ position: 'relative', overflow: 'hidden', flexGrow: 1, mt: 2 }}>
+          <Box 
+            component="div" 
+            dangerouslySetInnerHTML={{ __html: note.note }} 
+            sx={{ 
+              lineHeight: 1.7, 
+              '& p': { m: 0, mb: 1 }, 
+              '& ul, & ol': { pl: 3, my: 1 }, 
+              '& a': { color: 'primary.main', textDecoration: 'underline' }, 
+              color: 'text.secondary' 
+            }} 
+            className="tiptap-display" 
+          />
+          <Box sx={{ position: 'absolute', bottom: 0, left: 0, right: 0, height: '40px', background: `linear-gradient(to bottom, transparent, ${isTopLevel ? 'white' : '#f8f9fa'})` }} />
+        </Box>
       </CardContent>
-      <CardActions sx={{ justifyContent: 'flex-end', p: 2, pt: 0 }}>
+      <CardActions sx={{ justifyContent: 'flex-end', p: 2, pt: 0, flexShrink: 0 }}>
         {canReply && (
           <Button size="small" startIcon={<ReplyIcon />} onClick={() => setShowReplyForm(!showReplyForm)}>
             {showReplyForm ? 'Cancel' : 'Reply'}
@@ -248,13 +272,13 @@ const NoteCard = React.forwardRef(({ note, userProfile, onReply, onEdit, onDelet
         )}
       </CardActions>
       {showReplyForm && (
-        <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}>
+        <Box sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
           <EditorContent editor={editor} style={{ border: '1px solid #ccc', borderRadius: '4px', padding: '8px', minHeight: '100px', marginBottom: '8px' }} />
           <Button variant="contained" size="small" onClick={handleReplySubmit}>Submit Reply</Button>
         </Box>
       )}
       {note.replies && note.replies.length > 0 && (
-        <Accordion sx={{ boxShadow: 'none', '&:before': { display: 'none' }, borderTop: '1px solid', borderColor: 'divider' }}>
+        <Accordion sx={{ boxShadow: 'none', '&:before': { display: 'none' }, borderTop: '1px solid', borderColor: 'divider', flexShrink: 0 }}>
           <AccordionSummary expandIcon={<ExpandMore />} sx={{ '& .MuiAccordionSummary-content': { my: 1 } }}>
             <Typography variant="body2" color="primary.main" fontWeight="bold">
               {note.replies.length} {note.replies.length > 1 ? 'Replies' : 'Reply'}
@@ -270,6 +294,7 @@ const NoteCard = React.forwardRef(({ note, userProfile, onReply, onEdit, onDelet
                   onEdit={onEdit}
                   onDelete={onDelete}
                   onFavorite={onFavorite}
+                  onView={null} // Nested cards are not clickable to open a dialog
                   isViewingSelfAsCoach={isViewingSelfAsCoach}
                 />
               </Box>
@@ -281,6 +306,210 @@ const NoteCard = React.forwardRef(({ note, userProfile, onReply, onEdit, onDelet
   );
 });
 
+// We create a specific NoteCard for the dialog that doesn't have height restrictions or truncation.
+  const FullNoteCard = () => (
+    <Card 
+      variant="outlined"
+      sx={{
+        borderRadius: 2,
+        borderWidth: 0, // No border inside dialog
+        boxShadow: 'none',
+        backgroundColor: 'transparent'
+      }}
+    >
+      <CardContent sx={{ pb: 1 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1 }}>
+          <Box>
+            <Typography variant="h6" fontWeight={600} color="primary.main">
+              {new Date(note.lesson_date).toLocaleDateString('en-UK', { year: '2-digit', month: 'short', day: 'numeric' })} - {note.subject || 'No Subject'}
+            </Typography>
+            <Typography variant="caption" color="text.secondary" fontWeight={500}>
+              By: {toProperCase(note.author?.full_name) || 'Unknown User'} on {new Date(note.updated_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+            </Typography>
+          </Box>
+        </Box>
+        <Box component="div" dangerouslySetInnerHTML={{ __html: note.note }} sx={{ my: 2, lineHeight: 1.7, '& p': { m: 0, mb: 1 }, '& ul, & ol': { pl: 3, my: 1 }, '& a': { color: 'primary.main', textDecoration: 'underline' }, color: 'text.secondary' }} className="tiptap-display" />
+      </CardContent>
+      {/* We render the original NoteCard here just for its reply/action logic, but hide its main content */}
+      <NoteCard 
+        note={note} 
+        userProfile={userProfile}
+        onReply={onReply}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onFavorite={onFavorite}
+        isTopLevel={true}
+        isViewingSelfAsCoach={isViewingSelfAsCoach}
+        onView={null} // Not clickable
+        sx={{ height: 'auto', '& > .MuiCardContent-root': { display: 'none' } }} // Hide original content
+      />
+    </Card>
+  );
+
+const NoteViewDialog = ({ note, open, onClose, userProfile, onReply, onEdit, onDelete, onFavorite, isViewingSelfAsCoach }) => {
+  if (!note) return null;
+
+  return (
+    <Dialog open={open} onClose={onClose} fullWidth maxWidth="md" PaperProps={{ sx: { borderRadius: 3 } }}>
+      <DialogTitle component="div" sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', pb: 2, borderBottom: '2px solid', borderColor: 'divider' }}>
+        <Typography variant="h6" component="h2" fontWeight={600}>Note Details</Typography>
+        <IconButton onClick={onClose} sx={{ '&:hover': { backgroundColor: 'error.light', color: 'white' } }}><CloseIcon /></IconButton>
+      </DialogTitle>
+      <DialogContent sx={{ pt: '20px !important' }}><FullNoteCard /></DialogContent>
+      <DialogActions sx={{ p: 2, borderTop: '1px solid', borderColor: 'divider' }}><Button onClick={onClose}>Close</Button></DialogActions>
+    </Dialog>
+  );
+};
+
+const NoteReply = ({ note, userProfile, onEdit, onDelete }) => {
+  const canEdit = note.author_id === userProfile.user_id;
+  const canDelete = note.author_id === userProfile.user_id || userProfile.roles.includes('coach');
+
+  return (
+    <Paper 
+      variant="outlined" 
+      sx={{ 
+        p: 2,
+        backgroundColor: '#f8f9fa', 
+        borderRadius: 2.5,
+        borderWidth: 1,
+      }}
+    >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+        <Typography variant="body2" fontWeight={600}>
+          {toProperCase(note.author?.full_name)}
+        </Typography>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+          <Typography variant="caption" color="text.secondary">
+            {new Date(note.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+          </Typography>
+          {canEdit && (
+            <Tooltip title="Edit reply">
+              <IconButton size="small" onClick={() => onEdit(note)}><EditIcon fontSize="small" /></IconButton>
+            </Tooltip>
+          )}
+          {canDelete && (
+            <Tooltip title="Delete reply">
+              <IconButton size="small" onClick={() => onDelete(note)}><DeleteIcon fontSize="small" /></IconButton>
+            </Tooltip>
+          )}
+        </Box>
+      </Box>
+      <Box component="div" dangerouslySetInnerHTML={{ __html: note.note }} className="tiptap-display" sx={{ fontSize: '0.95rem' }} />
+    </Paper>
+  );
+};
+
+const NoteThreadRow = ({ note, onClick, userProfile }) => {
+  const lastReply = note.replies && note.replies.length > 0 ? note.replies[note.replies.length - 1] : null;
+  const lastActivityDate = lastReply ? lastReply.created_at : note.updated_at;
+  const lastActivityAuthor = lastReply ? lastReply.author : note.author;
+
+  return (
+    <Paper 
+      onClick={() => onClick(note.id)}
+      elevation={0}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        p: 2,
+        borderRadius: 2.5,
+        border: '1px solid',
+        borderColor: 'divider',
+        transition: 'all 0.2s ease-in-out',
+        '&:hover': {
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+          borderColor: 'primary.light',
+          transform: 'translateY(-2px)',
+          cursor: 'pointer',
+        },
+      }}
+    >
+      <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
+        <AddComment color="action" sx={{ opacity: 0.6 }} />
+        <Box>
+          <Typography variant="body1" fontWeight={600}>
+            {note.subject || 'No Subject'}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Started by {toProperCase(note.author?.full_name)} on {new Date(note.lesson_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} &bull; {note.replies?.length || 0} {note.replies?.length === 1 ? 'Reply' : 'Replies'}
+          </Typography>
+        </Box>
+      </Box>
+    </Paper>
+  );
+};
+
+const NoteThreadDetailView = ({ note, onBack, userProfile, ...handlers }) => {
+  if (!note) return null;
+
+  const canEdit = note.author_id === userProfile.user_id;
+  const canDelete = note.author_id === userProfile.user_id || userProfile.roles.includes('coach');
+
+  return (
+    <Box>
+      <Button 
+        startIcon={<ArrowBack />} 
+        onClick={onBack}
+        sx={{ mb: 3, textTransform: 'none', fontWeight: 600 }}
+      >
+        Back to All Notes
+      </Button>
+      
+      {/* Main Note Post */}
+      <Card variant="outlined" sx={{ borderRadius: 3, borderWidth: 2, borderColor: 'primary.main' }}>
+        <CardContent sx={{ p: 3, position: 'relative' }}>
+          <Box sx={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 0.5 }}>
+            {canEdit && (
+              <Tooltip title="Edit note">
+                <IconButton size="small" onClick={() => handlers.onEdit(note)}><EditIcon fontSize="small" /></IconButton>
+              </Tooltip>
+            )}
+            {canDelete && (
+              <Tooltip title="Delete note">
+                <IconButton size="small" onClick={() => handlers.onDelete(note)}><DeleteIcon fontSize="small" /></IconButton>
+              </Tooltip>
+            )}
+          </Box>
+          <Box sx={{ pr: 6 }}> {/* Add padding to the right to avoid overlap with buttons */}
+            <Typography variant="h4" fontWeight={700} gutterBottom>{note.subject}</Typography>
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
+              By {toProperCase(note.author?.full_name)} on {new Date(note.lesson_date).toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            </Typography>
+          </Box>
+          <Divider sx={{ mb: 3 }} />
+          <Box component="div" dangerouslySetInnerHTML={{ __html: note.note }} className="tiptap-display" />
+        </CardContent>
+        {/* Render only the actions and replies section of NoteCard, not the whole card */}
+        <CardActions sx={{ justifyContent: 'flex-end', p: 2, pt: 0 }}>
+          {!handlers.isViewingSelfAsCoach && (
+            <Button size="small" startIcon={<ReplyIcon />} onClick={() => { /* Logic to show reply form */ }}>
+              Reply
+            </Button>
+          )}
+        </CardActions>
+      </Card>
+
+      {/* Replies */}
+      <Box sx={{ mt: 4, pl: 4, borderLeft: '2px solid', borderColor: 'divider' }}>
+        <Typography variant="h6" fontWeight={600} sx={{ mb: 2 }}>
+          {note.replies.length} {note.replies.length === 1 ? 'Reply' : 'Replies'}
+        </Typography>
+        <Stack spacing={3}>
+          {note.replies.map(reply => (
+            <NoteReply 
+              key={reply.id}
+              note={reply}
+              userProfile={userProfile}
+              onEdit={handlers.onEdit}
+              onDelete={handlers.onDelete}
+            />
+          ))}
+        </Stack>
+      </Box>
+    </Box>
+  );
+};
 
 const StudentInteractionsPage = ({ userProfile, isActive }) => {
   const [students, setStudents] = useState([]);
@@ -310,6 +539,12 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
   
   // State for delete confirmation
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, note: null });
+
+  // State for viewing a note
+  const [viewingNote, setViewingNote] = useState(null);
+
+  // State for forum-style view
+  const [viewingThreadId, setViewingThreadId] = useState(null);
 
   const editor = useEditor({
     extensions: [
@@ -355,6 +590,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
       setNotes([]);
       setCurrentPage(0);
       loadNotesForStudent(selectedStudentId, 0, true);
+      setViewingThreadId(null); // Go back to list view when student changes
     } else {
       setNotes([]);
     }
@@ -366,6 +602,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
     setFilterEndDate(null);
     setShowFavorites(false);
     setSortOrder('desc');
+    setViewingThreadId(null);
   };
 
   const loadAllStudents = async () => {
@@ -512,6 +749,15 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
       setDeleteConfirm({ open: false, note: null });
     }
   };
+    const handleViewNote = (note) => {
+    // Find the full note object from state to ensure we have all replies
+    const fullNote = threadedNotes.find(n => n.id === note.id);
+    setViewingNote(fullNote);
+  };
+
+  const handleCloseViewNote = () => {
+    setViewingNote(null);
+  };
 
   // Add this function before the return statement
   const handleToggleFavorite = async (note) => {
@@ -566,6 +812,12 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
     return groups;
   }, [threadedNotes]);
 
+  const viewingThread = useMemo(() => {
+    if (!viewingThreadId) return null;
+    return threadedNotes.find(note => note.id === viewingThreadId);
+  }, [viewingThreadId, threadedNotes]);
+
+
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
@@ -609,7 +861,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
               }}
             >
               <Person color="primary" />
-              Select a Student
+              Student
             </Typography>
             <FormControl fullWidth>
               <InputLabel>Student</InputLabel>
@@ -617,6 +869,41 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                 value={selectedStudentId}
                 label="Student"
                 onChange={(e) => setSelectedStudentId(e.target.value)}
+                renderValue={(selected) => {
+                  if (!selected) {
+                    return <em>-- Select a Student --</em>;
+                  }
+                  const student = students.find(s => s.user_id === selected);
+                  if (!student) return null;
+
+                  const coaches = getAssignedCoaches(selected);
+
+                  return (
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                      <Box>
+                        <Typography fontWeight={500}>{toProperCase(student.full_name)}</Typography>
+                        <Typography variant="caption" color="text.secondary">{student.email}</Typography>
+                        {coaches.length > 0 && (
+                          <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                            Coach{coaches.length > 1 ? 'es' : ''}:
+                          </Typography>
+                          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
+                            {coaches.map(coach => (
+                              <Chip 
+                                key={coach.user_id} 
+                                label={toProperCase(coach.full_name)} 
+                                size="small"
+                                variant="outlined"
+                              />
+                            ))}
+                          </Box>
+                        </Box>
+                      )}
+                      </Box>
+                    </Box>
+                  );
+                }}
                 sx={{
                   borderRadius: 2,
                   '& .MuiOutlinedInput-notchedOutline': {
@@ -649,53 +936,44 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
           </Box>
         )}
 
-        {isCoach && selectedStudentId && (
-          <Card 
-            variant="outlined" 
-            sx={{ 
-              mb: 4, 
-              borderRadius: 2,
-              borderWidth: 2,
-              borderColor: 'divider',
-              backgroundColor: 'rgba(0, 0, 0, 0.02)'
-            }}
-          >
-            <CardContent>
-              <Typography 
-                variant="overline" 
-                color="text.secondary" 
-                sx={{ fontWeight: 600, letterSpacing: 1 }}
-              >
-                Assigned Coaches
-              </Typography>
-              <Box sx={{ display: 'flex', gap: 1, mt: 1.5, flexWrap: 'wrap' }}>
-                {getAssignedCoaches(selectedStudentId).length > 0 ? (
-                  getAssignedCoaches(selectedStudentId).map(coach => (
-                    <Chip 
-                      key={coach.user_id} 
-                      label={toProperCase(coach.full_name)} 
-                      color="primary"
-                      variant="outlined"
-                      sx={{ 
-                        fontWeight: 500,
-                        borderRadius: 2,
-                        borderWidth: 2,
-                      }}
-                    />
-                  ))
-                ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    No coaches assigned.
-                  </Typography>
-                )}
-              </Box>
-            </CardContent>
-          </Card>
-        )}
-
         {selectedStudentId && (
           <>
-            {/* Filters Section */}
+
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+              <Typography 
+                variant="h5" 
+                sx={{ 
+                  fontWeight: 600,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 1
+                }}
+              >
+                <AddComment color="primary" />
+                Lesson Notes
+              </Typography>
+              {isCoach && !isViewingSelfAsCoach && (
+                <Button 
+                  variant="contained" 
+                  startIcon={<AddComment />} 
+                  onClick={() => handleOpenForm()}
+                  sx={{
+                    borderRadius: 2,
+                    px: 3,
+                    py: 1.5,
+                    textTransform: 'none',
+                    fontWeight: 600,
+                    boxShadow: 2,
+                    '&:hover': {
+                      boxShadow: 4,
+                    },
+                  }}
+                >
+                  New
+                </Button>
+              )}
+            </Box>
+              {/* Filters Section */}
             <Paper
               sx={{
                 p: 3,
@@ -705,7 +983,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                 boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
               }}
             >
-              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
                 <TextField
                   fullWidth
                   placeholder="Search notes..."
@@ -722,21 +1000,27 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                     '& .MuiOutlinedInput-root': {
                       borderRadius: 3,
                     },
+                    flex: '1 1 300px',
                   }}
                 />
-                <Button
-                  variant="outlined"
-                  startIcon={<FilterList />}
-                  onClick={() => setShowFilters(!showFilters)}
-                  sx={{ borderRadius: 3, minWidth: 120, textTransform: 'none' }}
-                >
-                  Filters
-                </Button>
-                <FormControlLabel
-                  control={<Switch checked={showFavorites} onChange={(e) => setShowFavorites(e.target.checked)} />}
-                  label="Favorites"
-                  sx={{ pr: 1 }}
-                />
+                <Box sx={{ display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'nowrap', flex: '1 1 auto', justifyContent: 'flex-end' }}>
+                  <Button
+                    variant="outlined"
+                    startIcon={<FilterList />}
+                    onClick={() => setShowFilters(!showFilters)}
+                    sx={{ borderRadius: 3, minWidth: 110, textTransform: 'none', flexShrink: 0 }}
+                  >
+                    Filters
+                  </Button>
+                  <FormControlLabel
+                    control={<Switch checked={showFavorites} onChange={(e) => setShowFavorites(e.target.checked)} />}
+                    label="Favorites"
+                    sx={{ 
+                      pr: 1,
+                      mr: 0, // remove default margin
+                    }}
+                  />
+                </Box>
               </Box>
               <Fade in={showFilters}>
                 <Box sx={{ display: showFilters ? 'block' : 'none', pt: 3 }}>
@@ -814,42 +1098,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
               </Fade>
             </Paper>
 
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography 
-                variant="h5" 
-                sx={{ 
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1
-                }}
-              >
-                <AddComment color="primary" />
-                Lesson Notes
-              </Typography>
-              {isCoach && !isViewingSelfAsCoach && (
-                <Button 
-                  variant="contained" 
-                  startIcon={<AddComment />} 
-                  onClick={() => handleOpenForm()}
-                  sx={{
-                    borderRadius: 2,
-                    px: 3,
-                    py: 1.5,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    boxShadow: 2,
-                    '&:hover': {
-                      boxShadow: 4,
-                    },
-                  }}
-                >
-                  Add Note
-                </Button>
-              )}
-            </Box>
-
-            <Divider sx={{ mb: 3 }} />
+            <Divider sx={{ my: 3 }} />
 
             {notesLoading && currentPage === 0 ? (
               <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
@@ -877,39 +1126,27 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                     : 'You have no lesson notes from your coach yet.'}
                 </Typography>
               </Card>
+            ) : viewingThread ? (
+              <NoteThreadDetailView 
+                note={viewingThread}
+                onBack={() => setViewingThreadId(null)}
+                userProfile={userProfile}
+                // Pass handlers
+                onReply={handleSaveReply}
+                onEdit={(noteToEdit) => { handleCloseViewNote(); handleOpenForm(noteToEdit); }}
+                onDelete={handleDeleteRequest}
+                onFavorite={handleToggleFavorite}
+                isViewingSelfAsCoach={isViewingSelfAsCoach}
+              />
             ) : (
-              <Stack spacing={4}>
-                {Object.keys(groupedNotes).map(year => (
-                  <Box key={year}>
-                    <Divider sx={{ mb: 2, '&::before, &::after': { borderWidth: '2px' } }}>
-                      <Chip label={year} sx={{ fontWeight: 'bold', fontSize: '1.1rem' }} />
-                    </Divider>
-                    <Stack spacing={3}>
-                      {Object.keys(groupedNotes[year]).map(month => (
-                        <Box key={month}>
-                          <Typography variant="h6" color="text.secondary" sx={{ mb: 2, ml: 1, fontWeight: 500 }}>
-                            {month}
-                          </Typography>
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
-                            {groupedNotes[year][month].map((note, index) => (
-                              <Fade in key={note.id} timeout={300 * (index % 5)}>
-                                <NoteCard 
-                                  note={note} 
-                                  userProfile={userProfile}
-                                  onReply={handleSaveReply}
-                                  onEdit={handleOpenForm}
-                                  onDelete={handleDeleteRequest}
-                                  onFavorite={handleToggleFavorite}
-                                  isTopLevel={true}
-                                  isViewingSelfAsCoach={isViewingSelfAsCoach}
-                                />
-                              </Fade>
-                            ))}
-                          </Box>
-                        </Box>
-                      ))}
-                    </Stack>
-                  </Box>
+              <Stack spacing={1.5}>
+                {threadedNotes.map(note => (
+                  <NoteThreadRow 
+                    key={note.id}
+                    note={note}
+                    onClick={setViewingThreadId}
+                    userProfile={userProfile}
+                  />
                 ))}
               </Stack>
             )}
@@ -961,19 +1198,18 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
           }
         }}
       >
-        <DialogTitle 
+        <DialogTitle
+          component="div"
           sx={{ 
             display: 'flex', 
             justifyContent: 'space-between', 
             alignItems: 'center',
             pb: 2,
-            borderBottom: '2px solid',
-            borderColor: 'divider',
+            borderBottom: '1px solid',
+            borderColor: 'divider'
           }}
         >
-          <Typography variant="h6" fontWeight={600}>
-            {editingNote ? 'Edit Note' : 'Add New Note'}
-          </Typography>
+          <Typography variant="h6" component="h2" fontWeight={600}>{editingNote ? 'Edit Note' : 'Add New Note'}</Typography>
           <IconButton 
             onClick={handleCloseForm}
             sx={{
@@ -988,7 +1224,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
           {/* Removed Stack to use explicit Box margins for better control */}
-          <Box sx={{ mb: 3 }}>
+          <Box sx={{ mb: 3, mt: 3 }}>
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <DatePicker
                 label="Lesson Date"
@@ -1075,12 +1311,26 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
         </DialogActions>
       </Dialog>
 
+      {/* Note View Dialog */}
+      <NoteViewDialog
+        open={!!viewingNote}
+        onClose={handleCloseViewNote}
+        note={viewingNote}
+        userProfile={userProfile}
+        // Pass down handlers
+        onReply={handleSaveReply}
+        onEdit={(noteToEdit) => { handleCloseViewNote(); handleOpenForm(noteToEdit); }}
+        onDelete={handleDeleteRequest}
+        onFavorite={handleToggleFavorite}
+        isViewingSelfAsCoach={isViewingSelfAsCoach}
+      />
+
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={deleteConfirm.open}
         onClose={() => setDeleteConfirm({ open: false, note: null })}
       >
-        <DialogTitle>Delete Note?</DialogTitle>
+        <DialogTitle component="h2">Delete Note?</DialogTitle>
         <DialogContent>
           <DialogContentText>
             Are you sure you want to permanently delete the note with the subject "{deleteConfirm.note?.subject}"? This action cannot be undone.
