@@ -30,6 +30,8 @@ import {
   Switch,
   Tooltip,
   Stack,
+  ToggleButton,
+  ToggleButtonGroup,
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -41,7 +43,7 @@ import { useDebounce } from '../hooks/useDebounce';
 import {
   FormatBold, FormatItalic, FormatUnderlined, Link as LinkIcon,
   FormatListBulleted, FormatListNumbered, AddComment, Edit as EditIcon, ArrowBack,
-  Close as CloseIcon, Search as SearchIcon, CalendarToday, Person, Star, StarBorder, Delete as DeleteIcon, Reply as ReplyIcon,
+  Close as CloseIcon, Search as SearchIcon, CalendarToday, Person, Star, StarBorder, Delete as DeleteIcon, Reply as ReplyIcon, ViewList, ViewModule, ArrowDownward, ArrowUpward,
   ExpandMore, FilterList, ClearAll
 } from '@mui/icons-material';
 import { elevatedCardStyles } from '../styles/commonStyles';
@@ -400,10 +402,21 @@ const NoteReply = ({ note, userProfile, onEdit, onDelete }) => {
   );
 };
 
-const NoteThreadRow = ({ note, onClick, userProfile }) => {
+const stripHtmlAndTruncate = (html, length = 50) => {
+  if (!html) return '';
+  // Replace HTML tags with a space, collapse multiple whitespace chars, and trim.
+  const text = html.replace(/<[^>]*>?/gm, ' ').replace(/\s+/g, ' ').trim();
+  if (text.length <= length) {
+    return text;
+  }
+  return text.substring(0, length) + '...';
+};
+
+const NoteThreadRow = ({ note, onClick, onFavorite, isViewingSelfAsCoach, userProfile }) => {
   const lastReply = note.replies && note.replies.length > 0 ? note.replies[note.replies.length - 1] : null;
   const lastActivityDate = lastReply ? lastReply.created_at : note.updated_at;
   const lastActivityAuthor = lastReply ? lastReply.author : note.author;
+  const canFavorite = !isViewingSelfAsCoach;
 
   return (
     <Paper 
@@ -426,7 +439,21 @@ const NoteThreadRow = ({ note, onClick, userProfile }) => {
       }}
     >
       <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <AddComment color="action" sx={{ opacity: 0.6 }} />
+        {canFavorite ? (
+          <Tooltip title={note.is_favorited ? "Remove from favorites" : "Add to favorites"}>
+            <IconButton 
+              size="small" 
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent row click from firing
+                onFavorite(note);
+              }}
+            >
+              {note.is_favorited ? <Star sx={{ color: 'warning.main' }} /> : <StarBorder />}
+            </IconButton>
+          </Tooltip>
+        ) : (
+          <AddComment color="action" sx={{ opacity: 0.6, ml: 1 }} />
+        )}
         <Box>
           <Typography variant="body1" fontWeight={600}>
             {note.subject || 'No Subject'}
@@ -445,6 +472,7 @@ const NoteThreadDetailView = ({ note, onBack, userProfile, ...handlers }) => {
 
   const canEdit = note.author_id === userProfile.user_id;
   const canDelete = note.author_id === userProfile.user_id || userProfile.roles.includes('coach');
+  const canFavorite = !handlers.isViewingSelfAsCoach;
 
   return (
     <Box>
@@ -460,6 +488,15 @@ const NoteThreadDetailView = ({ note, onBack, userProfile, ...handlers }) => {
       <Card variant="outlined" sx={{ borderRadius: 3, borderWidth: 2, borderColor: 'primary.main' }}>
         <CardContent sx={{ p: 3, position: 'relative' }}>
           <Box sx={{ position: 'absolute', top: 16, right: 16, display: 'flex', gap: 0.5 }}>
+            {canFavorite && (
+              <Tooltip title={note.is_favorited ? "Remove from favorites" : "Add to favorites"}>
+                <IconButton 
+                  size="small" 
+                  onClick={() => handlers.onFavorite(note)}>
+                  {note.is_favorited ? <Star sx={{ color: 'warning.main' }} /> : <StarBorder />}
+                </IconButton>
+              </Tooltip>
+            )}
             {canEdit && (
               <Tooltip title="Edit note">
                 <IconButton size="small" onClick={() => handlers.onEdit(note)}><EditIcon fontSize="small" /></IconButton>
@@ -534,6 +571,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
   const [filterEndDate, setFilterEndDate] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
   const [sortOrder, setSortOrder] = useState('desc'); // 'desc' for recent first, 'asc' for oldest first
+  const [viewMode, setViewMode] = useState('grouped'); // 'list' or 'grouped'
   const [showFavorites, setShowFavorites] = useState(false);
   const [hasMore, setHasMore] = useState(false);
   
@@ -602,6 +640,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
     setFilterEndDate(null);
     setShowFavorites(false);
     setSortOrder('desc');
+    setViewMode('list');
     setViewingThreadId(null);
   };
 
@@ -1026,25 +1065,8 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                 <Box sx={{ display: showFilters ? 'block' : 'none', pt: 3 }}>
                   <LocalizationProvider dateAdapter={AdapterDateFns}>
                     <Stack spacing={2}>
+                      <InputLabel shrink sx={{ mb: 1, position: 'relative' }}>Filter by</InputLabel>
                       <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
-                        <FormControl 
-                          size="small" 
-                          sx={{ 
-                            flex: 1, 
-                            minWidth: '200px',
-                            '& .MuiOutlinedInput-root': { borderRadius: 2 }
-                          }}
-                        >
-                          <InputLabel>Sort By</InputLabel>
-                          <Select
-                            value={sortOrder}
-                            label="Sort By"
-                            onChange={(e) => setSortOrder(e.target.value)}
-                          >
-                            <MenuItem value="desc">Most Recent</MenuItem>
-                            <MenuItem value="asc">Oldest</MenuItem>
-                          </Select>
-                        </FormControl>
                         <DatePicker
                           label="Start Date"
                           value={filterStartDate}
@@ -1092,6 +1114,42 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                           Clear All Filters
                         </Button>
                       )}
+                        <Box>
+                          <InputLabel shrink sx={{ mb: 1, position: 'relative' }}>Sort by</InputLabel>
+                          <ToggleButtonGroup
+                            color="primary"
+                            value={sortOrder}
+                            exclusive
+                            onChange={(e) => setSortOrder(e.target.value)}
+                            aria-label="Sort By"
+                            size="small"
+                          >
+                            <ToggleButton value="desc" aria-label="sort descending">
+                              <ArrowUpward sx={{ mr: 1 }} /> Newest
+                            </ToggleButton>
+                            <ToggleButton value="asc" aria-label="sort ascending">
+                              <ArrowDownward sx={{ mr: 1 }} /> Oldest
+                            </ToggleButton>
+                          </ToggleButtonGroup>
+                        </Box>
+                      <Box>
+                          <InputLabel shrink sx={{ mb: 1, position: 'relative' }}>Group by</InputLabel>
+                          <ToggleButtonGroup
+                            color="primary"
+                            value={viewMode}
+                            exclusive
+                            onChange={(e, newViewMode) => { if (newViewMode) setViewMode(newViewMode); }}
+                            aria-label="view mode"
+                            size="small"
+                          >
+                            <ToggleButton value="list" aria-label="list view">
+                              <ViewList sx={{ mr: 1 }} /> None
+                            </ToggleButton>
+                            <ToggleButton value="grouped" aria-label="grouped view">
+                              <ViewModule sx={{ mr: 1 }} /> Date
+                            </ToggleButton>
+                          </ToggleButtonGroup>
+                        </Box>
                     </Stack>
                   </LocalizationProvider>
                 </Box>
@@ -1138,7 +1196,31 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                 onFavorite={handleToggleFavorite}
                 isViewingSelfAsCoach={isViewingSelfAsCoach}
               />
-            ) : (
+            ) : viewMode === 'grouped' ? (
+              <Stack spacing={4}>
+                {Object.keys(groupedNotes).map(year => (
+                  <Box key={year}>
+                    <Divider sx={{ mb: 2, '&::before, &::after': { borderWidth: '2px' } }}>
+                      <Chip label={year} sx={{ fontWeight: 'bold', fontSize: '1.1rem' }} />
+                    </Divider>
+                    <Stack spacing={3}>
+                      {Object.keys(groupedNotes[year]).map(month => (
+                        <Box key={month}>
+                          <Typography variant="h6" color="text.secondary" sx={{ mb: 2, ml: 1, fontWeight: 500 }}>
+                            {month}
+                          </Typography>
+                          <Stack spacing={1.5}>
+                            {groupedNotes[year][month].map(note => (
+                              <NoteThreadRow key={note.id} note={note} onClick={setViewingThreadId} userProfile={userProfile} onFavorite={handleToggleFavorite} isViewingSelfAsCoach={isViewingSelfAsCoach} />
+                            ))}
+                          </Stack>
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Box>
+                ))}
+              </Stack>
+            ) : ( // Default to 'list' view
               <Stack spacing={1.5}>
                 {threadedNotes.map(note => (
                   <NoteThreadRow 
@@ -1146,6 +1228,8 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                     note={note}
                     onClick={setViewingThreadId}
                     userProfile={userProfile}
+                    onFavorite={handleToggleFavorite}
+                    isViewingSelfAsCoach={isViewingSelfAsCoach}
                   />
                 ))}
               </Stack>
