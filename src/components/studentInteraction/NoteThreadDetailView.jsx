@@ -17,6 +17,7 @@ const NoteThreadDetailView = ({ note, onBack, userProfile, ...handlers }) => {
   const canDelete = note.author_id === userProfile.user_id || userProfile.roles.includes('coach');
   const canFavorite = !handlers.isViewingSelfAsCoach;
   const canPin = userProfile.roles.includes('coach') && !handlers.isViewingSelfAsCoach;
+  const isPersonalNote = note.author_id === note.student_id;
 
   return (
     <Box>
@@ -75,7 +76,7 @@ const NoteThreadDetailView = ({ note, onBack, userProfile, ...handlers }) => {
         </CardContent>
         <CardActions sx={{ justifyContent: 'flex-end', p: 2, pt: 0 }}>
           {!handlers.isViewingSelfAsCoach && (
-            <Button size="small" startIcon={<ReplyIcon />} onClick={() => { /* Logic to show reply form */ }}>
+            <Button size="small" startIcon={<ReplyIcon />} onClick={() => handlers.onReply(note)}>
               Reply
             </Button>
           )}

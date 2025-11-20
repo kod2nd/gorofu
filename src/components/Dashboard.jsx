@@ -12,7 +12,7 @@ import RecentInsights from "./RecentInsights";
 import FlippingGolfIcon from "./FlippingGolfIcon";
 import PinnedNotes from "./PinnedNotes";
 
-const Dashboard = ({ user, onViewRound, isActive, impersonatedUser, userProfile }) => {
+const Dashboard = ({ user, onViewRound, isActive, impersonatedUser, userProfile, onReply }) => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [isFiltering, setIsFiltering] = useState(false);
   const [error, setError] = useState("");
@@ -215,7 +215,7 @@ useEffect(() => {
           </Paper>
           {/* Render Pinned Notes if a coach is assigned OR if the user is viewing their own dashboard */}
           {(coach || !impersonatedUser) && (
-            <PinnedNotes studentId={user.id} userProfile={userProfile} />
+            <PinnedNotes studentId={user.id} userProfile={userProfile} onReply={onReply} />
           )}
         </Box>
 

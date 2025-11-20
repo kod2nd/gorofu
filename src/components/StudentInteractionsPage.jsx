@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
 import {
   Box,
   Typography,
@@ -54,7 +54,7 @@ import { toProperCase } from './studentInteraction/utils';
 import NoteFilters from './studentInteraction/NoteFilters';
 
 
-const StudentInteractionsPage = ({ userProfile, isActive }) => {
+const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
   const [students, setStudents] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [allMappings, setAllMappings] = useState([]);
@@ -85,6 +85,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
   // State for delete confirmation
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, note: null });
 
+  const [replyingToNote, setReplyingToNote] = useState(null);
   // State for forum-style view
   const [viewingThreadId, setViewingThreadId] = useState(null);
 
@@ -242,6 +243,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
       setNoteContent('');
       setLessonDate(new Date());
     }, 300);
+    setReplyingToNote(null);
   };
 
   const handleSaveNote = async () => {
@@ -249,22 +251,35 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
     if (!noteSubject.trim() || !noteContent.trim() || !studentIdForNote) return;
 
     try {
-      const noteData = {
-        subject: noteSubject,
-        note: noteContent,
-        lesson_date: lessonDate.toISOString(),
-        // The author of any new note is the currently logged-in user.
-        author_id: userProfile.user_id,
-        student_id: studentIdForNote,
-      };
-
-      if (editingNote) {
+      if (replyingToNote) {
+        // This is a reply
+        const replyData = {
+          author_id: userProfile.user_id,
+          student_id: replyingToNote.student_id,
+          parent_note_id: replyingToNote.id,
+          note: noteContent,
+          subject: noteSubject,
+          lesson_date: replyingToNote.lesson_date,
+        };
+        await userService.saveNoteForStudent(replyData);
+      } else if (editingNote) {
+        // This is an edit of an existing note
+        const noteData = {
+          subject: noteSubject,
+          note: noteContent,
+          lesson_date: lessonDate.toISOString(),
+        };
         // Remove fields that shouldn't be on an update
-        delete noteData.coach_id;
-        delete noteData.student_id;
-        delete noteData.author_id;
         await userService.updateNoteForStudent(editingNote.id, noteData);
       } else {
+        // This is a new note thread
+        const noteData = {
+          subject: noteSubject,
+          note: noteContent,
+          lesson_date: lessonDate.toISOString(),
+          author_id: userProfile.user_id,
+          student_id: studentIdForNote,
+        };
         await userService.saveNoteForStudent(noteData);
       }
       
@@ -286,23 +301,19 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
     return allUsers.filter(u => coachIds.includes(u.user_id));
   };
 
-    const handleSaveReply = async (parentNote, content) => {
-    try {
-      const replyData = {
-        author_id: userProfile.user_id,
-        student_id: parentNote.student_id,
-        parent_note_id: parentNote.id,
-        note: content,
-        subject: null, // Replies don't have subjects
-        lesson_date: parentNote.lesson_date,
-      };
-      await userService.saveNoteForStudent(replyData);
-      // Refresh the entire thread to show the new reply
-      loadNotesForStudent(selectedStudentId, 0, true);
-    } catch (err) {
-      setError('Failed to save reply: ' + err.message);
-    }
+  const handleReplyClick = (parentNote) => {
+    setReplyingToNote(parentNote);
+    setEditingNote(null); // Ensure we are not in edit mode
+    // Pre-fill subject for the reply for context
+    setNoteSubject(`Re: ${parentNote.subject}`);
+    setNoteContent(''); // Clear content for the new reply
+    setLessonDate(new Date(parentNote.lesson_date));
+    setIsFormOpen(true);
   };
+
+  useImperativeHandle(ref, () => ({
+    handleReplyClick,
+  }));
 
     const handleDeleteRequest = (note) => {
     setDeleteConfirm({ open: true, note: note });
@@ -603,7 +614,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                 note={viewingThread}
                 onBack={() => setViewingThreadId(null)}
                 userProfile={userProfile}
-                onReply={handleSaveReply}
+                onReply={handleReplyClick}
                 onEdit={handleOpenForm}
                 onDelete={handleDeleteRequest}
                 onFavorite={handleToggleFavorite}
@@ -708,7 +719,9 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
             borderColor: 'divider'
           }}
         >
-          <Typography variant="h6" component="h2" fontWeight={600}>{editingNote ? 'Edit Note' : 'Add New Note'}</Typography>
+          <Typography variant="h6" component="h2" fontWeight={600}>
+            {editingNote ? 'Edit Note' : (replyingToNote ? 'Add Reply' : 'Add New Note')}
+          </Typography>
           <IconButton 
             onClick={handleCloseForm}
             sx={{
@@ -722,45 +735,49 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
           </IconButton>
         </DialogTitle>
         <DialogContent sx={{ pt: 3 }}>
-          {/* Removed Stack to use explicit Box margins for better control */}
-          <Box sx={{ mb: 3, mt: 3 }}>
-            <LocalizationProvider dateAdapter={AdapterDateFns}>
-              <DatePicker
-                label="Date"
-                value={lessonDate}
-                onChange={(newValue) => setLessonDate(newValue)}
-                slotProps={{
-                  textField: {
-                    fullWidth: true,
-                    sx: {
-                      '& .MuiOutlinedInput-root': {
-                        borderRadius: 2,
+          {!replyingToNote && (
+            <>
+              {/* Removed Stack to use explicit Box margins for better control */}
+              <Box sx={{ mb: 3, mt: 3 }}>
+                <LocalizationProvider dateAdapter={AdapterDateFns}>
+                  <DatePicker
+                    label="Date"
+                    value={lessonDate}
+                    onChange={(newValue) => setLessonDate(newValue)}
+                    slotProps={{
+                      textField: {
+                        fullWidth: true,
+                        sx: {
+                          '& .MuiOutlinedInput-root': {
+                            borderRadius: 2,
+                          },
+                        },
                       },
+                    }}
+                  />
+                </LocalizationProvider>
+              </Box>
+              
+              <Box sx={{ mb: 3 }}>
+                <TextField
+                  label="Title"
+                  value={noteSubject}
+                  onChange={(e) => setNoteSubject(e.target.value)}
+                  variant="outlined"
+                  fullWidth
+                  sx={{
+                    '& .MuiOutlinedInput-root': {
+                      borderRadius: 2,
                     },
-                  },
-                }}
-              />
-            </LocalizationProvider>
-          </Box>
-          
-          <Box sx={{ mb: 3 }}>
-            <TextField
-              label="Title"
-              value={noteSubject}
-              onChange={(e) => setNoteSubject(e.target.value)}
-              variant="outlined"
-              fullWidth
-              sx={{
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 2,
-                },
-              }}
-            />
-          </Box>
+                  }}
+                />
+              </Box>
+            </>
+          )}
           
           <Box> {/* Tiptap editor section */}
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-              Notes
+              {replyingToNote ? 'Your Reply' : 'Notes'}
             </Typography>
             <MenuBar editor={editor} />
             <EditorContent 
@@ -815,7 +832,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
               },
             }}
           >
-            {editingNote ? 'Update Note' : 'Save Note'}
+            {editingNote ? 'Update Note' : (replyingToNote ? 'Post Reply' : 'Save Note')}
           </Button>
         </DialogActions>
       </Dialog>
@@ -838,6 +855,6 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
       </Dialog>
       </Box>
   );
-};
+});
 
 export default StudentInteractionsPage;

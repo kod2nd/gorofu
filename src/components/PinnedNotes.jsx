@@ -15,7 +15,7 @@ import FlippingGolfIcon from './FlippingGolfIcon';
 import NoteThreadRow from './studentInteraction/NoteThreadRow';
 import NoteThreadDetailView from './studentInteraction/NoteThreadDetailView';
 
-const PinnedNotes = ({ studentId, userProfile }) => {
+const PinnedNotes = ({ studentId, userProfile, onReply }) => {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -121,6 +121,7 @@ const PinnedNotes = ({ studentId, userProfile }) => {
               onBack={handleCloseDialog}
               userProfile={userProfile}
               onFavorite={handleToggleFavorite}
+              onReply={onReply}
               isViewingSelfAsCoach={false}
             />
           )}

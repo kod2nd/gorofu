@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect, lazy, Suspense, useRef } from 'react';
 import { supabase } from './supabaseClient';
 import { ThemeProvider } from '@mui/material/styles';
 import {
@@ -57,6 +57,7 @@ function App() {
   const [viewingRoundId, setViewingRoundId] = useState(null);
   const [impersonatedUser, setImpersonatedUser] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const interactionsPageRef = useRef(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -159,6 +160,11 @@ function App() {
     setViewingRoundId(roundId);
     setActivePage('viewRound');
   };
+
+  const handleDashboardReply = (note) => {
+    setActivePage('studentInteractions');
+    interactionsPageRef.current?.handleReplyClick(note);
+  }
 
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
@@ -342,6 +348,7 @@ function App() {
                     isActive={activePage === 'dashboard'} 
                     impersonatedUser={impersonatedUser}
                     userProfile={userProfile}
+                    onReply={handleDashboardReply}
                   />
                 </PageContainer>
                 
@@ -407,6 +414,7 @@ function App() {
                   <StudentInteractionsPage
                     userProfile={userProfile}
                     isActive={activePage === 'studentInteractions'}
+                    ref={interactionsPageRef}
                   />
                 </PageContainer>
               </Suspense>
