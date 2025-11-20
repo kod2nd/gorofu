@@ -17,6 +17,8 @@ import {
   DialogContent,
   DialogActions,
   IconButton,
+  Tabs,
+  Tab,
   DialogContentText,
   Divider,
   InputAdornment,
@@ -34,6 +36,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { useEditor, EditorContent } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
+import Placeholder from '@tiptap/extension-placeholder';
 import { useDebounce } from '../hooks/useDebounce';
 import {
   AddComment, Edit as EditIcon, Close as CloseIcon, Search as SearchIcon,
@@ -77,6 +80,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
   const [viewMode, setViewMode] = useState('list'); // 'list' or 'grouped'
   const [showFavorites, setShowFavorites] = useState(false);
   const [hasMore, setHasMore] = useState(false);
+  const [activeTab, setActiveTab] = useState('lesson'); // 'lesson' or 'personal'
   
   // State for delete confirmation
   const [deleteConfirm, setDeleteConfirm] = useState({ open: false, note: null });
@@ -86,15 +90,30 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
 
   const editor = useEditor({
     extensions: [
-      StarterKit,
-      Link.configure({ openOnClick: false }),
+      StarterKit.configure({
+        link: {
+          openOnClick: false,
+        },
+      }),
+      Placeholder.configure({
+        placeholder: 'Add your notes here...',
+      }),
     ],
     content: noteContent,
+    editable: true, // Explicitly set the editor to be editable
+    autofocus: 'end', // Focus the editor at the end of the content on load
+
     onUpdate: ({ editor }) => {
       setNoteContent(editor.getHTML());
     },
+
+    // --- Editor Props ---
     editorProps: {
-      attributes: { class: 'tiptap-editor' },
+      attributes: { 
+        class: 'tiptap-editor',
+        // You can add other attributes like this:
+        // spellcheck: 'false',
+      },
     },
   });
 
@@ -104,9 +123,11 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
 
   useEffect(() => {
     if (isActive && userProfile && !hasLoadedForActiveState.current) {
-      if (isCoach) {
-        loadAllStudents();
-      } else {
+      loadAllStudents(); // Load students for all users to populate dropdowns
+      // If user is not a coach, default to their personal notes view.
+      // Otherwise, coaches see the student selection.
+      if (!isCoach) {
+        setActiveTab('personal');
         setSelectedStudentId(userProfile.user_id);
       }
       hasLoadedForActiveState.current = true;
@@ -124,15 +145,21 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
   }, [noteContent, editor]);
 
   useEffect(() => {
-    if (selectedStudentId) {
+    const studentIdToLoad = activeTab === 'personal' ? userProfile.user_id : selectedStudentId;
+    if (studentIdToLoad) {
       setNotes([]);
       setCurrentPage(0);
-      loadNotesForStudent(selectedStudentId, 0, true);
+      loadNotesForStudent(studentIdToLoad, 0, true);
       setViewingThreadId(null); // Go back to list view when student changes
     } else {
       setNotes([]);
     }
-  }, [selectedStudentId, debouncedSearchTerm, filterStartDate, filterEndDate, sortOrder, showFavorites]);
+  }, [selectedStudentId, debouncedSearchTerm, filterStartDate, filterEndDate, sortOrder, showFavorites, activeTab, userProfile.user_id]);
+
+  useEffect(() => {
+    // When switching tabs, clear filters and reset view
+    handleClearFilters();
+  }, [activeTab]);
 
   const handleClearFilters = () => {
     setSearchTerm('');
@@ -173,11 +200,11 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
         page: pageToLoad,
         sortOrder: sortOrder,
         showFavoritesOnly: showFavorites,
+        personalNotesOnly: activeTab === 'personal',
         limit: 10,
       });
 
       setNotes(prevNotes => isReset ? newNotes : [...prevNotes, ...newNotes]);
-      console.log("Fetched notes with coach info:", newNotes); // Add this line to inspect data
       setHasMore(moreNotesExist);
       setCurrentPage(pageToLoad);
     } catch (err) {
@@ -189,7 +216,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
 
   const handleLoadMore = () => {
     const nextPage = currentPage + 1;
-    loadNotesForStudent(selectedStudentId, nextPage);
+    loadNotesForStudent(activeTab === 'personal' ? userProfile.user_id : selectedStudentId, nextPage);
   };
 
   const handleOpenForm = (noteToEdit = null) => {
@@ -201,8 +228,8 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
     } else {
       setEditingNote(null);
       setNoteSubject('');
-      setNoteContent('');
-      setLessonDate(new Date());
+      setNoteContent(''); // Explicitly clear the state for the editor
+      setLessonDate(new Date()); // Reset the date for the new note
     }
     setIsFormOpen(true);
   };
@@ -218,27 +245,31 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
   };
 
   const handleSaveNote = async () => {
-    if (!noteSubject.trim() || !noteContent.trim() || !selectedStudentId) return;
+    const studentIdForNote = activeTab === 'personal' ? userProfile.user_id : selectedStudentId;
+    if (!noteSubject.trim() || !noteContent.trim() || !studentIdForNote) return;
 
     try {
       const noteData = {
         subject: noteSubject,
         note: noteContent,
         lesson_date: lessonDate.toISOString(),
+        // The author of any new note is the currently logged-in user.
+        author_id: userProfile.user_id,
+        student_id: studentIdForNote,
       };
 
       if (editingNote) {
+        // Remove fields that shouldn't be on an update
+        delete noteData.coach_id;
+        delete noteData.student_id;
+        delete noteData.author_id;
         await userService.updateNoteForStudent(editingNote.id, noteData);
       } else {
-        await userService.saveNoteForStudent({
-          ...noteData,
-          coach_id: userProfile.user_id,
-          student_id: selectedStudentId,
-        });
+        await userService.saveNoteForStudent(noteData);
       }
       
       handleCloseForm();
-      loadNotesForStudent(selectedStudentId, 0, true);
+      loadNotesForStudent(studentIdForNote, 0, true);
     } catch (err) {
       setError('Failed to save note: ' + err.message);
     }
@@ -263,7 +294,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
         parent_note_id: parentNote.id,
         note: content,
         subject: null, // Replies don't have subjects
-        lesson_date: null, // Or inherit from parent if needed
+        lesson_date: parentNote.lesson_date,
       };
       await userService.saveNoteForStudent(replyData);
       // Refresh the entire thread to show the new reply
@@ -282,7 +313,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
     try {
       await userService.deleteNote(deleteConfirm.note.id);
       setDeleteConfirm({ open: false, note: null });
-      loadNotesForStudent(selectedStudentId, 0, true); // Refresh notes from the beginning
+      loadNotesForStudent(activeTab === 'personal' ? userProfile.user_id : selectedStudentId, 0, true); // Refresh notes
     } catch (err) {
       setError('Failed to delete note: ' + err.message);
       setDeleteConfirm({ open: false, note: null });
@@ -341,7 +372,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
     threadedNotes.forEach(note => {
       const date = new Date(note.lesson_date);
       const year = date.getFullYear();
-      const month = date.toLocaleString('en-UK', { month: 'long' });
+      const month = date.toLocaleString('en-US', { month: 'long' });
 
       if (!groups[year]) {
         groups[year] = {};
@@ -381,16 +412,20 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
         icon={<AddComment />}
       />
       
+      <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
+        <Tab label="Lesson Notes" value="lesson" />
+        <Tab label="My Notes" value="personal" />
+      </Tabs>
+
       <Paper 
         {...elevatedCardStyles} 
         sx={{ 
-          p: 4, 
-          mt: 3,
+          p: { xs: 2, sm: 4 },
           borderRadius: 3,
           background: 'linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%)',
         }}
       >
-        {isCoach && (
+        {activeTab === 'lesson' && isCoach && (
           <Box sx={{ mb: 4 }}>
             <Typography 
               variant="h6" 
@@ -479,7 +514,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
           </Box>
         )}
 
-        {selectedStudentId && (
+        {(selectedStudentId || activeTab === 'personal') && (
           <>
 
             <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -493,9 +528,9 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                 }}
               >
                 <AddComment color="primary" />
-                Lesson Notes
+                {activeTab === 'lesson' ? 'Lesson Notes' : 'My Notes'}
               </Typography>
-              {isCoach && !isViewingSelfAsCoach && (
+              {!isViewingSelfAsCoach && (
                 <Button 
                   variant="contained" 
                   startIcon={<AddComment />} 
@@ -543,7 +578,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
               </Box>
             ) : notes.length === 0 ? (
               <Card 
-                variant="outlined" 
+                variant="outlined"
                 sx={{ 
                   p: 6, 
                   textAlign: 'center',
@@ -558,9 +593,9 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                   No notes found
                 </Typography>
                 <Typography color="text.secondary">
-                  {isCoach 
-                    ? 'Start by adding your first lesson note for this student.' 
-                    : 'You have no lesson notes from your coach yet.'}
+                  {activeTab === 'personal'
+                    ? 'Start by adding your first personal note.'
+                    : 'No lesson notes found for this student.'}
                 </Typography>
               </Card>
             ) : viewingThread ? (
@@ -590,15 +625,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                           </Typography>
                           <Stack spacing={1.5}>
                             {groupedNotes[year][month].map(note => (
-                              <NoteThreadRow
-                                key={note.id}
-                                note={note}
-                                onClick={setViewingThreadId}
-                                userProfile={userProfile}
-                                onPin={handlePinToDashboard}
-                                onFavorite={handleToggleFavorite}
-                                isViewingSelfAsCoach={isViewingSelfAsCoach}
-                              />
+                              <NoteThreadRow key={note.id} note={note} onClick={setViewingThreadId} userProfile={userProfile} onFavorite={handleToggleFavorite} isViewingSelfAsCoach={isViewingSelfAsCoach} />
                             ))}
                           </Stack>
                         </Box>
@@ -615,7 +642,6 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                     note={note}
                     onClick={setViewingThreadId}
                     userProfile={userProfile}
-                    onPin={handlePinToDashboard}
                     onFavorite={handleToggleFavorite}
                     isViewingSelfAsCoach={isViewingSelfAsCoach}
                   />
@@ -699,7 +725,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
           <Box sx={{ mb: 3, mt: 3 }}>
             <LocalizationProvider dateAdapter={AdapterDateFns}>
               <DatePicker
-                label="Lesson Date"
+                label="Date"
                 value={lessonDate}
                 onChange={(newValue) => setLessonDate(newValue)}
                 slotProps={{
@@ -718,7 +744,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
           
           <Box sx={{ mb: 3 }}>
             <TextField
-              label="Subject / Summary"
+              label="Title"
               value={noteSubject}
               onChange={(e) => setNoteSubject(e.target.value)}
               variant="outlined"
@@ -742,11 +768,21 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                 border: '1px solid #e0e0e0',
                 borderTop: 'none',
                 borderRadius: '0 0 12px 12px',
-                padding: '16px',
+                padding: '8px 16px 16px 16px',
                 minHeight: '250px',
                 maxHeight: '400px',
                 overflow: 'auto',
                 backgroundColor: 'white',
+              }}
+              sx={{
+                // Styles for Tiptap placeholder
+                '& .tiptap p.is-editor-empty:first-child::before': {
+                  content: 'attr(data-placeholder)',
+                  float: 'left',
+                  color: '#adb5bd',
+                  pointerEvents: 'none',
+                  height: 0,
+                },
               }}
             />
           </Box>

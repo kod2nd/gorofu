@@ -78,9 +78,6 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser, userProfile 
 useEffect(() => {
     const loadCoach = async () => {
       // If the user has a profile, try to load their coach.
-      console.log("👨‍🏫 Fetching coach data for impersonatedUser:", impersonatedUser);
-      console.log("👨‍🏫 Fetching coach data for user:", user);
-      console.log("👨‍🏫 Fetching coach data for userProfile:", userProfile);
       if (user?.id) {
         try {
           // Use the service to get the coach details

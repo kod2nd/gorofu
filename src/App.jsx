@@ -183,7 +183,7 @@ function App() {
       case 'coachManagement':
         return 'Coach Management';
       case 'studentInteractions':
-        return 'Lesson Notes';
+        return 'Notes';
       default:
         return 'GolfStat';
     }

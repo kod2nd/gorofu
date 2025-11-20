@@ -416,13 +416,17 @@ export const userService = {
 
   // Get all notes for a specific student
   async   getNotesForStudent(options) {
-    const { studentId, searchTerm, startDate, endDate, page = 0, limit = 10, sortOrder = 'desc', showFavoritesOnly = false, pinnedOnly = false } = options;
+    const { studentId, searchTerm, startDate, endDate, page = 0, limit = 10, sortOrder = 'desc', showFavoritesOnly = false, pinnedOnly = false, personalNotesOnly = false } = options;
     if (!studentId) return { notes: [], hasMore: false };
 
     let query = supabase
       .from('coach_notes')
       .select('*, author:user_profiles!author_id(full_name, email, roles)', { count: 'exact' })
       .eq('student_id', studentId);
+
+    // If personalNotesOnly is true, only fetch notes where the author is the student.
+    // Otherwise, fetch notes where the author is NOT the student (i.e., lesson notes from a coach).
+    query = personalNotesOnly ? query.eq('author_id', studentId) : query.neq('author_id', studentId);
 
     if (showFavoritesOnly) {
       query = query.eq('is_favorited', true);

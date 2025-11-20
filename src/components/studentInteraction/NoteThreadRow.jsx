@@ -1,11 +1,12 @@
 import React from 'react';
-import { Paper, Box, Typography, Tooltip, IconButton } from '@mui/material';
+import { Paper, Box, Typography, Tooltip, IconButton, Chip } from '@mui/material';
 import { Star, StarBorder, AddComment, PushPin, PushPinOutlined } from '@mui/icons-material';
 import { toProperCase, stripHtmlAndTruncate } from './utils';
 
 const NoteThreadRow = ({ note, onClick, onFavorite, onPin, isViewingSelfAsCoach, userProfile }) => {
   const canFavorite = !isViewingSelfAsCoach;
   const canPin = userProfile.roles.includes('coach') && !isViewingSelfAsCoach;
+  const isPersonalNote = note.author_id === note.student_id;
 
   return (
     <Paper
@@ -57,10 +58,13 @@ const NoteThreadRow = ({ note, onClick, onFavorite, onPin, isViewingSelfAsCoach,
           )}
           {!canFavorite && !canPin && <AddComment color="action" sx={{ opacity: 0.6, ml: 1 }} />}
         </Box>
-        <Box>
-          <Typography variant="body1" fontWeight={600}>
-            {note.subject || 'No Subject'}
-          </Typography>
+        <Box sx={{ flexGrow: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
+            <Typography variant="body1" fontWeight={600}>
+              {note.subject || 'No Subject'}
+            </Typography>
+            <Chip label={isPersonalNote ? "Personal Note" : "Lesson Note"} size="small" variant="outlined" color={isPersonalNote ? "secondary" : "primary"} />
+          </Box>
           <Typography variant="caption" color="text.secondary">
             Started by {toProperCase(note.author?.full_name)} on {new Date(note.lesson_date).toLocaleDateString('en-UK', { month: 'short', day: 'numeric', year: 'numeric' })} &bull; {note.replies?.length || 0} {note.replies?.length === 1 ? 'Reply' : 'Replies'}
           </Typography>

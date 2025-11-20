@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Box, Button, Card, CardContent, CardActions, Typography,
+  Box, Button, Card, CardContent, CardActions, Typography, Chip,
   Divider, Tooltip, IconButton, Stack
 } from '@mui/material';
 import {
@@ -62,7 +62,10 @@ const NoteThreadDetailView = ({ note, onBack, userProfile, ...handlers }) => {
             )}
           </Box>
           <Box sx={{ pr: 6 }}> {/* Add padding to the right to avoid overlap with buttons */}
-            <Typography variant="h4" fontWeight={700} gutterBottom>{note.subject}</Typography>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, mb: 1 }}>
+              <Typography variant="h4" fontWeight={700}>{note.subject}</Typography>
+              <Chip label={isPersonalNote ? "Personal Note" : "Lesson Note"} color={isPersonalNote ? "secondary" : "primary"} />
+            </Box>
             <Typography variant="body2" color="text.secondary" sx={{ mb: 3 }}>
               By {toProperCase(note.author?.full_name)} on {new Date(note.lesson_date).toLocaleDateString('en-UK', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             </Typography>
