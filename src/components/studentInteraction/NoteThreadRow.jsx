@@ -1,0 +1,61 @@
+import React from 'react';
+import { Paper, Box, Typography, Tooltip, IconButton } from '@mui/material';
+import { Star, StarBorder, AddComment } from '@mui/icons-material';
+import { toProperCase, stripHtmlAndTruncate } from './utils';
+
+const NoteThreadRow = ({ note, onClick, onFavorite, isViewingSelfAsCoach, userProfile }) => {
+  const canFavorite = !isViewingSelfAsCoach;
+
+  return (
+    <Paper
+      onClick={() => onClick(note.id)}
+      elevation={0}
+      sx={{
+        display: 'flex',
+        alignItems: 'center',
+        p: 2,
+        borderRadius: 2.5,
+        border: '1px solid',
+        borderColor: 'divider',
+        transition: 'all 0.2s ease-in-out',
+        '&:hover': {
+          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
+          borderColor: 'primary.light',
+          transform: 'translateY(-2px)',
+          cursor: 'pointer',
+        },
+      }}
+    >
+      <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
+        {canFavorite ? (
+          <Tooltip title={note.is_favorited ? "Remove from favorites" : "Add to favorites"}>
+            <IconButton
+              size="small"
+              onClick={(e) => {
+                e.stopPropagation(); // Prevent row click from firing
+                onFavorite(note);
+              }}
+            >
+              {note.is_favorited ? <Star sx={{ color: 'warning.main' }} /> : <StarBorder />}
+            </IconButton>
+          </Tooltip>
+        ) : (
+          <AddComment color="action" sx={{ opacity: 0.6, ml: 1 }} />
+        )}
+        <Box>
+          <Typography variant="body1" fontWeight={600}>
+            {note.subject || 'No Subject'}
+          </Typography>
+          <Typography variant="caption" color="text.secondary">
+            Started by {toProperCase(note.author?.full_name)} on {new Date(note.lesson_date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })} &bull; {note.replies?.length || 0} {note.replies?.length === 1 ? 'Reply' : 'Replies'}
+          </Typography>
+          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontStyle: 'italic' }}>
+            {stripHtmlAndTruncate(note.note, 50)}
+          </Typography>
+        </Box>
+      </Box>
+    </Paper>
+  );
+};
+
+export default NoteThreadRow;
