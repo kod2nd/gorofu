@@ -625,7 +625,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                           </Typography>
                           <Stack spacing={1.5}>
                             {groupedNotes[year][month].map(note => (
-                              <NoteThreadRow key={note.id} note={note} onClick={setViewingThreadId} userProfile={userProfile} onFavorite={handleToggleFavorite} isViewingSelfAsCoach={isViewingSelfAsCoach} />
+                              <NoteThreadRow key={note.id} note={note} onClick={setViewingThreadId} userProfile={userProfile} onFavorite={handleToggleFavorite} isViewingSelfAsCoach={isViewingSelfAsCoach} onPin={handlePinToDashboard} />
                             ))}
                           </Stack>
                         </Box>
@@ -643,6 +643,7 @@ const StudentInteractionsPage = ({ userProfile, isActive }) => {
                     onClick={setViewingThreadId}
                     userProfile={userProfile}
                     onFavorite={handleToggleFavorite}
+                    onPin={handlePinToDashboard}
                     isViewingSelfAsCoach={isViewingSelfAsCoach}
                   />
                 ))}

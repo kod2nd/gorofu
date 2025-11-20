@@ -5,6 +5,8 @@ import { toProperCase, stripHtmlAndTruncate } from './utils';
 
 const NoteThreadRow = ({ note, onClick, onFavorite, onPin, isViewingSelfAsCoach, userProfile }) => {
   const canFavorite = !isViewingSelfAsCoach;
+  // A user can pin if they are a coach, AND they are not viewing their own notes,
+  // AND they are not a student viewing their own dashboard (where isViewingSelfAsCoach is false).
   const canPin = userProfile.roles.includes('coach') && !isViewingSelfAsCoach;
   const isPersonalNote = note.author_id === note.student_id;
 

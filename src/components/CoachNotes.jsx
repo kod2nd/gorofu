@@ -93,6 +93,7 @@ const CoachNotes = ({ studentId, userProfile }) => {
               note={note}
               onClick={() => handleNoteClick(note)}
               onFavorite={handleToggleFavorite}
+              onPin={() => {}} // Students can't pin from dashboard, so pass a no-op
               isViewingSelfAsCoach={false} // Student is never viewing self as coach on their dashboard
               userProfile={userProfile}
             />
