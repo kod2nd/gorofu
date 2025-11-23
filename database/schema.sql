@@ -156,7 +156,7 @@ CREATE TABLE IF NOT EXISTS public.coach_notes (
   subject TEXT,
   lesson_date TIMESTAMP WITH TIME ZONE,
   is_favorited BOOLEAN DEFAULT FALSE,
-  is_pinned_to_dashboard BOOLEAN DEFAULT FALSE;
+  is_pinned_to_dashboard BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   CONSTRAINT fk_author_note FOREIGN KEY (author_id) REFERENCES public.user_profiles(user_id) ON DELETE CASCADE,
@@ -669,10 +669,14 @@ ALTER TABLE coach_notes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE round_holes ENABLE ROW LEVEL SECURITY;
 
 -- User profiles: Users can view their own profile, admins can view all
+DROP POLICY IF EXISTS "Users can view their own profile" ON public.user_profiles;
 CREATE POLICY "Users can view their own profile" ON user_profiles FOR SELECT USING (user_id = auth.uid());
+DROP POLICY IF EXISTS "Admins can view all profiles" ON public.user_profiles;
 CREATE POLICY "Admins can view all profiles" ON user_profiles FOR SELECT USING (has_roles(ARRAY['admin', 'super_admin']));
+DROP POLICY IF EXISTS "Users can update their own profile" ON user_profiles FOR UPDATE;
 CREATE POLICY "Users can update their own profile" ON user_profiles FOR UPDATE USING (user_id = auth.uid());
 -- Coaches can view profiles of other coaches and students for note display and mapping
+DROP POLICY IF EXISTS "Coaches can view relevant user profiles" ON public.user_profiles;
 CREATE POLICY "Coaches can view relevant user profiles" ON public.user_profiles FOR SELECT USING (
   has_roles(ARRAY['coach']) AND (
     user_id = auth.uid() OR -- Their own profile
@@ -680,12 +684,17 @@ CREATE POLICY "Coaches can view relevant user profiles" ON public.user_profiles 
     EXISTS (SELECT 1 FROM public.coach_student_mappings WHERE student_user_id = user_profiles.user_id) -- Allow viewing any student profile (if they are a student in any mapping)
   )
 );
+DROP POLICY IF EXISTS "Admins can update any profile" ON public.user_profiles;
 CREATE POLICY "Admins can update any profile" ON user_profiles FOR UPDATE USING (has_roles(ARRAY['admin', 'super_admin']));
+DROP POLICY IF EXISTS "Admins can create profiles" ON public.user_profiles;
 CREATE POLICY "Admins can create profiles" ON user_profiles FOR INSERT WITH CHECK (has_roles(ARRAY['admin', 'super_admin']));
 
 -- User invitations: Only admins can manage invitations
+DROP POLICY IF EXISTS "Admins can view invitations" ON public.user_invitations;
 CREATE POLICY "Admins can view invitations" ON user_invitations FOR SELECT USING (has_roles(ARRAY['admin', 'super_admin']));
+DROP POLICY IF EXISTS "Admins can create invitations" ON public.user_invitations;
 CREATE POLICY "Admins can create invitations" ON user_invitations FOR INSERT WITH CHECK (has_roles(ARRAY['admin', 'super_admin']));
+DROP POLICY IF EXISTS "Admins can update invitations" ON public.user_invitations;
 CREATE POLICY "Admins can update invitations" ON user_invitations FOR UPDATE USING (has_roles(ARRAY['admin', 'super_admin']));
 
 -- Audit log: Only admins can view audit logs
@@ -693,14 +702,21 @@ CREATE POLICY "Admins can view audit logs" ON user_audit_log FOR SELECT USING (h
 CREATE POLICY "System can create audit logs" ON user_audit_log FOR INSERT WITH CHECK (true);
 
 -- Courses: Everyone can read, authenticated users can create
+DROP POLICY IF EXISTS "Anyone can view courses" ON public.courses;
 CREATE POLICY "Anyone can view courses" ON courses FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Authenticated users can create courses" ON public.courses;
 CREATE POLICY "Authenticated users can create courses" ON courses FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Course creators can update their courses" ON public.courses;
 CREATE POLICY "Course creators can update their courses" ON courses FOR UPDATE USING (created_by = auth.jwt() ->> 'email');
+DROP POLICY IF EXISTS "Admins can delete courses" ON public.courses;
 CREATE POLICY "Admins can delete courses" ON courses FOR DELETE USING (has_roles(ARRAY['admin', 'super_admin']));
 
 -- Course tee boxes: Everyone can read, authenticated users can create/update
+DROP POLICY IF EXISTS "Anyone can view course tee boxes" ON public.course_tee_boxes;
 CREATE POLICY "Anyone can view course tee boxes" ON course_tee_boxes FOR SELECT USING (true);
+DROP POLICY IF EXISTS "Authenticated users can create tee box data" ON public.course_tee_boxes;
 CREATE POLICY "Authenticated users can create tee box data" ON course_tee_boxes FOR INSERT WITH CHECK (auth.role() = 'authenticated');
+DROP POLICY IF EXISTS "Users can update tee box data they created" ON public.course_tee_boxes;
 CREATE POLICY "Users can update tee box data they created" ON course_tee_boxes FOR UPDATE USING (auth.role() = 'authenticated');
 
 -- Change requests: Users can create and view their own requests, admins can view all
@@ -710,6 +726,7 @@ CREATE POLICY "Admins can view all change requests" ON course_change_requests FO
 CREATE POLICY "Admins can update change requests" ON course_change_requests FOR UPDATE USING (has_roles(ARRAY['admin', 'super_admin']));
 
 -- Coach-student mappings policies
+DROP POLICY IF EXISTS "Admins can manage coach-student mappings" ON public.coach_student_mappings;
 CREATE POLICY "Admins can manage coach-student mappings" ON public.coach_student_mappings FOR ALL USING (has_roles(ARRAY['admin', 'super_admin']));
 DROP POLICY IF EXISTS "Coaches can view their own student mappings" ON public.coach_student_mappings;
 CREATE POLICY "Coaches can view their own student mappings" ON public.coach_student_mappings FOR SELECT USING (
@@ -721,32 +738,42 @@ CREATE POLICY "Coaches can view their own student mappings" ON public.coach_stud
 );
 
 -- Coach notes policies
-CREATE POLICY "Students can view their own notes" ON public.coach_notes FOR SELECT USING (
-  student_id = (SELECT user_id FROM public.user_profiles WHERE email = auth.jwt() ->> 'email' LIMIT 1)
-);
-
+DROP POLICY IF EXISTS "Users can view relevant notes" ON public.coach_notes;
 CREATE POLICY "Users can view relevant notes" ON public.coach_notes FOR SELECT USING (
+  -- Users can see notes where they are the student
   (student_id = auth.uid()) OR
-  has_roles(ARRAY['coach'])
-);
-
-CREATE POLICY "Users can create notes or replies" ON public.coach_notes FOR INSERT WITH CHECK (
-  author_id = auth.uid() AND (
-    -- Coaches can create new top-level notes for any student
-    (parent_note_id IS NULL AND has_roles(ARRAY['coach'])) OR
-    -- Students can reply to their own threads, and coaches can reply to any thread
-    (parent_note_id IS NOT NULL AND (student_id = auth.uid() OR has_roles(ARRAY['coach'])))
+  -- A coach can see notes of their own students
+  (
+    has_roles(ARRAY['coach']) AND
+    EXISTS (
+      SELECT 1 FROM public.coach_student_mappings
+      WHERE coach_user_id = auth.uid() AND student_user_id = coach_notes.student_id
+    )
   )
 );
 
-CREATE POLICY "Users can update their own notes" ON public.coach_notes FOR UPDATE USING (
-  author_id = auth.uid()
+DROP POLICY IF EXISTS "Users can create lesson notes or personal notes" ON public.coach_notes;
+CREATE POLICY "Users can create lesson notes or personal notes" ON public.coach_notes FOR INSERT WITH CHECK (
+  -- The person creating the note must be the author
+  author_id = auth.uid() AND (
+    -- CASE 1: Any user creating a personal note for themselves.
+    (auth.uid() = student_id)
+    OR
+    -- CASE 2: A coach creating a lesson note or reply for an assigned student.
+    (
+      (SELECT 'coach' = ANY(roles) FROM public.user_profiles WHERE user_id = auth.uid())
+      AND
+      EXISTS (
+        SELECT 1 FROM coach_student_mappings
+        WHERE coach_user_id = auth.uid() AND student_user_id = student_id
+      )
+    )
+  )
 );
 
-CREATE POLICY "Users can delete notes" ON public.coach_notes FOR DELETE USING (
-  (author_id = auth.uid()) OR
-  has_roles(ARRAY['coach']) OR
-  has_roles(ARRAY['admin', 'super_admin'])
+DROP POLICY IF EXISTS "Users can update their own notes" ON public.coach_notes;
+CREATE POLICY "Users can update their own notes" ON public.coach_notes FOR UPDATE USING (
+  author_id = auth.uid()
 );
 
 -- Rounds: Users can only access their own rounds
