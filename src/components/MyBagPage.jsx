@@ -273,7 +273,7 @@ const ClubCard = ({ club, shotConfig, displayUnit }) => {
 
             const shotTypeDetail = getShotTypeDetails(shot.shot_type);
             const categories = shotConfig.categories.filter(cat => shotTypeDetail?.categoryIds?.includes(cat.id));
-
+            console.log(shot)
             return ( // Parentheses added here
               <Paper key={shot.id} variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1 }}>
@@ -295,10 +295,10 @@ const ClubCard = ({ club, shotConfig, displayUnit }) => {
                   } />
                 </Stack>
                 <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
-                  <Chip label={`Launch: ${shot.launch}`} size="small" variant="outlined" />
-                  <Chip label={`Roll: ${shot.roll}`} size="small" variant="outlined" />
-                  <Chip label={`Tendency: ${shot.tendency}`} size="small" variant="outlined" color="warning" />
-                  <Chip label={`Swing Key: ${shot.swing_key}`} size="small" variant="outlined" color="info" />
+                  <Chip label={`Launch: ${shot.launch}`} size="small" />
+                  <Chip label={`Roll: ${shot.roll}`} size="small" color="success"/>
+                  <Chip label={`Tendency: ${shot.tendency}`} size="small" color="warning" />
+                  <Chip label={`Swing Key: ${shot.swing_key}`} size="small" color="info" />
                 </Stack>
               </Paper> // Parentheses added here
             );
