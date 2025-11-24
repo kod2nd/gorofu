@@ -120,7 +120,7 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
 
   const hasLoadedForActiveState = useRef(false);
   const isCoach = userProfile?.roles?.includes('coach');
-  const isViewingSelfAsCoach = isCoach && selectedStudentId === userProfile.user_id;
+  const isViewingOwnNotes = selectedStudentId === userProfile.user_id || activeTab === 'personal';
 
   useEffect(() => {
     if (isActive && userProfile && !hasLoadedForActiveState.current) {
@@ -255,7 +255,7 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
         // This is a reply
         const replyData = {
           author_id: userProfile.user_id,
-          student_id: replyingToNote.student_id,
+          student_id: replyingToNote.student_id, // Always use the parent note's student_id for threading
           parent_note_id: replyingToNote.id,
           note: noteContent,
           subject: noteSubject,
@@ -424,7 +424,7 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
       />
       
       <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
-        <Tab label="Lesson Notes" value="lesson" />
+        <Tab label="Coach Notes" value="lesson" />
         <Tab label="My Notes" value="personal" />
       </Tabs>
 
@@ -539,9 +539,9 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
                 }}
               >
                 <AddComment color="primary" />
-                {activeTab === 'lesson' ? 'Lesson Notes' : 'My Notes'}
+                {activeTab === 'lesson' ? 'Coach Notes' : 'My Notes'}
               </Typography>
-              {!isViewingSelfAsCoach && (
+              {!isViewingOwnNotes && (
                 <Button 
                   variant="contained" 
                   startIcon={<AddComment />} 
@@ -619,7 +619,7 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
                 onDelete={handleDeleteRequest}
                 onFavorite={handleToggleFavorite}
                 onPin={handlePinToDashboard}
-                isViewingSelfAsCoach={isViewingSelfAsCoach}
+                isViewingSelfAsCoach={isViewingOwnNotes}
               />
             ) : viewMode === 'grouped' ? (
               <Stack spacing={4}>
@@ -636,7 +636,7 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
                           </Typography>
                           <Stack spacing={1.5}>
                             {groupedNotes[year][month].map(note => (
-                              <NoteThreadRow key={note.id} note={note} onClick={setViewingThreadId} userProfile={userProfile} onFavorite={handleToggleFavorite} isViewingSelfAsCoach={isViewingSelfAsCoach} onPin={handlePinToDashboard} />
+                              <NoteThreadRow key={note.id} note={note} onClick={setViewingThreadId} userProfile={userProfile} onFavorite={handleToggleFavorite} isViewingSelfAsCoach={isViewingOwnNotes} onPin={handlePinToDashboard} />
                             ))}
                           </Stack>
                         </Box>
@@ -655,7 +655,7 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
                     userProfile={userProfile}
                     onFavorite={handleToggleFavorite}
                     onPin={handlePinToDashboard}
-                    isViewingSelfAsCoach={isViewingSelfAsCoach}
+                    isViewingSelfAsCoach={isViewingOwnNotes}
                   />
                 ))}
               </Stack>

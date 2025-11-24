@@ -31,9 +31,9 @@ const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, active
     const isCoach = userRoles?.includes('coach');
 
     if (isCoach || isAdmin) {
-      items.push({ text: "Lesson Notes", icon: <AddComment />, page: "studentInteractions" });
+      items.push({ text: "Notes", icon: <AddComment />, page: "studentInteractions" });
     } else {
-      items.push({ text: "Lesson Notes", icon: <AddComment />, page: "studentInteractions" });
+      items.push({ text: "Notes", icon: <AddComment />, page: "studentInteractions" });
     }
 
     if (isAdmin) {
