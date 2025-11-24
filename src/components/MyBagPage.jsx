@@ -122,12 +122,15 @@ const convertDistance = (distance, fromUnit, toUnit) => {
   return distance; // Fallback
 };
 
-const RangeDisplay = ({ title, shots, displayUnit }) => {
+const RangeDisplay = ({ title, shots, displayUnit, distanceMetric = 'total' }) => {
   if (shots.length === 0) return null;
 
+  const distanceKey = `${distanceMetric}_distance`;
+  const varianceKey = `${distanceMetric}_variance`;
+
   const ranges = shots.map(s => {
-    const total = convertDistance(s.total_distance, s.unit, displayUnit);
-    const variance = convertDistance(s.total_variance, s.unit, displayUnit);
+    const total = convertDistance(s[distanceKey], s.unit, displayUnit);
+    const variance = convertDistance(s[varianceKey], s.unit, displayUnit);
     return { min: total - variance, max: total + variance };
   });
   const min = Math.min(...ranges.map(r => r.min));
@@ -138,7 +141,7 @@ const RangeDisplay = ({ title, shots, displayUnit }) => {
     return null;
   }
 
-  const meanDistances = shots.map(s => convertDistance(s.total_distance, s.unit, displayUnit));
+  const meanDistances = shots.map(s => convertDistance(s[distanceKey], s.unit, displayUnit));
   const mean = meanDistances.reduce((a, b) => a + b, 0) / meanDistances.length;
 
   const unitLabel = displayUnit === 'meters' ? 'm' : 'yd';
@@ -189,6 +192,8 @@ const RangeDisplay = ({ title, shots, displayUnit }) => {
 };
 
 const ClubCard = ({ club, shotConfig, displayUnit }) => {
+  const [distanceView, setDistanceView] = useState('total'); // 'carry', 'total', 'both'
+
   // Group shots by the user-defined categories
   const shotsByCategoryId = club.shots.reduce((acc, shot) => {
     const shotTypeDetail = getShotTypeDetails(shot.shot_type);    
@@ -239,16 +244,37 @@ const ClubCard = ({ club, shotConfig, displayUnit }) => {
             </Stack>
           </Box>
           <Box>
-            <Typography variant="h6" sx={{ mb: 1.5 }}>Distance Ranges</Typography>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1.5 }}>
+              <Typography variant="h6">Distance Ranges</Typography>
+              <ToggleButtonGroup
+                size="small"
+                value={distanceView}
+                exclusive
+                onChange={(e, newView) => { if (newView) setDistanceView(newView); }}
+                aria-label="distance view"
+              >
+                <ToggleButton value="carry">Carry</ToggleButton>
+                <ToggleButton value="total">Total</ToggleButton>
+                <ToggleButton value="both">Both</ToggleButton>
+              </ToggleButtonGroup>
+            </Box>
             <Stack spacing={2}>
-              {shotConfig.categories.map(category => (
-                <RangeDisplay
-                  key={category.id}
-                  title={category.name}
-                  shots={shotsByCategoryId[category.id] || []}
-                  displayUnit={displayUnit}
-                />
-              ))}
+              {shotConfig.categories.map(category => {
+                const categoryShots = shotsByCategoryId[category.id] || [];
+                if (categoryShots.length === 0) return null;
+
+                return (
+                  <Box key={category.id}>
+                    <Typography variant="overline" color="text.secondary" sx={{ px: 1 }}>{category.name}</Typography>
+                    { (distanceView === 'carry' || distanceView === 'both') && (
+                      <RangeDisplay title="Carry" shots={categoryShots} displayUnit={displayUnit} distanceMetric="carry" />
+                    )}
+                    { (distanceView === 'total' || distanceView === 'both') && (
+                      <RangeDisplay title="Total" shots={categoryShots} displayUnit={displayUnit} distanceMetric="total" />
+                    )}
+                  </Box>
+                );
+              })}
             </Stack>
           </Box>
         </Stack>
