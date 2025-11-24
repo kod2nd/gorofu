@@ -35,6 +35,7 @@ const RoundDetailsPage = lazy(() => import('./components/RoundDetailsPage'));
 const CourseManagementPage = lazy(() => import('./components/CourseManagementPage'));
 const CoachManagementPage = lazy(() => import('./components/CoachManagementPage'));
 const StudentInteractionsPage = lazy(() => import('./components/StudentInteractionsPage'));
+const MyBagPage = lazy(() => import('./components/MyBagPage'));
 
 const drawerWidth = 240;
 const collapsedWidth = 60;
@@ -190,6 +191,8 @@ function App() {
         return 'Coach Management';
       case 'studentInteractions':
         return 'Notes';
+      case 'myBag':
+        return 'My Bag';
       default:
         return 'GolfStat';
     }
@@ -415,6 +418,13 @@ function App() {
                     userProfile={userProfile}
                     isActive={activePage === 'studentInteractions'}
                     ref={interactionsPageRef}
+                  />
+                </PageContainer>
+
+                <PageContainer active={activePage === 'myBag'}>
+                  <MyBagPage
+                    userProfile={impersonatedUser || userProfile}
+                    isActive={activePage === 'myBag'}
                   />
                 </PageContainer>
               </Suspense>

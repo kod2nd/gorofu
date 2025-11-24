@@ -9,7 +9,8 @@ import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
 import LogoutIcon from '@mui/icons-material/Logout';
 import HistoryIcon from '@mui/icons-material/History';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import GroupIcon from '@mui/icons-material/Group';
+import GroupIcon from '@mui/icons-material/Group'; 
+import StraightenIcon from '@mui/icons-material/Straighten';
 import SupervisedUserCircleIcon from '@mui/icons-material/SupervisedUserCircle';
 import SportsGolfIcon from '@mui/icons-material/SportsGolf';
 import MenuIcon from '@mui/icons-material/Menu';
@@ -21,7 +22,8 @@ const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, active
   const menuItems = useMemo(() => {
     const items = [
     { text: "Dashboard", icon: <DashboardIcon />, page: "dashboard" },
-    { text: "Add Round", icon: <AddCircleIcon />, page: "addRound" },
+    { text: "Add Round", icon: <AddCircleIcon />, page: "addRound" }, 
+    { text: "My Bag (WIP)", icon: <StraightenIcon />, page: "myBag" },
     { text: "Rounds History", icon: <HistoryIcon />, page: "roundsHistory" },
     { text: "Account", icon: <AccountCircleIcon />, page: "account" },
     { text: "View Round", icon: <VisibilityIcon />, page: "viewRound", hidden: true }, // Hidden from main menu
