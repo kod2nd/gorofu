@@ -11,7 +11,7 @@ import {
   Divider,
   Chip,
 } from '@mui/material';
-import { Search } from '@mui/icons-material';
+import { Search, GolfCourse } from '@mui/icons-material';
 import { elevatedCardStyles } from '../../styles/commonStyles';
 
 // Helper function (could be moved to a shared utils file later)
@@ -57,6 +57,9 @@ const DistanceLookup = ({ myBags, myClubs, displayUnit }) => {
     clubsToSearch.forEach(club => {
       club.shots.forEach(shot => {
         const carry = convertDistance(shot.carry_distance, shot.unit, displayUnit);
+        const bagsContainingClub = myBags.filter(bag =>
+          bag.clubIds.includes(club.id)
+        );
         const carryVariance = convertDistance(shot.carry_variance, shot.unit, displayUnit);
         const total = convertDistance(shot.total_distance, shot.unit, displayUnit);
         const totalVariance = convertDistance(shot.total_variance, shot.unit, displayUnit);
@@ -70,7 +73,7 @@ const DistanceLookup = ({ myBags, myClubs, displayUnit }) => {
           isExactMatch = (totalDist >= total - totalVariance && totalDist <= total + totalVariance);
         }
 
-        const suggestion = { clubName: club.name, clubLoft: club.loft, ...shot, displayUnit, medianToCompare };
+        const suggestion = { clubName: club.name, clubLoft: club.loft, bags: bagsContainingClub, ...shot, displayUnit, medianToCompare };
 
         if (isExactMatch) {
           exactMatches.push(suggestion);
@@ -185,6 +188,14 @@ const DistanceLookup = ({ myBags, myClubs, displayUnit }) => {
                   {shot.tendency && <Chip label={`Tendency: ${shot.tendency}`} size="small" color="warning" />}
                   {shot.swing_key && <Chip label={`Key: ${shot.swing_key}`} size="small" color="info" />}
                 </Stack>
+                {shot.bags && shot.bags.length > 0 && (
+                  <>
+                    <Divider sx={{ my: 1 }} />
+                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
+                      {shot.bags.map(bag => (<Chip key={bag.id} icon={<GolfCourse />} label={bag.name} size="small" variant="outlined" />))}
+                    </Stack>
+                  </>
+                )}
               </Paper>
             );
           })}
