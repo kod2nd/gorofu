@@ -27,6 +27,7 @@ import ConfigureShotsModal from './myBag/ConfigureShotsModal';
 import ManageShotTypesModal from './myBag/ManageShotTypesModal';
 import DistanceLookup from './myBag/DistanceLookup';
 import BagPresetModal from './myBag/BagPresetModal';
+import BagGappingChart from './myBag/BagGappingChart';
 import BagDetailsModal from './myBag/BagDetailsModal';
 import MyBagsSection from './myBag/MyBagsSection';
 import ConfirmationDialog from './myBag/ConfirmationDialog';
@@ -271,6 +272,26 @@ const MyBagPage = ({ userProfile, isActive }) => {
       />
 
       <DistanceLookup myBags={myBags} myClubs={myClubs} displayUnit={displayUnit} />
+
+      {/* Bag Gapping Chart */}
+      <Paper {...elevatedCardStyles} sx={{ p: 3, mb: 4, borderRadius: 3 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <ToggleButtonGroup
+            size="small"
+            value={gappingSelectedBagId}
+            exclusive
+            onChange={(e, newId) => { if (newId) setGappingSelectedBagId(newId); }}
+          >
+            <ToggleButton value="all">All Clubs</ToggleButton>
+            {myBags.map(bag => <ToggleButton key={bag.id} value={bag.id}>{bag.name}</ToggleButton>)}
+          </ToggleButtonGroup>
+        </Box>
+        <BagGappingChart 
+          clubs={filteredClubsForGapping} 
+          displayUnit={displayUnit} 
+          shotConfig={shotConfig}
+        />
+      </Paper>
 
       {/* My Bags Section */}
       <MyBagsSection
