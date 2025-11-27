@@ -1,6 +1,7 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Paper,
+  Alert,
   Box,
   Typography,
   ToggleButtonGroup,
@@ -10,9 +11,21 @@ import {
   Stack,
   Divider,
   Chip,
-} from '@mui/material';
-import { Search, GolfCourse } from '@mui/icons-material';
-import { elevatedCardStyles } from '../../styles/commonStyles';
+  Avatar,
+} from "@mui/material";
+import {
+  Search,
+  GolfCourse,
+  MyLocation,
+  Adjust,
+  TrendingUp,
+  TrendingDown,
+  Air,
+  Explore,
+  Bolt,
+  EmojiEvents,
+} from "@mui/icons-material";
+import { elevatedCardStyles } from "../../styles/commonStyles";
 
 // Helper function (could be moved to a shared utils file later)
 const YARDS_TO_METERS = 0.9144;
@@ -27,10 +40,11 @@ const convertDistance = (distance, fromUnit, toUnit) => {
 };
 
 const DistanceLookup = ({ myBags, myClubs, displayUnit }) => {
-  const [carryQuery, setCarryQuery] = useState('');
-  const [totalQuery, setTotalQuery] = useState('');
+  const [carryQuery, setCarryQuery] = useState("");
+  const [totalQuery, setTotalQuery] = useState("");
   const [suggestedShots, setSuggestedShots] = useState([]);
-  const [lookupSelectedBagId, setLookupSelectedBagId] = useState('all');
+  const [lookupSelectedBagId, setLookupSelectedBagId] = useState("all");
+  const [activeInput, setActiveInput] = useState(null);
 
   // Use useCallback to memoize the handleSearch function
   // This prevents it from being recreated on every render, which is important for the useEffect dependency array.
@@ -107,99 +121,177 @@ const DistanceLookup = ({ myBags, myClubs, displayUnit }) => {
 
   return (
     <Paper {...elevatedCardStyles} sx={{ p: 3, mb: 4, borderRadius: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6">Distance Lookup</Typography>        
-        <ToggleButtonGroup size="small" value={lookupSelectedBagId} exclusive onChange={(e, newId) => { if (newId) setLookupSelectedBagId(newId); }}>
+      {/* Header */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
+        <Box>
+          <Typography variant="h5" fontWeight="bold">Distance Lookup</Typography>
+          <Typography variant="body2" color="text.secondary">Find your perfect club for any distance.</Typography>
+        </Box>
+        <ToggleButtonGroup
+          size="small"
+          value={lookupSelectedBagId}
+          exclusive
+          onChange={(e, newId) => { if (newId) setLookupSelectedBagId(newId); }}
+        >
           <ToggleButton value="all">All Clubs</ToggleButton>
-          {myBags.map(bag => <ToggleButton key={bag.id} value={bag.id}>{bag.name}</ToggleButton>)}
+          {myBags.map((bag) => (
+            <ToggleButton key={bag.id} value={bag.id}>
+              {bag.name}
+            </ToggleButton>
+          ))}
         </ToggleButtonGroup>
       </Box>
-      <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
-        <TextField
-          fullWidth
-          label={`Search by Carry (${displayUnit})`}
-          type="number"
-          value={carryQuery}
-          onChange={(e) => {
-            setCarryQuery(e.target.value);
-            setTotalQuery(''); // Erase the other box
-            handleSearch(e.target.value, '');
+
+      {/* Search Inputs */}
+      <Stack direction={{ xs: "column", sm: "row" }} spacing={3} sx={{ mb: 3 }}>
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 2,
+            flex: 1,
+            borderRadius: 2,
+            borderWidth: 2,
+            borderColor: activeInput === "carry" ? "primary.main" : "divider",
+            transition: "border-color 0.3s ease",
           }}
-          InputProps={{
-            startAdornment: <InputAdornment position="start"><Search /></InputAdornment>,
+        >
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+            <Avatar sx={{ bgcolor: "primary.light" }}><MyLocation /></Avatar>
+            <Box>
+              <Typography variant="h6" fontWeight="bold">Carry</Typography>
+              <Typography variant="caption" color="text.secondary">Where the ball lands</Typography>
+            </Box>
+          </Stack>
+          <TextField
+            fullWidth
+            label={`Search by Carry (${displayUnit})`}
+            type="number"
+            value={carryQuery}
+            onChange={(e) => {
+              setCarryQuery(e.target.value);
+              setTotalQuery("");
+              handleSearch(e.target.value, "");
+            }}
+            onFocus={() => setActiveInput("carry")}
+            onBlur={() => setActiveInput(null)}
+            variant="filled"
+            InputProps={{
+              startAdornment: <InputAdornment position="start"><Search /></InputAdornment>,
+              disableUnderline: true,
+            }}
+          />
+        </Paper>
+        <Paper
+          variant="outlined"
+          sx={{
+            p: 2,
+            flex: 1,
+            borderRadius: 2,
+            borderWidth: 2,
+            borderColor: activeInput === "total" ? "success.main" : "divider",
+            transition: "border-color 0.3s ease",
           }}
-        />
-        <TextField
-          fullWidth
-          label={`Search by Total (${displayUnit})`}
-          type="number"
-          value={totalQuery}
-          onChange={(e) => {
-            setTotalQuery(e.target.value);
-            setCarryQuery(''); // Erase the other box
-            handleSearch('', e.target.value);
-          }}
-          InputProps={{
-            startAdornment: <InputAdornment position="start"><Search /></InputAdornment>,
-          }}
-        />
+        >
+          <Stack direction="row" spacing={2} alignItems="center" sx={{ mb: 2 }}>
+            <Avatar sx={{ bgcolor: "success.light" }}><Adjust /></Avatar>
+            <Box>
+              <Typography variant="h6" fontWeight="bold">Total</Typography>
+              <Typography variant="caption" color="text.secondary">Including roll</Typography>
+            </Box>
+          </Stack>
+          <TextField
+            fullWidth
+            label={`Search by Total (${displayUnit})`}
+            type="number"
+            value={totalQuery}
+            onChange={(e) => {
+              setTotalQuery(e.target.value);
+              setCarryQuery("");
+              handleSearch("", e.target.value);
+            }}
+            onFocus={() => setActiveInput("total")}
+            onBlur={() => setActiveInput(null)}
+            variant="filled"
+            InputProps={{
+              startAdornment: <InputAdornment position="start"><Search /></InputAdornment>,
+              disableUnderline: true,
+            }}
+          />
+        </Paper>
       </Stack>
+
+      {/* Results Section */}
       {suggestedShots.length > 0 && (
-        <Stack spacing={1} sx={{ mt: 2 }}>
-          <Typography variant="subtitle2">
-            {suggestedShots[0]?.isExact 
-              ? 'Suggested Shots:' 
-              : suggestedShots[0]?.isNearby 
-              ? 'No logged ranges for this distance. Nearby options:' 
-              : 'Suggested Shots:'
-            }
-          </Typography>
-          {suggestedShots.map((shot) => {
-            const unitLabel = shot.displayUnit === 'meters' ? 'm' : 'yd';
+        <Box>
+          <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
+            <EmojiEvents color="primary" sx={{ fontSize: 32 }} />
+            <Typography variant="h5" fontWeight="bold">
+              {suggestedShots[0]?.isExact ? "Perfect Matches Found!" : "Nearby Options"}
+            </Typography>
+          </Stack>
 
-            // Carry calculations
-            const medianCarry = convertDistance(shot.carry_distance, shot.unit, shot.displayUnit);
-            const carryVariance = convertDistance(shot.carry_variance, shot.unit, shot.displayUnit);
-            const lowerBoundCarry = Math.round(medianCarry - carryVariance);
-            const upperBoundCarry = Math.round(medianCarry + carryVariance);
+          {!suggestedShots[0]?.isExact && (
+            <Alert severity="info" sx={{ mb: 3, borderRadius: 2 }}>
+              No exact matches for this distance. Here are your closest options:
+            </Alert>
+          )}
 
-            // Total calculations
-            const medianTotal = convertDistance(shot.total_distance, shot.unit, shot.displayUnit);
-            const totalVariance = convertDistance(shot.total_variance, shot.unit, shot.displayUnit);
-            const lowerBoundTotal = Math.round(medianTotal - totalVariance);
-            const upperBoundTotal = Math.round(medianTotal + totalVariance);
+          <Stack spacing={2}>
+            {suggestedShots.map((shot) => {
+              const unitLabel = shot.displayUnit === "meters" ? "m" : "yd";
+              const medianCarry = convertDistance(shot.carry_distance, shot.unit, shot.displayUnit);
+              const carryVariance = convertDistance(shot.carry_variance, shot.unit, shot.displayUnit);
+              const lowerBoundCarry = Math.round(medianCarry - carryVariance);
+              const upperBoundCarry = Math.round(medianCarry + carryVariance);
+              const medianTotal = convertDistance(shot.total_distance, shot.unit, shot.displayUnit);
+              const totalVariance = convertDistance(shot.total_variance, shot.unit, shot.displayUnit);
+              const lowerBoundTotal = Math.round(medianTotal - totalVariance);
+              const upperBoundTotal = Math.round(medianTotal + totalVariance);
 
-            return (
-              <Paper key={`${shot.clubName}-${shot.id}`} variant="outlined" sx={{ p: 1.5, borderRadius: 2 }}>
-                {shot.label && (
-                  <Chip label={shot.label} color={shot.label === 'Nearest Longer' ? 'success' : 'warning'} size="small" sx={{ mb: 1, fontWeight: 'bold' }} />
-                )}
-                <Typography variant="body1" fontWeight="bold">{shot.clubName} ({shot.clubLoft}) - {shot.shot_type}</Typography>
-                <Stack direction="row" spacing={1} sx={{ mt: 0.5, flexWrap: 'wrap', gap: 0.5 }}>
-                  <Typography variant="caption" color="text.secondary">
-                    Carry: {lowerBoundCarry} - <b>{Math.round(medianCarry)}</b> - {upperBoundCarry} {unitLabel}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">| Total: {lowerBoundTotal} - <b>{Math.round(medianTotal)}</b> - {upperBoundTotal} {unitLabel}</Typography>
-                </Stack>
-                <Divider sx={{ my: 1 }} />
-                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-                  {shot.launch && <Chip label={`Launch: ${shot.launch}`} size="small" />}
-                  {shot.roll && <Chip label={`Roll: ${shot.roll}`} size="small" color="success" />}
-                  {shot.tendency && <Chip label={`Tendency: ${shot.tendency}`} size="small" color="warning" />}
-                  {shot.swing_key && <Chip label={`Key: ${shot.swing_key}`} size="small" color="info" />}
-                </Stack>
-                {shot.bags && shot.bags.length > 0 && (
-                  <>
-                    <Divider sx={{ my: 1 }} />
-                    <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-                      {shot.bags.map(bag => (<Chip key={bag.id} icon={<GolfCourse />} label={bag.name} size="small" variant="outlined" />))}
+              return (
+                <Paper key={`${shot.clubName}-${shot.id}`} variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+                  <Stack spacing={1.5}>
+                    {shot.label && <Chip label={shot.label} icon={shot.label === "Nearest Longer" ? <TrendingUp /> : <TrendingDown />} color={shot.label === "Nearest Longer" ? "success" : "warning"} size="small" sx={{ mb: 1, fontWeight: "bold", alignSelf: 'flex-start' }} />}
+                    {shot.isExact && <Chip label="Perfect Match" icon={<Adjust />} color="secondary" size="small" sx={{ mb: 1, fontWeight: "bold", alignSelf: 'flex-start' }} />}
+                    
+                    <Typography variant="h6" fontWeight="bold">{shot.clubName} ({shot.clubLoft}) - {shot.shot_type}</Typography>
+                    
+                    <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap", gap: 0.5 }}>
+                      <Typography variant="body2" color="text.secondary">Carry: <b>{lowerBoundCarry} - {Math.round(medianCarry)} - {upperBoundCarry}</b> {unitLabel}</Typography>
+                      <Typography variant="body2" color="text.secondary">Total: <b>{lowerBoundTotal} - {Math.round(medianTotal)} - {upperBoundTotal}</b> {unitLabel}</Typography>
                     </Stack>
-                  </>
-                )}
-              </Paper>
-            );
-          })}
-        </Stack>
+                    
+                    <Divider />
+                    
+                    <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 0.5 }}>
+                      {shot.launch && <Chip icon={<TrendingUp />} label={`Launch: ${shot.launch}`} size="small" />}
+                      {shot.roll && <Chip icon={<Explore />} label={`Roll: ${shot.roll}`} size="small" color="success" />}
+                      {shot.tendency && <Chip icon={<Air />} label={`Tendency: ${shot.tendency}`} size="small" color="warning" />}
+                      {shot.swing_key && <Chip icon={<Bolt />} label={`Key: ${shot.swing_key}`} size="small" color="info" />}
+                    </Stack>
+                    
+                    {shot.bags && shot.bags.length > 0 && (
+                      <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 0.5, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
+                        {shot.bags.map((bag) => (<Chip key={bag.id} icon={<GolfCourse />} label={bag.name} size="small" variant="outlined" />))}
+                      </Stack>
+                    )}
+                  </Stack>
+                </Paper>
+              );
+            })}
+          </Stack>
+        </Box>
+      )}
+
+      {/* Empty State */}
+      {!carryQuery && !totalQuery && suggestedShots.length === 0 && (
+        <Box sx={{ textAlign: "center", py: 8 }}>
+          <Avatar sx={{ width: 80, height: 80, bgcolor: "grey.200", color: "grey.500", mx: "auto", mb: 3 }}>
+            <Search sx={{ fontSize: 48 }} />
+          </Avatar>
+          <Typography variant="h5" fontWeight="bold" sx={{ mb: 1 }}>Ready to find your club?</Typography>
+          <Typography color="text.secondary">Enter a distance above to get started.</Typography>
+        </Box>
       )}
     </Paper>
   );
