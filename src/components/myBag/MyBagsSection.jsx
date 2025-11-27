@@ -11,13 +11,13 @@ import {
 import { Add, Edit, Delete, Star } from '@mui/icons-material';
 import { elevatedCardStyles } from '../../styles/commonStyles';
 
-const MyBagsSection = ({ myBags, myClubs, handleOpenBagModal, handleDeleteBagRequest }) => {
+const MyBagsSection = ({ myBags, myClubs, handleOpenBagModal, handleDeleteBagRequest, onViewBagDetails }) => {
   return (
     <Paper {...elevatedCardStyles} sx={{ p: 3, mb: 4, borderRadius: 3 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
         <Typography variant="h6">My Bags</Typography>
         <Stack direction="row" spacing={1}>
-          <Button variant="outlined" startIcon={<Add />} onClick={() => handleOpenBagModal(null)}>Create Preset</Button>
+          <Button variant="outlined" startIcon={<Add />} onClick={() => handleOpenBagModal(null)}>Add Bag</Button>
         </Stack>
       </Box>
       <Stack spacing={2}>
@@ -34,7 +34,16 @@ const MyBagsSection = ({ myBags, myClubs, handleOpenBagModal, handleDeleteBagReq
               return a.name.localeCompare(b.name); // Fallback to name
             });
           return (
-            <Paper key={bag.id} variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
+            <Paper
+              key={bag.id}
+              variant="outlined"
+              onClick={() => onViewBagDetails(bag)}
+              sx={{
+                p: 2,
+                borderRadius: 2,
+                cursor: 'pointer',
+                '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' }
+              }}>
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                 <Box>
                   <Typography variant="subtitle1" fontWeight="bold">{bag.name}</Typography>
@@ -44,8 +53,8 @@ const MyBagsSection = ({ myBags, myClubs, handleOpenBagModal, handleDeleteBagReq
                 </Box>
                 <Stack direction="row" alignItems="center" spacing={1}>
                   {bag.is_default && <Chip icon={<Star />} label="Default" size="small" color="success" variant="outlined" />}
-                  <IconButton aria-label="edit preset" onClick={() => handleOpenBagModal(bag)}><Edit fontSize="small" /></IconButton>
-                  <IconButton aria-label="delete preset" onClick={() => handleDeleteBagRequest(bag.id)}><Delete fontSize="small" /></IconButton>
+                  <IconButton aria-label="edit preset" onClick={(e) => { e.stopPropagation(); handleOpenBagModal(bag); }}><Edit fontSize="small" /></IconButton>
+                  <IconButton aria-label="delete preset" onClick={(e) => { e.stopPropagation(); handleDeleteBagRequest(bag.id); }}><Delete fontSize="small" /></IconButton>
                 </Stack>
               </Box>
               <Box sx={{ mt: 2 }}>

@@ -27,6 +27,7 @@ import ConfigureShotsModal from './myBag/ConfigureShotsModal';
 import ManageShotTypesModal from './myBag/ManageShotTypesModal';
 import DistanceLookup from './myBag/DistanceLookup';
 import BagPresetModal from './myBag/BagPresetModal';
+import BagDetailsModal from './myBag/BagDetailsModal';
 import MyBagsSection from './myBag/MyBagsSection';
 import ConfirmationDialog from './myBag/ConfirmationDialog';
 import ClubCard from './myBag/ClubCard';
@@ -48,156 +49,6 @@ const getShotTypeDetails = (shotTypeName, shotConfig) => {
   return shotConfig.shotTypes.find(st => st.name === shotTypeName);
 };
  
-const YARDS_TO_METERS = 0.9144;
-const METERS_TO_YARDS = 1.09361;
-
-const convertDistance = (distance, fromUnit, toUnit) => {
-  if (typeof distance !== 'number') return 0; // Gracefully handle undefined or non-numeric inputs
-  if (fromUnit === toUnit) return distance;
-  if (fromUnit === 'yards' && toUnit === 'meters') return distance * YARDS_TO_METERS;
-  if (fromUnit === 'meters' && toUnit === 'yards') return distance * METERS_TO_YARDS;
-  return distance; // Fallback
-};
-
-const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
-  const [distanceMetric, setDistanceMetric] = useState('total');  
-  const allCategoryIds = useMemo(() => {
-    if (!shotConfig || !shotConfig.categories) {
-      return [];
-    }
-    return shotConfig.categories.map(c => c.id);
-  }, [shotConfig]);
-
-  const [selectedCategoryIds, setSelectedCategoryIds] = useState(allCategoryIds);
-
-  useEffect(() => {
-    // When the available categories change (e.g., on initial load), reset the selection to all.
-    setSelectedCategoryIds(allCategoryIds);
-  }, [allCategoryIds]);
-
-  const clubRanges = useMemo(() => {
-    if (!clubs || selectedCategoryIds.length === 0) return [];
-
-    const distanceKey = `${distanceMetric}_distance`;
-    const varianceKey = `${distanceMetric}_variance`;
-
-    return clubs.map(club => {
-      if (!club.shots || club.shots.length === 0) {
-        return { id: club.id, name: club.name, min: 0, max: 0, avg: 0 };
-      }
-
-      const filteredShots = club.shots.filter(shot => {
-        const shotDetails = getShotTypeDetails(shot.shot_type, shotConfig);
-        // Check if shot has categories and if any match the selected categories
-        return shotDetails?.category_ids?.some(catId => selectedCategoryIds.includes(catId));
-      });
-
-      // If no shots match the filter, return empty range
-      if (filteredShots.length === 0) {
-        return { id: club.id, name: club.name, min: 0, max: 0, avg: 0 };
-      }
-
-      const ranges = filteredShots.map(shot => {
-        const median = convertDistance(shot[distanceKey], shot.unit, displayUnit);
-        const variance = convertDistance(shot[varianceKey], shot.unit, displayUnit);
-        return { min: median - variance, max: median + variance };
-      });
-
-      const min = Math.min(...ranges.map(r => r.min));
-      const max = Math.max(...ranges.map(r => r.max));
-      const avg = (min + max) / 2;
-
-      return { id: club.id, name: club.name, min, max, avg };
-    }).filter(club => club.min > 0 && club.max > 0) // Filter out clubs with no valid ranges
-      .sort((a, b) => b.max - a.max); // Sort from longest to shortest club
-  }, [clubs, distanceMetric, displayUnit, selectedCategoryIds, shotConfig]);
-
-  const maxDistanceOverall = Math.max(...clubRanges.map(c => c.max), 300);
-  const unitLabel = displayUnit === 'meters' ? 'm' : 'yd';
-
-  const handleCategoryToggle = (catId) => {
-    const newIds = selectedCategoryIds.includes(catId)
-      ? selectedCategoryIds.filter(id => id !== catId)
-      : [...selectedCategoryIds, catId];
-
-    // Ensure at least one category is always selected
-    if (newIds.length > 0) {
-      setSelectedCategoryIds(newIds);
-    }
-  };
-
-  const areAllCategoriesSelected = selectedCategoryIds.length === allCategoryIds.length;
-
-  return (
-    <Paper {...elevatedCardStyles} sx={{ p: 3, mb: 4, borderRadius: 3 }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h6">Distance Gapping</Typography>
-        <ToggleButtonGroup
-          size="small"
-          value={distanceMetric}
-          exclusive
-          onChange={(e, newMetric) => { if (newMetric) setDistanceMetric(newMetric); }}
-        >
-          <ToggleButton value="total">Total Distance</ToggleButton>
-          <ToggleButton value="carry">Carry Distance</ToggleButton>
-        </ToggleButtonGroup>
-      </Box>
-
-      <Box sx={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: 1, mb: 3 }}>
-        <Chip
-          label="All Shots"
-          clickable
-          color={areAllCategoriesSelected ? 'primary' : 'default'}
-          variant={areAllCategoriesSelected ? 'filled' : 'outlined'}
-          onClick={() => setSelectedCategoryIds(allCategoryIds)}
-        />
-        {shotConfig.categories.map(cat => (
-          <Chip
-            key={cat.id}
-            label={cat.name}
-            clickable
-            color={selectedCategoryIds.includes(cat.id) ? 'primary' : 'default'}
-            variant={selectedCategoryIds.includes(cat.id) ? 'filled' : 'outlined'}
-            onClick={() => handleCategoryToggle(cat.id)}
-          />
-        ))}
-      </Box>
-      
-      {clubRanges.length > 0 ? (
-        <Stack spacing={2.5}>
-          {clubRanges.map(club => (
-            <Box key={club.id}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', mb: 0.5 }}>
-                <Typography variant="body2" fontWeight="bold">{club.name}</Typography>
-                <Typography variant="caption" color="text.secondary">
-                  {Math.round(club.min)} - {Math.round(club.max)} {unitLabel}
-                </Typography>
-              </Box>
-              <Slider
-                value={[club.min, club.max]}
-                min={0}
-                max={maxDistanceOverall}
-                disabled
-                sx={{ 
-                  padding: '13px 0', 
-                  '& .MuiSlider-thumb': { display: 'none' },
-                  '& .MuiSlider-track': {
-                    background: (theme) => `linear-gradient(to right, transparent ${(club.min / maxDistanceOverall) * 100}%, ${theme.palette.primary.main} ${(club.min / maxDistanceOverall) * 100}%, ${theme.palette.primary.main} ${(club.max / maxDistanceOverall) * 100}%, transparent ${(club.max / maxDistanceOverall) * 100}%)`,
-                  }
-                }}
-              />
-            </Box>
-          ))}
-        </Stack>
-      ) : (
-        <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 4 }}>
-          No distance data available for the selected categories.
-        </Typography>
-      )}
-    </Paper>
-  );
-};
-
 const MyBagPage = ({ userProfile, isActive }) => {
   const [myClubs, setMyClubs] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -213,6 +64,7 @@ const MyBagPage = ({ userProfile, isActive }) => {
   const [isBagPresetModalOpen, setBagPresetModalOpen] = useState(false);
   const [editingBag, setEditingBag] = useState(null);
   const [deletingBagId, setDeletingBagId] = useState(null);
+  const [viewingBag, setViewingBag] = useState(null);
   const [clubSortOrder, setClubSortOrder] = useState('loft'); // 'loft' or 'name'
   const [clubFilterBagIds, setClubFilterBagIds] = useState([]); // Array of bag IDs
   const [confirmDeleteDialog, setConfirmDeleteDialog] = useState({ open: false, id: null, name: '', type: '' });
@@ -341,6 +193,10 @@ const MyBagPage = ({ userProfile, isActive }) => {
     setDeletingBagId(bagId);
   };
 
+  const handleViewBagDetails = (bag) => {
+    setViewingBag(bag);
+  };
+
   const handleConfirmDeleteBag = async () => {
     if (!deletingBagId) return;
     try {
@@ -414,29 +270,7 @@ const MyBagPage = ({ userProfile, isActive }) => {
         }
       />
 
-      {/* Distance Lookup Tool */}
       <DistanceLookup myBags={myBags} myClubs={myClubs} displayUnit={displayUnit} />
-
-      {/* Bag Gapping Chart */}
-      <Paper {...elevatedCardStyles} sx={{ p: 3, mb: 4, borderRadius: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <Typography variant="h6">Bag Gapping</Typography>
-          <ToggleButtonGroup
-            size="small"
-            value={gappingSelectedBagId}
-            exclusive
-            onChange={(e, newId) => { if (newId) setGappingSelectedBagId(newId); }}
-          >
-            <ToggleButton value="all">All Clubs</ToggleButton>
-            {myBags.map(bag => <ToggleButton key={bag.id} value={bag.id}>{bag.name}</ToggleButton>)}
-          </ToggleButtonGroup>
-        </Box>
-        <BagGappingChart 
-          clubs={filteredClubsForGapping} 
-          displayUnit={displayUnit} 
-          shotConfig={shotConfig}
-        />
-      </Paper>
 
       {/* My Bags Section */}
       <MyBagsSection
@@ -444,6 +278,7 @@ const MyBagPage = ({ userProfile, isActive }) => {
         myClubs={myClubs}
         handleOpenBagModal={handleOpenBagModal}
         handleDeleteBagRequest={handleDeleteBagRequest}
+        onViewBagDetails={handleViewBagDetails}
       />
 
       {/* Club List */}
@@ -529,6 +364,15 @@ const MyBagPage = ({ userProfile, isActive }) => {
         onSave={handleSaveBag}
         bagToEdit={editingBag}
         myClubs={myClubs}
+      />
+
+      <BagDetailsModal
+        open={Boolean(viewingBag)}
+        onClose={() => setViewingBag(null)}
+        bag={viewingBag}
+        myClubs={myClubs}
+        shotConfig={shotConfig}
+        displayUnit={displayUnit}
       />
 
       <ConfirmationDialog

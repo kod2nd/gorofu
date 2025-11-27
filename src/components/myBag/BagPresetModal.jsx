@@ -87,7 +87,7 @@ const BagPresetModal = ({ open, onClose, onSave, bagToEdit, myClubs }) => {
   return (
     <Dialog open={open} onClose={handleClose} maxWidth="sm" fullWidth>
       <DialogTitle>
-        {isEditMode ? "Edit Bag Preset" : "Create Bag Preset"}
+        {isEditMode ? "Edit Bag" : "Add Bag"}
       </DialogTitle>
       <DialogContent>
         <Stack spacing={3} sx={{ mt: 2 }}>
