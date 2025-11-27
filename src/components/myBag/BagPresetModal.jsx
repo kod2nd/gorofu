@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import {
   Box,
   Paper,
@@ -21,6 +21,7 @@ import {
   ListItemText,
   ListItemButton,
   ListItemIcon,
+  ListSubheader,
   Checkbox,
   Autocomplete,
   Chip,
@@ -33,6 +34,8 @@ const initialBagState = {
   is_default: false,
   clubIds: [],
 };
+
+const clubTypesOrder = ['Driver', 'Woods', 'Hybrid', 'Iron', 'Wedge', 'Putter', 'Other'];
 
 const BagPresetModal = ({ open, onClose, onSave, bagToEdit, myClubs }) => {
   const [bagData, setBagData] = useState(initialBagState);
@@ -54,6 +57,35 @@ const BagPresetModal = ({ open, onClose, onSave, bagToEdit, myClubs }) => {
       setBagData(initialBagState);
     }
   }, [bagToEdit, isEditMode, open]);
+
+  const groupedClubs = useMemo(() => {
+    const groups = {};
+    // Initialize groups to maintain order
+    clubTypesOrder.forEach(type => {
+      groups[type] = [];
+    });
+
+    (myClubs || []).forEach(club => {
+      const type = club.type && clubTypesOrder.includes(club.type) ? club.type : 'Other';
+      groups[type].push(club);
+    });
+
+    // Sort specific groups by loft
+    ['Iron', 'Wedge', 'Hybrid', 'Woods'].forEach(type => {
+      if (groups[type]) {
+        groups[type].sort((a, b) => {
+          const loftA = parseInt(a.loft) || 999;
+          const loftB = parseInt(b.loft) || 999;
+          if (loftA !== loftB) {
+            return loftA - loftB;
+          }
+          return a.name.localeCompare(b.name); // Fallback sort
+        });
+      }
+    });
+
+    return groups;
+  }, [myClubs]);
 
   const handleClubToggle = (clubId) => {
     const { clubIds } = bagData;
@@ -113,17 +145,27 @@ const BagPresetModal = ({ open, onClose, onSave, bagToEdit, myClubs }) => {
             onChange={(event, newValue) => {
               setBagData((prev) => ({ ...prev, tags: newValue }));
             }}
-            renderTags={(value, getTagProps) =>
-              value.map((option, index) => (
-                <Chip
-                  variant="outlined"
-                  label={option}
-                  {...getTagProps({ index })}
-                />
-              ))
-            }
             renderInput={(params) => (
-              <TextField {...params} label="Tags (e.g., Windy, Wet, Links)" />
+              <TextField
+                {...params}
+                label="Tags (e.g., Windy, Wet, Links)"
+                onBlur={(event) => {
+                  const { value } = event.target;
+                  if (value && !bagData.tags.includes(value)) {
+                    // Add the tag when the input field loses focus
+                    setBagData(prev => ({ ...prev, tags: [...prev.tags, value] }));
+                  }
+                }}
+                // The new way: Use renderValue inside InputProps
+                InputProps={{
+                  ...params.InputProps,
+                  renderValue: (selected) => (
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
+                      {selected.map((value) => (<Chip key={value} label={value} />))}
+                    </Box>
+                  )
+                }}
+              />
             )}
           />
           <FormControlLabel
@@ -146,27 +188,34 @@ const BagPresetModal = ({ open, onClose, onSave, bagToEdit, myClubs }) => {
             </Typography>
             <Paper variant="outlined" sx={{ maxHeight: 300, overflow: "auto" }}>
               <List dense>
-                {myClubs.map((club) => (
-                  <ListItem key={club.id} disablePadding>
-                    <ListItemButton
-                      onClick={() => handleClubToggle(club.id)}
-                      disabled={
-                        bagData.clubIds.length >= clubLimit &&
-                        !bagData.clubIds.includes(club.id)
-                      }
-                    >
-                      <ListItemIcon>
-                        <Checkbox
-                          edge="start"
-                          checked={bagData.clubIds.includes(club.id)}
-                          tabIndex={-1}
-                          disableRipple
-                        />
-                      </ListItemIcon>
-                      <ListItemText primary={club.name} secondary={club.type} />
-                    </ListItemButton>
-                  </ListItem>
-                ))}
+                {Object.entries(groupedClubs).map(([type, clubsInGroup]) => {
+                  if (clubsInGroup.length === 0) return null;
+                  return (
+                    <li key={type}>
+                      <ul>
+                        <ListSubheader>{type}</ListSubheader>
+                        {clubsInGroup.map((club) => (
+                          <ListItem key={club.id} disablePadding>
+                            <ListItemButton
+                              onClick={() => handleClubToggle(club.id)}
+                              disabled={bagData.clubIds.length >= clubLimit && !bagData.clubIds.includes(club.id)}
+                            >
+                              <ListItemIcon>
+                                <Checkbox
+                                  edge="start"
+                                  checked={bagData.clubIds.includes(club.id)}
+                                  tabIndex={-1}
+                                  disableRipple
+                                />
+                              </ListItemIcon>
+                              <ListItemText primary={club.name} secondary={club.loft ? `Loft: ${club.loft}` : null} />
+                            </ListItemButton>
+                          </ListItem>
+                        ))}
+                      </ul>
+                    </li>
+                  );
+                })}
               </List>
             </Paper>
             {bagData.clubIds.length >= clubLimit && (
@@ -180,7 +229,7 @@ const BagPresetModal = ({ open, onClose, onSave, bagToEdit, myClubs }) => {
       <DialogActions>
         <Button onClick={handleClose}>Cancel</Button>
         <Button onClick={handleSave} variant="contained">
-          Save Preset
+          Save
         </Button>
       </DialogActions>
     </Dialog>

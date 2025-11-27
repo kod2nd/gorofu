@@ -11,6 +11,8 @@ import {
 import { Add, Edit, Delete, Star } from '@mui/icons-material';
 import { elevatedCardStyles } from '../../styles/commonStyles';
 
+const clubTypesOrder = ['Driver', 'Woods', 'Hybrid', 'Iron', 'Wedge', 'Putter', 'Other'];
+
 const MyBagsSection = ({ myBags, myClubs, handleOpenBagModal, handleDeleteBagRequest, onViewBagDetails }) => {
   return (
     <Paper {...elevatedCardStyles} sx={{ p: 3, mb: 4, borderRadius: 3 }}>
@@ -33,6 +35,19 @@ const MyBagsSection = ({ myBags, myClubs, handleOpenBagModal, handleDeleteBagReq
               }
               return a.name.localeCompare(b.name); // Fallback to name
             });
+
+          const groupedClubsInBag = clubTypesOrder.reduce((acc, type) => {
+            const clubsOfType = clubsInBag.filter(club => club.type === type);
+            if (clubsOfType.length > 0) {
+              acc[type] = clubsOfType;
+            }
+            return acc;
+          }, {});
+          
+          // Handle clubs that don't match the ordered types
+          const otherClubs = clubsInBag.filter(club => !clubTypesOrder.includes(club.type));
+          if (otherClubs.length > 0) groupedClubsInBag['Other'] = otherClubs;
+
           return (
             <Paper
               key={bag.id}
@@ -48,7 +63,7 @@ const MyBagsSection = ({ myBags, myClubs, handleOpenBagModal, handleDeleteBagReq
                 <Box>
                   <Typography variant="subtitle1" fontWeight="bold">{bag.name}</Typography>
                   <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap', gap: 0.5 }}>
-                    {bag.tags.map(tag => <Chip key={tag} label={tag} size="small" />)}
+                    {bag.tags && bag.tags.map(tag => <Chip key={tag} label={tag} size="small" />)}
                   </Stack>
                 </Box>
                 <Stack direction="row" alignItems="center" spacing={1}>
@@ -59,8 +74,31 @@ const MyBagsSection = ({ myBags, myClubs, handleOpenBagModal, handleDeleteBagReq
               </Box>
               <Box sx={{ mt: 2 }}>
                 <Typography variant="overline" color="text.secondary">Clubs ({clubsInBag.length}/14)</Typography>
-                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                  {clubsInBag.map(club => <Chip key={club.id} label={club.name} size="small" variant="outlined" />)}
+                <Stack spacing={1.5} sx={{ mt: 1 }}>
+                  {Object.entries(groupedClubsInBag).map(([type, clubsInGroup]) => (
+                    <Box key={type}>
+                      <Typography variant="caption" fontWeight="bold" color="text.secondary">{type}</Typography>
+                      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
+                        {clubsInGroup.map(club => {
+                           const specDetails = [
+                            club.make,
+                            club.model,
+                            club.loft ? `(${club.loft})` : ''
+                          ].filter(Boolean).join(' ');
+                          
+                          return (
+                            <Chip
+                              key={club.id}
+                              label={
+                                <Typography component="span" variant="body2">{club.name} <Typography component="span" variant="caption" color="text.secondary">{specDetails}</Typography></Typography>
+                              }
+                              variant="outlined"
+                            />
+                          );
+                        })}
+                      </Stack>
+                    </Box>
+                  ))}
                 </Stack>
               </Box>
             </Paper>

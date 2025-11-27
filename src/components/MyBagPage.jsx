@@ -17,6 +17,9 @@ import {
   InputLabel,
   Select,
   MenuItem,
+  Snackbar,
+  ListSubheader,
+  Alert,
 } from '@mui/material';
 import { Add, Edit, Delete, Search, Straighten as StraightenIcon, Settings, CheckCircle, GolfCourse } from '@mui/icons-material';
 import PageHeader from './PageHeader';
@@ -69,6 +72,7 @@ const MyBagPage = ({ userProfile, isActive }) => {
   const [clubSortOrder, setClubSortOrder] = useState('loft'); // 'loft' or 'name'
   const [clubFilterBagIds, setClubFilterBagIds] = useState([]); // Array of bag IDs
   const [confirmDeleteDialog, setConfirmDeleteDialog] = useState({ open: false, id: null, name: '', type: '' });
+  const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
 
   const fetchData = async () => {
     if (!isActive) return;
@@ -98,10 +102,12 @@ const MyBagPage = ({ userProfile, isActive }) => {
       // Update existing club
       const updatedClub = await updateClub(editingClub.id, clubData);
       setMyClubs(myClubs.map(c => c.id === editingClub.id ? updatedClub : c));
+      setSnackbar({ open: true, message: 'Club updated successfully!', severity: 'success' });
     } else {
       // Create new club
       const newClub = await createClub(clubData);
       setMyClubs([...myClubs, newClub]);
+      setSnackbar({ open: true, message: 'Club added successfully!', severity: 'success' });
     }
   };
 
@@ -168,20 +174,21 @@ const MyBagPage = ({ userProfile, isActive }) => {
   };
 
   const handleSaveBag = async (bagData) => {
-    const { id, clubIds, ...bagDetails } = bagData;
+    const { id, clubIds, name, tags, is_default } = bagData;
     try {
       if (id) {
         // Update existing bag
-        await updateBag(id, bagDetails, clubIds);
+        await updateBag(id, { name, tags, is_default }, clubIds);        
       } else {
         // Create new bag
-        await createBag(bagDetails, clubIds);
+        await createBag({ name, tags, is_default }, clubIds);
       }
       await fetchData(); // Refetch all data to update UI
       setBagPresetModalOpen(false);
+      setSnackbar({ open: true, message: `Bag ${id ? 'updated' : 'created'} successfully!`, severity: 'success' });
     } catch (error) {
       console.error("Failed to save bag preset:", error);
-      // TODO: Show error snackbar
+      setSnackbar({ open: true, message: `Error: ${error.message}`, severity: 'error' });
     }
   };
 
@@ -243,6 +250,27 @@ const MyBagPage = ({ userProfile, isActive }) => {
 
     return clubsToDisplay;
   }, [myClubs, myBags, clubSortOrder, clubFilterBagIds]);
+
+  const groupedClubsForDisplay = useMemo(() => {
+    const clubTypesOrder = ['Driver', 'Woods', 'Hybrid', 'Iron', 'Wedge', 'Putter', 'Other'];
+    const groups = {};
+
+    clubTypesOrder.forEach(type => {
+      groups[type] = [];
+    });
+
+    filteredAndSortedClubs.forEach(club => {
+      const type = club.type && clubTypesOrder.includes(club.type) ? club.type : 'Other';
+      groups[type].push(club);
+    });
+
+    // The filteredAndSortedClubs are already sorted, so we just need to group them.
+    // If sorting by name, the loft sort within groups might not be perfect, but the primary sort is respected.
+    // The loft sort is most effective when the primary sort is 'loft'.
+
+    return groups;
+
+  }, [filteredAndSortedClubs]);
 
   return (
     <Box sx={{ pb: 4 }}>
@@ -336,20 +364,30 @@ const MyBagPage = ({ userProfile, isActive }) => {
       </Stack>
 
       <Stack spacing={3}>
-        {filteredAndSortedClubs.map(club => (
-          <ClubCard
-            key={club.id}
-            club={club}
-            shotConfig={shotConfig}
-            displayUnit={displayUnit}
-            bags={myBags}
-            onEdit={handleOpenEditModal}
-            onDeleteRequest={handleDeleteRequest}
-            onConfigureShots={handleConfigureShots}
-            onManageShotTypes={() => setShotTypesModalOpen(true)}
-            onBagAssignmentChange={handleClubBagAssignmentChange}
-          />
-        ))}
+        {Object.entries(groupedClubsForDisplay).map(([type, clubsInGroup]) => {
+          if (clubsInGroup.length === 0) return null;
+          return (
+            <Box key={type}>
+              <ListSubheader sx={{ bgcolor: 'transparent', lineHeight: '2em' }}>{type}</ListSubheader>
+              <Stack spacing={3}>
+                {clubsInGroup.map(club => (
+                  <ClubCard
+                    key={club.id}
+                    club={club}
+                    shotConfig={shotConfig}
+                    displayUnit={displayUnit}
+                    bags={myBags}
+                    onEdit={handleOpenEditModal}
+                    onDeleteRequest={handleDeleteRequest}
+                    onConfigureShots={handleConfigureShots}
+                    onManageShotTypes={() => setShotTypesModalOpen(true)}
+                    onBagAssignmentChange={handleClubBagAssignmentChange}
+                  />
+                ))}
+              </Stack>
+            </Box>
+          );
+        })}
       </Stack>
 
       <AddClubModal
@@ -415,6 +453,17 @@ const MyBagPage = ({ userProfile, isActive }) => {
         confirmText="Delete"
         confirmColor="error"
       />
+
+      <Snackbar
+        open={snackbar.open}
+        autoHideDuration={6000}
+        onClose={() => setSnackbar({ ...snackbar, open: false })}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={() => setSnackbar({ ...snackbar, open: false })} severity={snackbar.severity} sx={{ width: '100%' }}>
+          {snackbar.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
