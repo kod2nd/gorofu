@@ -20,6 +20,7 @@ import {
   Snackbar,
   ListSubheader,
   Alert,
+  useTheme,
 } from '@mui/material';
 import { Add, Edit, Delete, Search, Straighten as StraightenIcon, Settings, CheckCircle, GolfCourse, UploadFile, Download } from '@mui/icons-material';
 import PageHeader from './PageHeader';
@@ -71,6 +72,7 @@ const MyBagPage = ({ userProfile, isActive }) => {
   const [clubFilterBagIds, setClubFilterBagIds] = useState([]); // Array of bag IDs
   const [confirmDeleteDialog, setConfirmDeleteDialog] = useState({ open: false, id: null, name: '', type: '' });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const theme = useTheme();
 
   const fetchData = async () => {
     if (!isActive) return;
@@ -282,8 +284,21 @@ const MyBagPage = ({ userProfile, isActive }) => {
 
   }, [filteredAndSortedClubs]);
 
+  const getClubTypeStyle = (type) => {
+    const styles = {
+      Driver: { color: theme.palette.error.main },
+      Woods: { color: theme.palette.warning.dark },
+      Hybrid: { color: theme.palette.success.main },
+      Iron: { color: theme.palette.info.main },
+      Wedge: { color: theme.palette.primary.main },
+      Putter: { color: theme.palette.grey[700] },
+      Other: { color: theme.palette.grey[500] },
+    };
+    return styles[type] || styles.Other;
+  };
+
   const clubTemplateHeaders = [
-    'name', 'type', 'make', 'model', 'loft', 'shaft_make', 'shaft_model', 
+    'name', 'type', 'make', 'model', 'loft', 'bounce', 'shaft_make', 'shaft_model', 
     'shaft_flex', 'shaft_weight', 'shaft_length', 'grip_make', 'grip_model', 
     'grip_size', 'grip_weight', 'swing_weight'
   ];
@@ -369,7 +384,7 @@ const MyBagPage = ({ userProfile, isActive }) => {
       <DistanceLookup myBags={myBags} myClubs={myClubs} displayUnit={displayUnit} />
 
       {/* Bag Gapping Chart */}
-      <Paper {...elevatedCardStyles} sx={{ p: 3, mb: 4, borderRadius: 3 }}>
+      {/* <Paper {...elevatedCardStyles} sx={{ p: 3, mb: 4, borderRadius: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
           <ToggleButtonGroup
             size="small"
@@ -386,7 +401,7 @@ const MyBagPage = ({ userProfile, isActive }) => {
           displayUnit={displayUnit} 
           shotConfig={shotConfig}
         />
-      </Paper>
+      </Paper> */}
 
       {/* My Bags Section */}
       <MyBagsSection
@@ -447,9 +462,21 @@ const MyBagPage = ({ userProfile, isActive }) => {
       <Stack spacing={3}>
         {Object.entries(groupedClubsForDisplay).map(([type, clubsInGroup]) => {
           if (clubsInGroup.length === 0) return null;
+          const typeStyle = getClubTypeStyle(type);
           return (
             <Box key={type}>
-              <ListSubheader sx={{ bgcolor: 'transparent', lineHeight: '2em' }}>{type}</ListSubheader>
+              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2, pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
+                <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: typeStyle.color }} />
+                <Typography 
+                  variant="h6" 
+                  sx={{ 
+                    fontWeight: 600, 
+                    textTransform: 'uppercase', 
+                    letterSpacing: '0.05em',
+                    color: 'text.secondary'
+                  }}
+                >{type}s</Typography>
+              </Box>
               <Stack spacing={3}>
                 {clubsInGroup.map(club => (
                   <ClubCard

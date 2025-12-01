@@ -907,6 +907,7 @@ CREATE TABLE public.clubs (
   make TEXT, -- e.g., Titleist
   model TEXT, -- e.g., T100
   loft TEXT,
+  bounce TEXT,
   shaft_make TEXT,
   shaft_model TEXT,
   shaft_flex TEXT,

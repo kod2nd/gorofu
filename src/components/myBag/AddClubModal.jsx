@@ -25,6 +25,7 @@ const initialClubState = {
     make: '', // e.g., 'Titleist'
     model: '', // e.g., 'T100'
     loft: '',
+    bounce: '',
     shaft_make: '',
     shaft_model: '',
     shaft_flex: '',
@@ -148,6 +149,7 @@ const AddClubModal = ({ open, onClose, onSave, clubToEdit, myClubs = [] }) => {
               <Box sx={{ flexBasis: { xs: '100%', sm: 'calc(50% - 8px)' } }}><TextField name="make" label="Make (Brand)" value={clubData.make} onChange={handleChange} fullWidth /></Box>
               <Box sx={{ flexBasis: { xs: '100%', sm: 'calc(50% - 8px)' } }}><TextField name="model" label="Model" value={clubData.model} onChange={handleChange} fullWidth /></Box>
               <Box sx={{ flexBasis: { xs: '100%', sm: 'calc(50% - 8px)' } }}><TextField name="loft" label="Loft" value={clubData.loft} onChange={handleChange} fullWidth /></Box>
+              <Box sx={{ flexBasis: { xs: '100%', sm: 'calc(50% - 8px)' } }}><TextField name="bounce" label="Bounce" value={clubData.bounce} onChange={handleChange} fullWidth /></Box>
             </Box>
 
             {/* Shaft Section */}

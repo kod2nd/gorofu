@@ -422,6 +422,7 @@ const ClubCard = ({
     { label: 'Make', value: safeClub.make },
     { label: 'Model', value: safeClub.model },
     { label: 'Loft', value: safeClub.loft },
+    { label: 'Bounce', value: safeClub.bounce },
     { label: 'Shaft', value: `${safeClub.shaft_make || ''} ${safeClub.shaft_model || ''}`.trim() },
     { label: 'Flex', value: safeClub.shaft_flex },
     { label: 'Grip', value: `${safeClub.grip_make || ''} ${safeClub.grip_model || ''}`.trim() },
@@ -488,7 +489,7 @@ const ClubCard = ({
   
   return (
     <Card {...elevatedCardStyles} sx={{ borderRadius: 3, overflow: 'hidden' }}>
-      <Box sx={{ p: 3, background: typeStyle.gradient, color: 'white' }}>
+      <Box sx={{ p: 3, bgcolor: 'primary.main', color: 'white' }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <Box>
             <Typography variant="h4" fontWeight="bold">{safeClub.name || 'Unnamed Club'}</Typography>

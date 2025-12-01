@@ -146,8 +146,7 @@ const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
                     <Box>
                       <Typography variant="body2" fontWeight="bold">{club.name}</Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {club.type}
-                        {club.make && ` • ${club.make} ${club.model} • ${club.loft}° Loft`}
+                        {club.type} {club.make && ` • ${club.make} ${club.model}`} {club.loft && ` • ${club.loft}°`} {club.bounce && ` • ${club.bounce}° Bounce`}
                       </Typography>
                     </Box>
                   </Box>

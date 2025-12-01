@@ -116,7 +116,7 @@ const MyBagsSection = ({ myBags, myClubs, handleOpenBagModal, handleDeleteBagReq
                             </Box>
                             <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1, pl: 2.5 }}>
                               {clubsInGroup.map((club) => {
-                                const specDetails = [club.make, club.model, club.loft ? `${club.loft}°` : ""].filter(Boolean).join(" ");
+                                const specDetails = [club.make, club.model, club.loft ? `${club.loft}°` : "", club.bounce ? `${club.bounce}°` : ""].filter(Boolean).join(" ");
                                 return (
                                   <Chip
                                     key={club.id}
