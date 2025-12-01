@@ -199,6 +199,22 @@ const MyBagPage = ({ userProfile, isActive }) => {
     setDeletingBagId(bagId);
   };
 
+  const handleSetDefaultBag = async (bagToSetAsDefault) => {
+    try {
+      // We only need to update the is_default flag. The service handles unsetting the old default.
+      const updates = {
+        name: bagToSetAsDefault.name,
+        tags: bagToSetAsDefault.tags,
+        is_default: true,
+      };
+      await updateBag(bagToSetAsDefault.id, updates, bagToSetAsDefault.clubIds);
+      await fetchData(); // Refresh data to show the change
+      setSnackbar({ open: true, message: `"${bagToSetAsDefault.name}" is now the default bag.`, severity: 'success' });
+    } catch (error) {
+      setSnackbar({ open: true, message: `Error setting default bag: ${error.message}`, severity: 'error' });
+    }
+  };
+
   const handleConfirmDeleteBag = async () => {
     if (!deletingBagId) return;
     try {
@@ -378,6 +394,7 @@ const MyBagPage = ({ userProfile, isActive }) => {
         myClubs={myClubs}
         handleOpenBagModal={handleOpenBagModal}
         handleDeleteBagRequest={handleDeleteBagRequest}
+        handleSetDefaultBag={handleSetDefaultBag}
         displayUnit={displayUnit}
         shotConfig={shotConfig}
       />

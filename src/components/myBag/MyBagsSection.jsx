@@ -32,7 +32,7 @@ const getClubTypeStyle = (type, theme) => {
   return styles[type] || styles.Other;
 };
 
-const MyBagsSection = ({ myBags, myClubs, handleOpenBagModal, handleDeleteBagRequest, onViewBagDetails, displayUnit, shotConfig }) => {
+const MyBagsSection = ({ myBags, myClubs, handleOpenBagModal, handleDeleteBagRequest, handleSetDefaultBag, displayUnit, shotConfig }) => {
   const theme = useTheme();
   const [expandedBagId, setExpandedBagId] = useState(null);
 
@@ -81,7 +81,18 @@ const MyBagsSection = ({ myBags, myClubs, handleOpenBagModal, handleDeleteBagReq
                     </Stack>
                   </Box>
                   <Stack direction="row" alignItems="center" spacing={0.5}>
-                    {bag.is_default && <Chip icon={<Star />} label="Default" size="small" sx={{ bgcolor: 'success.dark', color: 'white', fontWeight: 'bold' }} />}
+                    {bag.is_default ? (
+                      <Chip icon={<Star />} label="Default" size="small" sx={{ bgcolor: 'success.dark', color: 'white', fontWeight: 'bold' }} />
+                    ) : (
+                      <Button
+                        size="small"
+                        variant="contained"
+                        onClick={(e) => { e.stopPropagation(); handleSetDefaultBag(bag); }}
+                        sx={{ color: 'white', bgcolor: 'rgba(255,255,255,0.2)', '&:hover': { bgcolor: 'rgba(255,255,255,0.3)' } }}
+                      >
+                        Set as Default
+                      </Button>
+                    )}
                     <IconButton size="small" sx={{ color: 'white' }} aria-label="edit preset" onClick={(e) => { e.stopPropagation(); handleOpenBagModal(bag); }}><Edit fontSize="small" /></IconButton>
                     <IconButton size="small" sx={{ color: 'white' }} aria-label="delete preset" onClick={(e) => { e.stopPropagation(); handleDeleteBagRequest(bag.id); }}><Delete fontSize="small" /></IconButton>
                   </Stack>
