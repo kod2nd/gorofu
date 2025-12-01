@@ -140,10 +140,18 @@ const BagPresetModal = ({ open, onClose, onSave, bagToEdit, myClubs }) => {
           <Autocomplete
             multiple
             freeSolo
+            filterSelectedOptions
             options={[]}
             value={bagData.tags}
             onChange={(event, newValue) => {
               setBagData((prev) => ({ ...prev, tags: newValue }));
+            }}
+            renderTags={(value, getTagProps) => {
+              return value.map((option, index) => {
+                // Destructure to separate the key from the rest of the props
+                const { key, ...chipProps } = getTagProps({ index });
+                return <Chip key={key} variant="outlined" label={option} {...chipProps} />;
+              });
             }}
             renderInput={(params) => (
               <TextField
@@ -155,15 +163,6 @@ const BagPresetModal = ({ open, onClose, onSave, bagToEdit, myClubs }) => {
                     // Add the tag when the input field loses focus
                     setBagData(prev => ({ ...prev, tags: [...prev.tags, value] }));
                   }
-                }}
-                // The new way: Use renderValue inside InputProps
-                InputProps={{
-                  ...params.InputProps,
-                  renderValue: (selected) => (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                      {selected.map((value) => (<Chip key={value} label={value} />))}
-                    </Box>
-                  )
                 }}
               />
             )}

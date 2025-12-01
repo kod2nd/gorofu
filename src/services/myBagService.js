@@ -87,6 +87,28 @@ export const createClub = async (clubData) => {
 };
 
 /**
+ * Creates multiple clubs in a single request for the currently authenticated user.
+ * @param {object[]} clubsData - An array of club data objects to insert.
+ */
+export const bulkCreateClubs = async (clubsData) => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error("User not authenticated.");
+
+  // Add user_id to each club object
+  const clubsToInsert = clubsData.map(club => ({ ...club, user_id: user.id }));
+
+  const { data, error } = await supabase
+    .from('clubs')
+    .insert(clubsToInsert)
+    .select();
+
+  if (error) {
+    console.error('Error bulk creating clubs:', error);
+    throw error;
+  }
+  return data;
+};
+/**
  * Updates an existing club.
  * @param {number} clubId - The ID of the club to update.
  * @param {object} updates - An object with the fields to update.

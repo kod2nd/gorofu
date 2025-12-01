@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from "react";
 import {
   Paper,
   Box,
@@ -6,20 +6,42 @@ import {
   Stack,
   Button,
   Chip,
+  Card,
+  Divider,
   IconButton,
-} from '@mui/material';
-import { Add, Edit, Delete, Star } from '@mui/icons-material';
-import { elevatedCardStyles } from '../../styles/commonStyles';
+  Collapse,
+  LinearProgress,
+  useTheme,
+} from "@mui/material";
+import { Add, Edit, Delete, Star, ExpandMore as ExpandMoreIcon } from "@mui/icons-material";
+import { elevatedCardStyles } from "../../styles/commonStyles";
+import BagGappingChart from "./BagGappingChart";
 
 const clubTypesOrder = ['Driver', 'Woods', 'Hybrid', 'Iron', 'Wedge', 'Putter', 'Other'];
 
-const MyBagsSection = ({ myBags, myClubs, handleOpenBagModal, handleDeleteBagRequest, onViewBagDetails }) => {
+const getClubTypeStyle = (type, theme) => {
+  const styles = {
+    Driver: { color: theme.palette.error.main },
+    Woods: { color: theme.palette.warning.dark },
+    Hybrid: { color: theme.palette.success.main },
+    Iron: { color: theme.palette.info.main },
+    Wedge: { color: theme.palette.secondary.main },
+    Putter: { color: theme.palette.grey[700] },
+    Other: { color: theme.palette.grey[500] },
+  };
+  return styles[type] || styles.Other;
+};
+
+const MyBagsSection = ({ myBags, myClubs, handleOpenBagModal, handleDeleteBagRequest, onViewBagDetails, displayUnit, shotConfig }) => {
+  const theme = useTheme();
+  const [expandedBagId, setExpandedBagId] = useState(null);
+
   return (
-    <Paper {...elevatedCardStyles} sx={{ p: 3, mb: 4, borderRadius: 3 }}>
+    <Paper {...elevatedCardStyles} sx={{ p: 3, mb: 4, borderRadius: 3, overflow: 'hidden' }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h6">My Bags</Typography>
+        <Typography variant="h5" fontWeight={600}>My Bags</Typography>
         <Stack direction="row" spacing={1}>
-          <Button variant="outlined" startIcon={<Add />} onClick={() => handleOpenBagModal(null)}>Add Bag</Button>
+          <Button variant="contained" startIcon={<Add />} onClick={() => handleOpenBagModal(null)}>Add Bag</Button>
         </Stack>
       </Box>
       <Stack spacing={2}>
@@ -49,59 +71,83 @@ const MyBagsSection = ({ myBags, myClubs, handleOpenBagModal, handleDeleteBagReq
           if (otherClubs.length > 0) groupedClubsInBag['Other'] = otherClubs;
 
           return (
-            <Paper
-              key={bag.id}
-              variant="outlined"
-              onClick={() => onViewBagDetails(bag)}
-              sx={{
-                p: 2,
-                borderRadius: 2,
-                cursor: 'pointer',
-                '&:hover': { borderColor: 'primary.main', bgcolor: 'action.hover' }
-              }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                <Box>
-                  <Typography variant="subtitle1" fontWeight="bold">{bag.name}</Typography>
-                  <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap', gap: 0.5 }}>
-                    {bag.tags && bag.tags.map(tag => <Chip key={tag} label={tag} size="small" />)}
+            <Card key={bag.id} variant="outlined" sx={{ borderRadius: 3, transition: 'all 0.3s ease', '&:hover': { boxShadow: 3, borderColor: 'primary.light' } }}>
+              <Box sx={{ p: 2, background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.primary.dark} 100%)`, color: 'white', cursor: 'pointer' }} onClick={() => setExpandedBagId(expandedBagId === bag.id ? null : bag.id)}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <Box>
+                    <Typography variant="h6" fontWeight="bold">{bag.name}</Typography>
+                    <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap', gap: 0.5 }}>
+                      {bag.tags && bag.tags.map(tag => <Chip key={tag} label={tag} size="small" sx={{ bgcolor: 'rgba(255,255,255,0.2)', color: 'white' }} />)}
+                    </Stack>
+                  </Box>
+                  <Stack direction="row" alignItems="center" spacing={0.5}>
+                    {bag.is_default && <Chip icon={<Star />} label="Default" size="small" sx={{ bgcolor: 'success.dark', color: 'white', fontWeight: 'bold' }} />}
+                    <IconButton size="small" sx={{ color: 'white' }} aria-label="edit preset" onClick={(e) => { e.stopPropagation(); handleOpenBagModal(bag); }}><Edit fontSize="small" /></IconButton>
+                    <IconButton size="small" sx={{ color: 'white' }} aria-label="delete preset" onClick={(e) => { e.stopPropagation(); handleDeleteBagRequest(bag.id); }}><Delete fontSize="small" /></IconButton>
                   </Stack>
                 </Box>
-                <Stack direction="row" alignItems="center" spacing={1}>
-                  {bag.is_default && <Chip icon={<Star />} label="Default" size="small" color="success" variant="outlined" />}
-                  <IconButton aria-label="edit preset" onClick={(e) => { e.stopPropagation(); handleOpenBagModal(bag); }}><Edit fontSize="small" /></IconButton>
-                  <IconButton aria-label="delete preset" onClick={(e) => { e.stopPropagation(); handleDeleteBagRequest(bag.id); }}><Delete fontSize="small" /></IconButton>
-                </Stack>
+                <Box sx={{ mt: 2 }}>
+                  <Typography variant="body2" sx={{ opacity: 0.9 }}>{clubsInBag.length} / 14 Clubs</Typography>
+                  <LinearProgress variant="determinate" value={(clubsInBag.length / 14) * 100} sx={{ height: 6, borderRadius: 3, mt: 0.5, bgcolor: 'rgba(255,255,255,0.3)' }} />
+                </Box>
               </Box>
-              <Box sx={{ mt: 2 }}>
-                <Typography variant="overline" color="text.secondary">Clubs ({clubsInBag.length}/14)</Typography>
-                <Stack spacing={1.5} sx={{ mt: 1 }}>
-                  {Object.entries(groupedClubsInBag).map(([type, clubsInGroup]) => (
-                    <Box key={type}>
-                      <Typography variant="caption" fontWeight="bold" color="text.secondary">{type}</Typography>
-                      <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 0.5, mt: 0.5 }}>
-                        {clubsInGroup.map(club => {
-                           const specDetails = [
-                            club.make,
-                            club.model,
-                            club.loft ? `(${club.loft})` : ''
-                          ].filter(Boolean).join(' ');
-                          
-                          return (
-                            <Chip
-                              key={club.id}
-                              label={
-                                <Typography component="span" variant="body2">{club.name} <Typography component="span" variant="caption" color="text.secondary">{specDetails}</Typography></Typography>
-                              }
-                              variant="outlined"
-                            />
-                          );
-                        })}
-                      </Stack>
-                    </Box>
-                  ))}
-                </Stack>
-              </Box>
-            </Paper>
+              <Collapse in={expandedBagId === bag.id} timeout="auto" unmountOnExit>
+                <Box sx={{ p: 2 }}>
+                  <Stack spacing={1.5}>
+                    {Object.entries(groupedClubsInBag).map(
+                      ([type, clubsInGroup]) => {
+                        const typeStyle = getClubTypeStyle(type, theme);
+                        return (
+                          <Box key={type}>
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+                              <Box sx={{ width: 8, height: 8, borderRadius: "50%", bgcolor: typeStyle.color }} />
+                              <Typography variant="caption" fontWeight="bold" color="text.secondary" sx={{ textTransform: 'uppercase' }}>{type}</Typography>
+                            </Box>
+                            <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 1, pl: 2.5 }}>
+                              {clubsInGroup.map((club) => {
+                                const specDetails = [club.make, club.model, club.loft ? `${club.loft}°` : ""].filter(Boolean).join(" ");
+                                return (
+                                  <Chip
+                                    key={club.id}
+                                    label={
+                                      <Box component="span" sx={{ display: 'flex', alignItems: 'baseline', gap: 0.5 }}>
+                                        <Typography component="span" sx={{ fontWeight: 500, fontSize: '0.8125rem' }}>{club.name}</Typography>
+                                        {specDetails && <Typography component="span" variant="caption" color="text.secondary">{specDetails}</Typography>}
+                                      </Box>
+                                    }
+                                    size="small"
+                                    variant="outlined"
+                                  />
+                                );
+                              })}
+                            </Stack>
+                          </Box>
+                        );
+                      })}
+                  </Stack>
+                  <Divider sx={{ my: 2 }} />
+                  <BagGappingChart clubs={clubsInBag} displayUnit={displayUnit} shotConfig={shotConfig} />
+                </Box>
+              </Collapse>
+              <Divider />
+              <Button
+                fullWidth
+                onClick={() => setExpandedBagId(expandedBagId === bag.id ? null : bag.id)}
+                endIcon={
+                  <ExpandMoreIcon
+                    sx={{
+                      transform: expandedBagId === bag.id ? 'rotate(180deg)' : 'rotate(0deg)',
+                      transition: 'transform 0.3s',
+                    }}
+                  />
+                }
+                sx={{ justifyContent: 'space-between', p: 1.5, textTransform: 'none', color: 'text.secondary', borderRadius: '0 0 12px 12px' }}
+              >
+                <Typography variant="body2" fontWeight="500">
+                  {expandedBagId === bag.id ? 'Hide Details' : 'View Clubs & Gapping'}
+                </Typography>
+              </Button>
+            </Card>
           );
         })}
       </Stack>

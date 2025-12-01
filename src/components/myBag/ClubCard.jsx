@@ -11,12 +11,11 @@ import {
   Chip,
   Divider,
   ToggleButtonGroup,
-  ToggleButton,
-  Slider,
+  ToggleButton,  
   Paper,
-} from '@mui/material';
-import { Edit, Delete, GolfCourse, Tune, Star, Add } from '@mui/icons-material';
-import { elevatedCardStyles } from '../../styles/commonStyles';
+} from "@mui/material";
+import { Edit, Delete, GolfCourse, Tune, Star, Add } from "@mui/icons-material";
+import { elevatedCardStyles } from "../../styles/commonStyles";
 
 // Safe helper functions with comprehensive error handling
 const YARDS_TO_METERS = 0.9144;
@@ -82,34 +81,34 @@ const RangeDisplay = ({ title, shots, displayUnit, distanceMetric = 'total', sho
             {Math.round(min)}<Typography component="span" variant="caption" color="primary.main" fontWeight="bold"> / {Math.round(mean)} / </Typography>{Math.round(max)} {unitLabel}
           </Typography>
         </Stack>
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, px: 1, mt: -1 }}>
-          <Slider
-            value={[min, mean, max]}
-            min={0}
-            max={sliderMax}
-            disabled
-            track={false}
-            sx={{
-              '& .MuiSlider-rail': {
-                height: 6,
-                opacity: 0.3,
-                background: (theme) => `linear-gradient(to right, ${theme.palette.info.light}, ${theme.palette.primary.main}, ${theme.palette.error.light})`,
-              },
-              '& .MuiSlider-thumb': {
-                height: 16,
-                width: 4,
-                borderRadius: '1px',
-                backgroundColor: 'white',
-                border: '1px solid currentColor',
-                '&:nth-of-type(3)': {
-                  backgroundColor: 'primary.main',
-                  borderColor: 'white',
-                  boxShadow: '0 0 4px 2px rgba(0,0,0,0.2)',
-                  zIndex: 1,
-                },
-              },
-            }}
-          />
+      <Box sx={{ position: 'relative', height: 24, px: 1 }}>
+        <Box sx={{ position: 'absolute', left: 8, right: 8, top: '50%', transform: 'translateY(-50%)', height: 8, bgcolor: 'grey.300', borderRadius: 1 }} />
+        <Box
+          sx={{
+            position: 'absolute',
+            left: `calc(${(min / sliderMax) * 100}% + 8px)`,
+            width: `calc(${((max - min) / sliderMax) * 100}%)`,
+            top: '50%',
+            transform: 'translateY(-50%)',
+            height: 16,
+            bgcolor: 'primary.main',
+            borderRadius: 1,
+            boxShadow: 1,
+          }}
+        >
+          {/* Average Marker */}
+          <Box sx={{
+            position: 'absolute',
+            left: `${((mean - min) / (max - min)) * 100}%`,
+            top: '50%',
+            transform: 'translate(-50%, -50%)',
+            width: 4,
+            height: '120%',
+            bgcolor: 'white',
+            borderRadius: '2px',
+            boxShadow: 1,
+          }} />
+        </Box>
         </Box>
       </Box>
     );

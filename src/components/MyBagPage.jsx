@@ -21,17 +21,16 @@ import {
   ListSubheader,
   Alert,
 } from '@mui/material';
-import { Add, Edit, Delete, Search, Straighten as StraightenIcon, Settings, CheckCircle, GolfCourse } from '@mui/icons-material';
+import { Add, Edit, Delete, Search, Straighten as StraightenIcon, Settings, CheckCircle, GolfCourse, UploadFile, Download } from '@mui/icons-material';
 import PageHeader from './PageHeader';
 import { elevatedCardStyles } from '../styles/commonStyles';
-import { getMyBagData, createClub, updateClub, deleteClub, createBag, updateBag, deleteBag, syncClubInBags, deleteShot } from '../services/myBagService';
+import { getMyBagData, createClub, updateClub, deleteClub, createBag, updateBag, deleteBag, syncClubInBags, deleteShot, bulkCreateClubs } from '../services/myBagService';
 import AddClubModal from './myBag/AddClubModal';
 import ConfigureShotsModal from './myBag/ConfigureShotsModal';
 import ManageShotTypesModal from './myBag/ManageShotTypesModal';
 import DistanceLookup from './myBag/DistanceLookup';
 import BagPresetModal from './myBag/BagPresetModal';
 import BagGappingChart from './myBag/BagGappingChart';
-import BagDetailsModal from './myBag/BagDetailsModal';
 import MyBagsSection from './myBag/MyBagsSection';
 import ConfirmationDialog from './myBag/ConfirmationDialog';
 import ClubCard from './myBag/ClubCard';
@@ -68,7 +67,6 @@ const MyBagPage = ({ userProfile, isActive }) => {
   const [isBagPresetModalOpen, setBagPresetModalOpen] = useState(false);
   const [editingBag, setEditingBag] = useState(null);
   const [deletingBagId, setDeletingBagId] = useState(null);
-  const [viewingBag, setViewingBag] = useState(null);
   const [clubSortOrder, setClubSortOrder] = useState('loft'); // 'loft' or 'name'
   const [clubFilterBagIds, setClubFilterBagIds] = useState([]); // Array of bag IDs
   const [confirmDeleteDialog, setConfirmDeleteDialog] = useState({ open: false, id: null, name: '', type: '' });
@@ -201,10 +199,6 @@ const MyBagPage = ({ userProfile, isActive }) => {
     setDeletingBagId(bagId);
   };
 
-  const handleViewBagDetails = (bag) => {
-    setViewingBag(bag);
-  };
-
   const handleConfirmDeleteBag = async () => {
     if (!deletingBagId) return;
     try {
@@ -272,6 +266,63 @@ const MyBagPage = ({ userProfile, isActive }) => {
 
   }, [filteredAndSortedClubs]);
 
+  const clubTemplateHeaders = [
+    'name', 'type', 'make', 'model', 'loft', 'shaft_make', 'shaft_model', 
+    'shaft_flex', 'shaft_weight', 'shaft_length', 'grip_make', 'grip_model', 
+    'grip_size', 'grip_weight', 'swing_weight'
+  ];
+
+  const handleDownloadClubTemplate = () => {
+    const csvContent = clubTemplateHeaders.join(',');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'my_clubs_template.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleClubUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      let text = e.target.result;
+      if (text.startsWith('\uFEFF')) { // Remove BOM
+        text = text.substring(1);
+      }
+      const lines = text.split('\n').filter(line => line.trim() !== '');
+      const headers = lines[0].split(',').map(h => h.trim());
+      
+      const clubsToCreate = [];
+      for (let i = 1; i < lines.length; i++) {
+        const values = lines[i].split(',').map(v => v.trim());
+        const clubData = headers.reduce((obj, header, index) => {
+          if (clubTemplateHeaders.includes(header) && values[index]) {
+            obj[header] = values[index];
+          }
+          return obj;
+        }, {});
+        if (Object.keys(clubData).length > 0) {
+          clubsToCreate.push(clubData);
+        }
+      }
+
+      try {
+        await bulkCreateClubs(clubsToCreate);
+        setSnackbar({ open: true, message: `${clubsToCreate.length} clubs imported successfully!`, severity: 'success' });
+        fetchData(); // Refresh the list
+      } catch (error) {
+        setSnackbar({ open: true, message: `Error importing clubs: ${error.message}`, severity: 'error' });
+      }
+    };
+    reader.readAsText(file);
+    event.target.value = null; // Reset file input
+  };
+
   return (
     <Box sx={{ pb: 4 }}>
       <PageHeader
@@ -327,14 +378,27 @@ const MyBagPage = ({ userProfile, isActive }) => {
         myClubs={myClubs}
         handleOpenBagModal={handleOpenBagModal}
         handleDeleteBagRequest={handleDeleteBagRequest}
-        onViewBagDetails={handleViewBagDetails}
+        displayUnit={displayUnit}
+        shotConfig={shotConfig}
       />
 
       {/* Club List */}
       <Stack spacing={2} sx={{ mb: 3 }}>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <Typography variant="h5" fontWeight={600}>My Clubs</Typography>
-          <Button variant="contained" startIcon={<Add />} onClick={() => { setEditingClub(null); setAddClubModalOpen(true); }}>Add Club</Button>
+          <Stack direction="row" spacing={1}>
+            <Button variant="outlined" startIcon={<Download />} onClick={handleDownloadClubTemplate}>Template</Button>
+            <Button component="label" variant="outlined" startIcon={<UploadFile />}>
+              Upload CSV
+              <input type="file" hidden accept=".csv" onChange={handleClubUpload} />
+            </Button>
+            <Button 
+              variant="contained" 
+              startIcon={<Add />} 
+              onClick={() => { setEditingClub(null); setAddClubModalOpen(true); }}>
+                Add Club
+            </Button>
+          </Stack>
         </Box>
         <Paper variant="outlined" sx={{ p: 2, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
           <FormControl sx={{ minWidth: 240, flexGrow: 1 }} size="small">
@@ -423,15 +487,6 @@ const MyBagPage = ({ userProfile, isActive }) => {
         onSave={handleSaveBag}
         bagToEdit={editingBag}
         myClubs={myClubs}
-      />
-
-      <BagDetailsModal
-        open={Boolean(viewingBag)}
-        onClose={() => setViewingBag(null)}
-        bag={viewingBag}
-        myClubs={myClubs}
-        shotConfig={shotConfig}
-        displayUnit={displayUnit}
       />
 
       <ConfirmationDialog

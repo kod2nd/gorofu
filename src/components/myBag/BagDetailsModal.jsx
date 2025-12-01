@@ -37,7 +37,9 @@ const BagDetailsModal = ({ open, onClose, bag, myClubs, shotConfig, displayUnit 
             </Stack>
           </Box>
           <Box>
-            <Typography variant="overline" color="text.secondary">Clubs in Bag ({clubsInBag.length}/14)</Typography>
+            <Typography variant="overline" color="text.secondary">
+              Club Gapping ({clubsInBag.length}/14)
+            </Typography>
             <BagGappingChart clubs={clubsInBag} displayUnit={displayUnit} shotConfig={shotConfig} />
           </Box>
         </Stack>
