@@ -3,28 +3,15 @@ import {
   Button,
   Box,
   Typography,
-  Paper,
-  IconButton,
-  Chip,
   Stack,
-  Divider,
-  TextField,
-  InputAdornment,
-  Slider,
   ToggleButtonGroup,
   ToggleButton,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
   Snackbar,
-  ListSubheader,
   Alert,
   useTheme,
 } from '@mui/material';
-import { Add, Edit, Delete, Search, Straighten as StraightenIcon, Settings, CheckCircle, GolfCourse, UploadFile, Download } from '@mui/icons-material';
+import { Straighten as StraightenIcon } from '@mui/icons-material';
 import PageHeader from './PageHeader';
-import { elevatedCardStyles } from '../styles/commonStyles';
 import { getMyBagData, createClub, updateClub, deleteClub, createBag, updateBag, deleteBag, syncClubInBags, deleteShot, bulkCreateClubs } from '../services/myBagService';
 import AddClubModal from './myBag/AddClubModal';
 import ConfigureShotsModal from './myBag/ConfigureShotsModal';
@@ -34,7 +21,7 @@ import BagPresetModal from './myBag/BagPresetModal';
 import BagGappingChart from './myBag/BagGappingChart';
 import MyBagsSection from './myBag/MyBagsSection';
 import ConfirmationDialog from './myBag/ConfirmationDialog';
-import ClubCard from './myBag/ClubCard';
+import MyClubsSection from './myBag/MyClubsSection';
 
 // Mock user-defined shot configuration. In a real app, this would be fetched from the database.
 const mockUserShotConfig = {
@@ -46,11 +33,6 @@ const mockUserShotConfig = {
   shotTypes: [
     // This will be populated from the API
   ],
-};
-
-// Helper to get shot type details from config
-const getShotTypeDetails = (shotTypeName, shotConfig) => {
-  return shotConfig.shotTypes.find(st => st.name === shotTypeName);
 };
  
 const MyBagPage = ({ userProfile, isActive }) => {
@@ -284,19 +266,6 @@ const MyBagPage = ({ userProfile, isActive }) => {
 
   }, [filteredAndSortedClubs]);
 
-  const getClubTypeStyle = (type) => {
-    const styles = {
-      Driver: { color: theme.palette.error.main },
-      Woods: { color: theme.palette.warning.dark },
-      Hybrid: { color: theme.palette.success.main },
-      Iron: { color: theme.palette.info.main },
-      Wedge: { color: theme.palette.primary.main },
-      Putter: { color: theme.palette.grey[700] },
-      Other: { color: theme.palette.grey[500] },
-    };
-    return styles[type] || styles.Other;
-  };
-
   const clubTemplateHeaders = [
     'name', 'type', 'make', 'model', 'loft', 'bounce', 'shaft_make', 'shaft_model', 
     'shaft_flex', 'shaft_weight', 'shaft_length', 'grip_make', 'grip_model', 
@@ -383,26 +352,6 @@ const MyBagPage = ({ userProfile, isActive }) => {
 
       <DistanceLookup myBags={myBags} myClubs={myClubs} displayUnit={displayUnit} />
 
-      {/* Bag Gapping Chart */}
-      {/* <Paper {...elevatedCardStyles} sx={{ p: 3, mb: 4, borderRadius: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-          <ToggleButtonGroup
-            size="small"
-            value={gappingSelectedBagId}
-            exclusive
-            onChange={(e, newId) => { if (newId) setGappingSelectedBagId(newId); }}
-          >
-            <ToggleButton value="all">All Clubs</ToggleButton>
-            {myBags.map(bag => <ToggleButton key={bag.id} value={bag.id}>{bag.name}</ToggleButton>)}
-          </ToggleButtonGroup>
-        </Box>
-        <BagGappingChart 
-          clubs={filteredClubsForGapping} 
-          displayUnit={displayUnit} 
-          shotConfig={shotConfig}
-        />
-      </Paper> */}
-
       {/* My Bags Section */}
       <MyBagsSection
         myBags={myBags}
@@ -415,88 +364,24 @@ const MyBagPage = ({ userProfile, isActive }) => {
       />
 
       {/* Club List */}
-      <Stack spacing={2} sx={{ mb: 3 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <Typography variant="h5" fontWeight={600}>My Clubs</Typography>
-          <Stack direction="row" spacing={1}>
-            <Button variant="outlined" startIcon={<Download />} onClick={handleDownloadClubTemplate}>Template</Button>
-            <Button component="label" variant="outlined" startIcon={<UploadFile />}>
-              Upload CSV
-              <input type="file" hidden accept=".csv" onChange={handleClubUpload} />
-            </Button>
-            <Button 
-              variant="contained" 
-              startIcon={<Add />} 
-              onClick={() => { setEditingClub(null); setAddClubModalOpen(true); }}>
-                Add Club
-            </Button>
-          </Stack>
-        </Box>
-        <Paper variant="outlined" sx={{ p: 2, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap' }}>
-          <FormControl sx={{ minWidth: 240, flexGrow: 1 }} size="small">
-            <InputLabel>Filter by Bag</InputLabel>
-            <Select
-              multiple
-              value={clubFilterBagIds}
-              onChange={(e) => setClubFilterBagIds(e.target.value)}
-              label="Filter by Bag"
-              renderValue={(selected) => (
-                <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.5 }}>
-                  {selected.map(id => {
-                    const bag = myBags.find(b => b.id === id);
-                    return <Chip key={id} label={bag?.name || '...'} size="small" />;
-                  })}
-                </Box>
-              )}
-            >
-              {myBags.map((bag) => (<MenuItem key={bag.id} value={bag.id}>{bag.name}</MenuItem>))}
-            </Select>
-          </FormControl>
-          <ToggleButtonGroup size="small" value={clubSortOrder} exclusive onChange={(e, newOrder) => { if (newOrder) setClubSortOrder(newOrder); }}>
-            <ToggleButton value="loft">Sort by Loft</ToggleButton>
-            <ToggleButton value="name">Sort by Name</ToggleButton>
-          </ToggleButtonGroup>
-        </Paper>
-      </Stack>
-
-      <Stack spacing={3}>
-        {Object.entries(groupedClubsForDisplay).map(([type, clubsInGroup]) => {
-          if (clubsInGroup.length === 0) return null;
-          const typeStyle = getClubTypeStyle(type);
-          return (
-            <Box key={type}>
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2, pb: 1, borderBottom: '1px solid', borderColor: 'divider' }}>
-                <Box sx={{ width: 12, height: 12, borderRadius: '50%', bgcolor: typeStyle.color }} />
-                <Typography 
-                  variant="h6" 
-                  sx={{ 
-                    fontWeight: 600, 
-                    textTransform: 'uppercase', 
-                    letterSpacing: '0.05em',
-                    color: 'text.secondary'
-                  }}
-                >{type}s</Typography>
-              </Box>
-              <Stack spacing={3}>
-                {clubsInGroup.map(club => (
-                  <ClubCard
-                    key={club.id}
-                    club={club}
-                    shotConfig={shotConfig}
-                    displayUnit={displayUnit}
-                    bags={myBags}
-                    onEdit={handleOpenEditModal}
-                    onDeleteRequest={handleDeleteRequest}
-                    onConfigureShots={handleConfigureShots}
-                    onManageShotTypes={() => setShotTypesModalOpen(true)}
-                    onBagAssignmentChange={handleClubBagAssignmentChange}
-                  />
-                ))}
-              </Stack>
-            </Box>
-          );
-        })}
-      </Stack>
+      <MyClubsSection
+        myBags={myBags}
+        groupedClubs={groupedClubsForDisplay}
+        clubFilterBagIds={clubFilterBagIds}
+        setClubFilterBagIds={setClubFilterBagIds}
+        clubSortOrder={clubSortOrder}
+        setClubSortOrder={setClubSortOrder}
+        onAddClub={() => { setEditingClub(null); setAddClubModalOpen(true); }}
+        onDownloadTemplate={handleDownloadClubTemplate}
+        onUpload={handleClubUpload}
+        shotConfig={shotConfig}
+        displayUnit={displayUnit}
+        onEditClub={handleOpenEditModal}
+        onDeleteClub={handleDeleteRequest}
+        onConfigureShots={handleConfigureShots}
+        onManageShotTypes={() => setShotTypesModalOpen(true)}
+        onClubBagAssignmentChange={handleClubBagAssignmentChange}
+      />
 
       <AddClubModal
         open={isAddClubModalOpen}

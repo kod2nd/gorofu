@@ -99,7 +99,6 @@ const MyBagsSection = ({ myBags, myClubs, handleOpenBagModal, handleDeleteBagReq
                 </Box>
                 <Box sx={{ mt: 2 }}>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>{clubsInBag.length} / 14 Clubs</Typography>
-                  <LinearProgress variant="determinate" value={(clubsInBag.length / 14) * 100} sx={{ height: 6, borderRadius: 3, mt: 0.5, bgcolor: 'rgba(255,255,255,0.3)' }} />
                 </Box>
               </Box>
               <Collapse in={expandedBagId === bag.id} timeout="auto" unmountOnExit>

@@ -4,9 +4,6 @@ import {
   Button,
   Typography,
   Stack,
-  Card,
-  CardContent,
-  CardHeader,
   IconButton,
   Chip,
   Divider,
@@ -14,6 +11,10 @@ import {
   ToggleButton,  
   Paper,
   Collapse,
+  ButtonBase,
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
   alpha,
   useTheme,
 } from "@mui/material";
@@ -21,11 +22,15 @@ import { Edit, Delete, GolfCourse, Tune, Star, Add as Plus, Info, ExpandMore as 
   TrendingUp,
   Settings,
   Explore,
+  ArrowUpward,
+  ArrowDownward,
+  Sort,
   AutoAwesome as Sparkles,
   Air as AirIcon,
   Bolt as BoltIcon, } from "@mui/icons-material";
 import { elevatedCardStyles } from "../../styles/commonStyles";
 
+import ShotCard from './ShotCard';
 // Safe helper functions with comprehensive error handling
 const YARDS_TO_METERS = 0.9144;
 const METERS_TO_YARDS = 1.09361;
@@ -153,196 +158,27 @@ const RangeDisplay = ({ title, shots, displayUnit, distanceMetric = 'total', sho
   }
 };
 
-const ShotCard = ({ shot, displayUnit, shotConfig, onEdit, onDelete }) => {
-  const unitLabel = displayUnit === 'meters' ? 'm' : 'yd';
+const calculateAggregateRange = (shots, distanceMetric, displayUnit) => {
+  if (!shots || shots.length === 0) {
+    return null;
+  }
 
-  const medianCarry = convertDistance(shot.carry_distance, shot.unit, displayUnit);
-  const carryVariance = convertDistance(shot.carry_variance, shot.unit, displayUnit);
-  const lowerBoundCarry = Math.round(medianCarry - carryVariance);
-  const upperBoundCarry = Math.round(medianCarry + carryVariance);
+  const distanceKey = `${distanceMetric}_distance`;
+  const varianceKey = `${distanceMetric}_variance`;
 
-  const medianTotal = convertDistance(shot.total_distance, shot.unit, displayUnit);
-  const totalVariance = convertDistance(shot.total_variance, shot.unit, displayUnit);
-  const lowerBoundTotal = Math.round(medianTotal - totalVariance);
-  const upperBoundTotal = Math.round(medianTotal + totalVariance);
-  const theme = useTheme();
+  const ranges = shots.map(s => {
+    const median = convertDistance(s[distanceKey], s.unit, displayUnit);
+    const variance = convertDistance(s[varianceKey], s.unit, displayUnit);
+    return { min: median - variance, max: median + variance };
+  });
 
-  const shotTypeDetail = getShotTypeDetails(shot.shot_type, shotConfig);
-  const categories = shotConfig.categories?.filter(cat =>
-    shotTypeDetail?.category_ids?.includes(cat.id)
-  ) || [];
+  const lowerBound = Math.round(Math.min(...ranges.map(r => r.min)));
+  const upperBound = Math.round(Math.max(...ranges.map(r => r.max)));
 
-  return (
-    <Paper 
-      variant="outlined" 
-      sx={{ 
-        p: 2.5, 
-        borderRadius: 3,
-        border: '1px solid',
-        borderColor: 'divider',
-        backgroundColor: 'background.paper',
-        boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
-        transition: 'all 0.2s ease-in-out',
-        '&:hover': {
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-          borderColor: 'primary.light',
-        }
-      }}
-    >
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
-        <Box>
-          <Typography variant="h6" fontWeight="bold" color="text.primary" sx={{ mb: 0.5 }}>
-            {shot.shot_type}
-          </Typography>
-          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 0.5 }}>
-            {categories.map(category => (
-              <Chip 
-                key={category.id} 
-                label={category.name} 
-                size="small" 
-                variant="outlined"
-                sx={{
-                  borderRadius: 1.5,
-                  borderColor: 'grey.300',
-                  bgcolor: 'grey.50',
-                  fontSize: '0.75rem',
-                  fontWeight: 500,
-                }}
-              />
-            ))}
-          </Stack>
-        </Box>
-        <Box>
-          <IconButton 
-            size="small" 
-            onClick={() => onEdit(shot)}
-            sx={{
-              bgcolor: 'grey.100',
-              mr: 0.5,
-              '&:hover': {
-                bgcolor: 'grey.200',
-              }
-            }}
-          >
-            <Edit fontSize="small" />
-          </IconButton>
-          <IconButton 
-            size="small" 
-            onClick={() => onDelete(shot.id)}
-            sx={{
-              bgcolor: 'grey.100',
-              '&:hover': {
-                bgcolor: 'error.light',
-                color: 'error.main',
-              }
-            }}
-          >
-            <Delete fontSize="small" />
-          </IconButton>
-        </Box>
-      </Box>
-      
-      <Stack direction="row" spacing={2} sx={{ flexWrap: 'wrap', gap: 2, mb: 2 }}>
-        <Box sx={{
-          bgcolor: alpha(theme.palette.info.main, 0.1),
-          borderRadius: 2,
-          px: 2,
-          py: 1.5,
-          flex: 1,
-          minWidth: 140,
-        }}>
-          <Typography variant="caption" fontWeight="bold" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
-            Carry
-          </Typography>
-          <Typography variant="caption" color="text.secondary">{lowerBoundCarry} {unitLabel}</Typography>
-          <Typography variant="h6" fontWeight="bold" color="info.dark">
-            {Math.round(medianCarry)} {unitLabel}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">{upperBoundCarry} {unitLabel} </Typography>
-        </Box>
-        
-        <Box sx={{
-          bgcolor: alpha(theme.palette.success.main, 0.1),
-          borderRadius: 2,
-          px: 2,
-          py: 1.5,
-          flex: 1,
-          minWidth: 140,
-        }}>
-          <Typography variant="caption" fontWeight="bold" color="text.secondary" display="block" sx={{ mb: 0.5 }}>
-            Total
-          </Typography>
-          <Typography variant="caption" color="text.secondary">{lowerBoundTotal} {unitLabel}</Typography>
-          <Typography variant="h6" fontWeight="bold" color="success.dark">
-            {Math.round(medianTotal)} {unitLabel}
-          </Typography>
-          <Typography variant="caption" color="text.secondary">{upperBoundTotal} {unitLabel} </Typography>
-        </Box>
-      </Stack>
-      
-      {(shot.launch || shot.roll || shot.tendency || shot.swing_key) && (
-        <>
-          <Divider sx={{ my: 2 }} />
-          <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1 }}>
-            {shot.launch && (
-              <Chip 
-                icon={<TrendingUp fontSize="small" />} 
-                label={shot.launch} 
-                size="small" 
-                sx={{
-                  borderRadius: 1.5,
-                  bgcolor: alpha('#3b82f6', 0.1),
-                  color: 'primary.dark',
-                  fontWeight: 500,
-                }}
-              />
-            )}
-            {shot.roll && (
-              <Chip 
-                icon={<Explore fontSize="small" />} 
-                label={shot.roll} 
-                size="small" 
-                sx={{
-                  borderRadius: 1.5,
-                  bgcolor: alpha('#10b981', 0.1),
-                  color: 'success.dark',
-                  fontWeight: 500,
-                }}
-              />
-            )}
-            {shot.tendency && shot.tendency.split(',').map(t => t.trim()).map((t, i) => (
-              <Chip 
-                key={i} 
-                icon={<AirIcon fontSize="small" />} 
-                label={t} 
-                size="small" 
-                sx={{
-                  borderRadius: 1.5,
-                  bgcolor: alpha('#f59e0b', 0.1),
-                  color: 'warning.dark',
-                  fontWeight: 500,
-                }}
-              />
-            ))}
-            {shot.swing_key && shot.swing_key.split(',').map(k => k.trim()).map((k, i) => (
-              <Chip 
-                key={i} 
-                icon={<BoltIcon fontSize="small" />} 
-                label={k} 
-                size="small" 
-                sx={{
-                  borderRadius: 1.5,
-                  bgcolor: alpha('#8b5cf6', 0.1),
-                  color: 'secondary.dark',
-                  fontWeight: 500,
-                }}
-              />
-            ))}
-          </Stack>
-        </>
-      )}
-    </Paper>
-  );
+  const medianDistances = shots.map(s => convertDistance(s[distanceKey], s.unit, displayUnit));
+  const median = Math.round(medianDistances.reduce((a, b) => a + b, 0) / medianDistances.length);
+
+  return { lowerBound, median, upperBound };
 };
 
 const ClubCard = ({ 
@@ -357,8 +193,11 @@ const ClubCard = ({
   onBagAssignmentChange 
 }) => {
   const [distanceView, setDistanceView] = useState('total');
+  const [expanded, setExpanded] = useState(false);
   const [showSpecs, setShowSpecs] = useState(true);
   const [showRanges, setShowRanges] = useState(true);
+  const [shotSortOrder, setShotSortOrder] = useState('distance');
+  const [shotSortDirection, setShotSortDirection] = useState('desc'); // 'asc' or 'desc'
   const theme = useTheme();
 
   // Safe defaults for all props
@@ -391,6 +230,43 @@ const ClubCard = ({
     return { overallChartMin: Math.max(0, minDistance - padding), overallChartMax: maxDistance + padding };
 
   }, [safeShots, displayUnit]);
+
+  const sortedShots = useMemo(() => {
+    const shotsToSort = [...safeShots];
+    if (shotsToSort.length === 0) return [];
+
+    const directionMultiplier = shotSortDirection === 'asc' ? 1 : -1;
+    shotsToSort.sort((a, b) => {
+      const getPrimaryCategory = (shot) => {
+        const shotDetails = getShotTypeDetails(shot.shot_type, safeShotConfig);
+        if (!shotDetails?.category_ids?.length) return 'ZZZ'; // Push to end
+        const category = safeShotConfig.categories.find(c => c.id === shotDetails.category_ids[0]);
+        return category?.name || 'ZZZ';
+      };
+
+      const distanceA = convertDistance(a.total_distance, a.unit, displayUnit);
+      const distanceB = convertDistance(b.total_distance, b.unit, displayUnit);
+
+      switch (shotSortOrder) {
+        case 'distance':
+          return (distanceA - distanceB) * directionMultiplier;
+        case 'category':
+          const catCompare = getPrimaryCategory(a).localeCompare(getPrimaryCategory(b));
+          // For category, asc/desc is based on name, so multiplier is applied to the result
+          return catCompare * directionMultiplier;
+        case 'category_distance':
+          const catDistCompare = getPrimaryCategory(a).localeCompare(getPrimaryCategory(b));
+          if (catDistCompare !== 0) return catDistCompare;
+          return (distanceB - distanceA); // Always sort distance descending within category
+        case 'distance_category':
+          if (distanceA !== distanceB) return (distanceB - distanceA); // Always sort distance descending first
+          return getPrimaryCategory(a).localeCompare(getPrimaryCategory(b)); // Then sort category ascending
+        default:
+          return 0;
+      }
+    });
+    return shotsToSort;
+  }, [safeShots, shotSortOrder, shotSortDirection, safeShotConfig, displayUnit]);
 
   const typeStyle = getClubTypeStyle(safeClub.type, theme);
 
@@ -454,59 +330,200 @@ const ClubCard = ({
     }
   };
 
-  const handleDeleteShot = (shotId) => {
-    if (onDeleteRequest) {
-      onDeleteRequest(shotId, 'shot');
-    }
-  };
-
-  const handleEditClub = () => {
+  const handleEditClub = (event) => {
+    event.stopPropagation();
     if (onEdit && safeClub) {
       onEdit(safeClub);
     }
   };
 
-  const handleDeleteClub = () => {
+  const handleDeleteClub = (event) => {
+    event.stopPropagation();
     if (onDeleteRequest && safeClub) {
       onDeleteRequest(safeClub, 'club');
     }
   };
 
-  const handleAddShot = () => {
-    if (onConfigureShots && safeClub) {
-      onConfigureShots(safeClub, true);
-    }
+  const handleAccordionChange = (event, isExpanded) => {
+    setExpanded(isExpanded);
   };
 
-  const handleEditShot = (shot) => {
-    if (onConfigureShots && safeClub && shot) {
-      onConfigureShots(safeClub, false, shot);
-    }
-  };
 
   // Safe categories
   const safeCategories = Array.isArray(safeShotConfig.categories) ? safeShotConfig.categories : [];
   
-  return (
-    <Card {...elevatedCardStyles} sx={{ borderRadius: 3, overflow: 'hidden' }}>
-      <Box sx={{ p: 3, bgcolor: 'primary.main', color: 'white' }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-          <Box>
-            <Typography variant="h4" fontWeight="bold">{safeClub.name || 'Unnamed Club'}</Typography>
-            <Typography variant="body1" sx={{ opacity: 0.9 }}>{safeClub.type || 'Unknown Type'}</Typography>
-          </Box>
-          <Box>
-            <IconButton sx={{ color: 'white' }} aria-label="edit club" onClick={handleEditClub}>
-              <Edit />
-            </IconButton>
-            <IconButton sx={{ color: 'white' }} aria-label="delete club" onClick={handleDeleteClub}>
-              <Delete />
-            </IconButton>
-          </Box>
-        </Box>
-      </Box>
+  const longGameCategoryId = useMemo(() => {
+    const longGameCategory = safeCategories.find(c => c.name.toLowerCase() === 'long game');
+    return longGameCategory?.id;
+  }, [safeCategories]);
 
-      <CardContent>
+  const longGameShots = longGameCategoryId ? shotsByCategoryId[longGameCategoryId] : [];
+
+  const summaryCarryRange = useMemo(() => calculateAggregateRange(longGameShots, 'carry', displayUnit), [longGameShots, displayUnit]);
+  const summaryTotalRange = useMemo(() => calculateAggregateRange(longGameShots, 'total', displayUnit), [longGameShots, displayUnit]);
+
+  const hasSummaryData = summaryCarryRange || summaryTotalRange;
+  const isPutter = safeClub.type === 'Putter';
+
+  return (
+    <Accordion 
+      expanded={expanded} 
+      onChange={handleAccordionChange}
+      sx={{ ...elevatedCardStyles, borderRadius: 3, overflow: 'hidden', '&:before': { display: 'none' } }}
+    >
+      <AccordionSummary
+  expandIcon={<ExpandMoreIcon sx={{ color: 'white' }} />}
+  aria-controls={`panel-${safeClub.id}-content`}
+  id={`panel-${safeClub.id}-header`}
+  sx={{ 
+    p: { xs: 1.5, sm: 2, md: 3 }, 
+    bgcolor: 'primary.main', 
+    color: 'white',
+    '& .MuiAccordionSummary-content': {
+      m: 0, 
+      alignItems: 'center',
+      overflow: 'hidden'
+    }
+  }}
+>
+  <Stack direction="row" alignItems="center" spacing={{ xs: 1, sm: 2 }} sx={{ width: '100%' }}>
+    {/* Main clickable area */}
+    <Box sx={{ flexGrow: 1, minWidth: 0 }}>
+      <Stack 
+        direction={{ xs: 'column', md: 'row' }} 
+        alignItems={{ xs: 'flex-start', md: 'center' }} 
+        spacing={{ xs: 1, md: 4 }}
+      >
+        <Box sx={{ minWidth: 0 }}>
+          <Typography 
+            variant="h6"
+            fontWeight="bold" 
+            noWrap 
+            sx={{ 
+              fontSize: { xs: '1rem', sm: '1.25rem' },
+              lineHeight: 1.2
+            }}
+          >
+            {safeClub.name || 'Unnamed Club'}
+          </Typography>
+          <Typography 
+            variant="body2" 
+            sx={{ 
+              opacity: 0.9, 
+              fontSize: { xs: '0.75rem', sm: '0.875rem' },
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden',
+              textOverflow: 'ellipsis',
+              lineHeight: 1.4
+            }}
+          >
+            {[safeClub.type, safeClub.make, safeClub.model].filter(Boolean).join(' • ')}
+            {safeClub.loft && ` • ${safeClub.loft}°`}
+          </Typography>
+        </Box>
+        
+        {!isPutter && hasSummaryData && (
+          <Stack direction="row" spacing={{ xs: 2, sm: 3 }} sx={{ alignItems: 'center', flexWrap: 'wrap', gap: 1 }}>
+            {summaryCarryRange && (
+              <Box sx={{ textAlign: { xs: 'left', sm: 'center' } }}>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: 'rgba(255,255,255,0.7)',
+                    fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                    display: 'block'
+                  }}
+                >
+                  Carry
+                </Typography>
+                <Typography 
+                  fontWeight="bold" 
+                  color="white"
+                  sx={{ 
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {summaryCarryRange.lowerBound} - {summaryCarryRange.median} {unitLabel}
+                </Typography>
+              </Box>
+            )}
+            {summaryTotalRange && (
+              <Box sx={{ textAlign: { xs: 'left', sm: 'center' } }}>
+                <Typography 
+                  variant="caption" 
+                  sx={{ 
+                    color: 'rgba(255,255,255,0.7)',
+                    fontSize: { xs: '0.65rem', sm: '0.75rem' },
+                    display: 'block'
+                  }}
+                >
+                  Total
+                </Typography>
+                <Typography 
+                  fontWeight="bold" 
+                  color="white"
+                  sx={{ 
+                    fontSize: { xs: '0.75rem', sm: '0.875rem' },
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {summaryTotalRange.lowerBound} - {summaryTotalRange.median} {unitLabel}
+                </Typography>
+              </Box>
+            )}
+          </Stack>
+        )}
+      </Stack>
+    </Box>
+
+    {/* Action Buttons - Sibling to the main content */}
+    <Box 
+  sx={{ display: 'flex', alignItems: 'center', gap: { xs: 0, sm: 0.5 }, flexShrink: 0 }}
+  onClick={(e) => e.stopPropagation()}
+>
+  <Box
+    component="div"
+    onClick={handleEditClub}
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 32,
+      height: 32,
+      color: 'white',
+      cursor: 'pointer',
+      borderRadius: '50%',
+      '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+    }}
+    aria-label="edit club"
+  >
+    <Edit sx={{ fontSize: { xs: 18, sm: 20 } }} />
+  </Box>
+  <Box
+    component="div"
+    onClick={handleDeleteClub}
+    sx={{
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'center',
+      width: 32,
+      height: 32,
+      color: 'white',
+      cursor: 'pointer',
+      borderRadius: '50%',
+      '&:hover': { bgcolor: 'rgba(255,255,255,0.1)' }
+    }}
+    aria-label="delete club"
+  >
+    <Delete sx={{ fontSize: { xs: 18, sm: 20 } }} />
+  </Box>
+</Box>
+    </Stack>
+</AccordionSummary>
+      <AccordionDetails sx={{ p: { xs: 2, md: 3 } }}>
         <Stack spacing={3} sx={{ mb: 2 }}>
           {safeBags.length > 0 && (
             <Box>
@@ -541,11 +558,45 @@ const ClubCard = ({
                 </Box>
               </Button>
               <Collapse in={showSpecs}>
-                <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 1, mt: 1 }}>
-                  {clubSpecs.map(spec => (
-                    <Chip key={spec.label} label={`${spec.label}: ${spec.value}`} size="small" variant="outlined" />
-                  ))}
-                </Stack>
+<Box sx={{ mt: 1, position: 'relative' }}>
+  <Box 
+    sx={{ 
+      display: 'flex',
+      flexWrap: 'nowrap',
+      overflowX: 'auto',
+      gap: 0.75,
+      py: 0.5,
+      px: 0.5,
+      scrollbarWidth: 'thin',
+      '&::-webkit-scrollbar': {
+        height: 4,
+      },
+      '&::-webkit-scrollbar-thumb': {
+        backgroundColor: 'grey.400',
+        borderRadius: 2,
+      },
+      '& .MuiChip-root': {
+        flexShrink: 0,
+        fontSize: { xs: '0.7rem', sm: '0.8125rem' },
+        height: { xs: 26, sm: 32 },
+        '& .MuiChip-label': {
+          px: { xs: 1, sm: 1.5 },
+          py: { xs: 0.25, sm: 0.5 },
+          whiteSpace: 'nowrap'
+        }
+      }
+    }}
+  >
+    {clubSpecs.map(spec => (
+      <Chip 
+        key={spec.label} 
+        label={`${spec.label}: ${spec.value}`} 
+        size="small" 
+        variant="outlined"
+      />
+    ))}
+  </Box>
+</Box>
               </Collapse>
             </Box>
           )}
@@ -564,15 +615,70 @@ const ClubCard = ({
                 '&:hover': { bgcolor: 'action.hover' }
               }}
             >
-              <Typography variant="h6">Distance Ranges</Typography>
-              <Box onClick={(e) => e.stopPropagation()} sx={{ display: 'flex', alignItems: 'center' }}>
-                <ToggleButtonGroup size="small" value={distanceView} exclusive onChange={(e, newView) => { if (newView) setDistanceView(newView); }} aria-label="distance view">
-                  <ToggleButton value="carry">Carry</ToggleButton>
-                  <ToggleButton value="total">Total</ToggleButton>
-                  <ToggleButton value="both">Both</ToggleButton>
-                </ToggleButtonGroup>
-                <ExpandMoreIcon sx={{ transform: showRanges ? 'rotate(180deg)' : 'rotate(0deg)', transition: 'transform 0.3s', ml: 1 }} />
-              </Box>
+<Box
+  onClick={() => setShowRanges(!showRanges)}
+  sx={{
+    display: 'flex',
+    flexDirection: { xs: 'column', sm: 'row' },
+    justifyContent: 'space-between',
+    alignItems: { xs: 'flex-start', sm: 'center' },
+    cursor: 'pointer',
+    p: 1,
+    mb: 1,
+    borderRadius: 1,
+    gap: { xs: 1, sm: 0 },
+    '&:hover': { bgcolor: 'action.hover' }
+  }}
+>
+  <Typography 
+    variant="h6" 
+    sx={{ 
+      fontSize: { xs: '1rem', sm: '1.25rem' },
+      fontWeight: 600 
+    }}
+  >
+    Distance Ranges
+  </Typography>
+  
+  <Box 
+    onClick={(e) => e.stopPropagation()} 
+    sx={{ 
+      display: 'flex', 
+      alignItems: 'center',
+      width: { xs: '100%', sm: 'auto' },
+      justifyContent: 'space-between'
+    }}
+  >
+    <ToggleButtonGroup 
+      size="small" 
+      value={distanceView} 
+      exclusive 
+      onChange={(e, newView) => { if (newView) setDistanceView(newView); }} 
+      aria-label="distance view"
+      sx={{
+        '& .MuiToggleButton-root': {
+          px: { xs: 1, sm: 1.5 },
+          py: { xs: 0.25, sm: 0.5 },
+          fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+          minWidth: { xs: 60, sm: 70 }
+        }
+      }}
+    >
+      <ToggleButton value="carry">Carry</ToggleButton>
+      <ToggleButton value="total">Total</ToggleButton>
+      <ToggleButton value="both">Both</ToggleButton>
+    </ToggleButtonGroup>
+    
+    <ExpandMoreIcon 
+      sx={{ 
+        transform: showRanges ? 'rotate(180deg)' : 'rotate(0deg)', 
+        transition: 'transform 0.3s', 
+        ml: 1,
+        fontSize: { xs: 20, sm: 24 }
+      }} 
+    />
+  </Box>
+</Box>
             </Box>
             <Collapse in={showRanges}>
               <Stack spacing={2} sx={{ mt: 2 }}>
@@ -605,14 +711,25 @@ const ClubCard = ({
         <Divider sx={{ my: 2 }} />
         
 <Box sx={{ mt: 4 }}>
-      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 4 }}>
+      <Box sx={{ 
+        display: 'flex', 
+        flexDirection: { xs: 'column', sm: 'row' },
+        alignItems: { xs: 'stretch', sm: 'center' }, 
+        justifyContent: 'space-between', 
+        mb: 4,
+        gap: 2,
+      }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <Sparkles sx={{ width: 20, height: 20, color: 'text.secondary' }} />
           <Typography variant="h5" fontWeight="bold" color="text.primary">
             Shots ({safeShots.length})
           </Typography>
         </Box>
-        <Stack direction="row" spacing={2}>
+        <Stack 
+          direction={{ xs: 'column', sm: 'row' }} 
+          spacing={2} 
+          sx={{ width: { xs: '100%', sm: 'auto' } }}
+        >
           <Button
             variant="outlined"
             startIcon={<Settings />}
@@ -656,9 +773,76 @@ const ClubCard = ({
         </Stack>
       </Box>
 
-      {safeShots.length > 0 ? (
+      {safeShots.length > 0 && (
+        <Paper variant="outlined" sx={{ p: 2, display: 'flex', gap: 2, alignItems: 'center', flexWrap: 'wrap', mb: 2 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Sort color="action" />
+            <Typography variant="body2" fontWeight="bold" color="text.secondary">Sort Shots By</Typography>
+          </Box>
+          <Stack 
+  direction={{ xs: 'column', sm: 'row' }} 
+  spacing={1} 
+  sx={{ 
+    flexWrap: 'wrap', 
+    gap: 1,
+    alignItems: { xs: 'stretch', sm: 'center' }
+  }}
+>
+  <ToggleButtonGroup
+    size="small"
+    value={shotSortOrder}
+    exclusive
+    onChange={(e, newOrder) => { if (newOrder) setShotSortOrder(newOrder); }}
+    sx={{
+      width: { xs: '100%', sm: 'auto' },
+      '& .MuiToggleButton-root': {
+        flex: { xs: 1, sm: 'initial' },
+        px: { xs: 0.75, sm: 1.5 },
+        py: { xs: 0.5, sm: 0.375 },
+        fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+        whiteSpace: 'nowrap',
+        minWidth: { xs: 'auto', sm: 80 }
+      }
+    }}
+  >
+    <ToggleButton value="distance">Distance</ToggleButton>
+    <ToggleButton value="category">Category</ToggleButton>
+    <ToggleButton value="category_distance">Cat & Dist</ToggleButton>
+  </ToggleButtonGroup>
+  
+  <ToggleButtonGroup
+    size="small"
+    value={shotSortDirection}
+    exclusive
+    onChange={(e, newDir) => { if (newDir) setShotSortDirection(newDir); }}
+    sx={{
+      '& .MuiToggleButton-root': {
+        px: { xs: 1, sm: 0.75 },
+        py: { xs: 0.5, sm: 0.375 },
+        minWidth: { xs: '50%', sm: 'auto' }
+      }
+    }}
+  >
+    <ToggleButton value="desc">
+      <ArrowDownward fontSize="small" />
+      <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' }, ml: 0.5, fontSize: '0.75rem' }}>
+        Desc
+      </Box>
+    </ToggleButton>
+    <ToggleButton value="asc">
+      <ArrowUpward fontSize="small" />
+      <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' }, ml: 0.5, fontSize: '0.75rem' }}>
+        Asc
+      </Box>
+    </ToggleButton>
+  </ToggleButtonGroup>
+</Stack>
+        </Paper>
+      )}
+
+      {sortedShots.length > 0 ? (
         <Stack spacing={2}>
-          {safeShots.map(shot => (
+          {sortedShots.map(shot => (
             <ShotCard
               key={shot.id}
               shot={shot}
@@ -708,8 +892,8 @@ const ClubCard = ({
         </Paper>
       )}
     </Box>
-      </CardContent>
-    </Card>
+      </AccordionDetails>
+</Accordion>
   );
 };
 

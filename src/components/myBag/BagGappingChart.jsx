@@ -94,13 +94,58 @@ const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
   return (
     <Box>
       {/* Header with Stats */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: 2 }}>
-        <Typography variant="h6" fontWeight="bold">Club Gapping</Typography>
-        <ToggleButtonGroup size="small" value={distanceMetric} exclusive onChange={(e, newMetric) => { if (newMetric) setDistanceMetric(newMetric); }}>
-          <ToggleButton value="total">Total Distance</ToggleButton>
-          <ToggleButton value="carry">Carry Distance</ToggleButton>
-        </ToggleButtonGroup>
+<Box sx={{ 
+  display: 'flex', 
+  flexDirection: { xs: 'column', sm: 'row' },
+  justifyContent: 'space-between', 
+  alignItems: { xs: 'stretch', sm: 'center' }, 
+  mb: 2, 
+  gap: 1.5 
+}}>
+  <Typography 
+    variant="h6" 
+    fontWeight="bold"
+    sx={{ 
+      textAlign: { xs: 'center', sm: 'left' },
+      fontSize: { xs: '1rem', sm: '1.25rem' }
+    }}
+  >
+    Club Gapping
+  </Typography>
+  
+  <ToggleButtonGroup 
+    size="small" 
+    value={distanceMetric} 
+    exclusive 
+    onChange={(e, newMetric) => { if (newMetric) setDistanceMetric(newMetric); }}
+    sx={{
+      alignSelf: { xs: 'center', sm: 'flex-end' },
+      '& .MuiToggleButton-root': {
+        px: { xs: 1.5, sm: 2 },
+        py: { xs: 0.5, sm: 0.375 },
+        fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+        whiteSpace: 'nowrap'
+      }
+    }}
+  >
+    <ToggleButton value="total">
+      <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+        Total Distance
       </Box>
+      <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+        Total
+      </Box>
+    </ToggleButton>
+    <ToggleButton value="carry">
+      <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
+        Carry Distance
+      </Box>
+      <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
+        Carry
+      </Box>
+    </ToggleButton>
+  </ToggleButtonGroup>
+</Box>
 
       {/* Filters */}
       <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
