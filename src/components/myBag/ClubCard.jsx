@@ -4,40 +4,32 @@ import {
   Button,
   Typography,
   Stack,
-  IconButton,
   Chip,
   Divider,
   ToggleButtonGroup,
   ToggleButton,
   Paper,
   Collapse,
-  ButtonBase,
   Accordion,
   AccordionSummary,
   AccordionDetails,
-  alpha,
   useTheme,
 } from "@mui/material";
 import {
   Edit,
   Delete,
   GolfCourse,
-  Tune,
   Star,
   Add as Plus,
   Info,
   ExpandMore as ExpandMoreIcon,
-  TrendingUp,
   Settings,
-  Explore,
   ArrowUpward,
   ArrowDownward,
   Sort,
   AutoAwesome as Sparkles,
-  Air as AirIcon,
-  Bolt as BoltIcon,
 } from "@mui/icons-material";
-import { elevatedCardStyles } from "../../styles/commonStyles";
+import { elevatedCardStyles, typographyStyles, buttonStyles, accordionStyles, toggleButtonGroupStyles } from "../../styles/commonStyles";
 
 import ShotCard from "./ShotCard";
 import { convertDistance } from "../utils/utils";
@@ -498,26 +490,14 @@ const ClubCard = ({
     <Accordion
       expanded={expanded}
       onChange={handleAccordionChange}
-      sx={{
-        ...elevatedCardStyles,
-        borderRadius: 3,
-        overflow: "hidden",
-        "&:before": { display: "none" },
-      }}
+      sx={{ ...elevatedCardStyles.sx, ...accordionStyles.clubCard.sx }}
     >
       <AccordionSummary
         expandIcon={<ExpandMoreIcon sx={{ color: "white" }} />}
         aria-controls={`panel-${safeClub.id}-content`}
         id={`panel-${safeClub.id}-header`}
         sx={{
-          p: { xs: 1.5, sm: 2, md: 3 },
-          bgcolor: "primary.main",
-          color: "white",
-          "& .MuiAccordionSummary-content": {
-            m: 0,
-            alignItems: "center",
-            overflow: "hidden",
-          },
+          ...accordionStyles.summary.sx
         }}
       >
         <Stack
@@ -528,36 +508,12 @@ const ClubCard = ({
         >
           {/* Main clickable area */}
           <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-            <Stack
-              direction={{ xs: "column", md: "row" }}
-              alignItems={{ xs: "flex-start", md: "center" }}
-              spacing={{ xs: 1, md: 4 }}
-            >
+            <Stack direction={{ xs: "column", md: "row" }} alignItems={{ xs: "flex-start", md: "center" }} spacing={{ xs: 1, md: 4 }}>
               <Box sx={{ minWidth: 0 }}>
-                <Typography
-                  variant="h6"
-                  fontWeight="bold"
-                  noWrap
-                  sx={{
-                    fontSize: { xs: "1rem", sm: "1.25rem" },
-                    lineHeight: 1.2,
-                  }}
-                >
+                <Typography {...typographyStyles.clubName}>
                   {safeClub.name || "Unnamed Club"}
                 </Typography>
-                <Typography
-                  variant="body2"
-                  sx={{
-                    opacity: 0.9,
-                    fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                    display: "-webkit-box",
-                    WebkitLineClamp: 2,
-                    WebkitBoxOrient: "vertical",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis",
-                    lineHeight: 1.4,
-                  }}
-                >
+                <Typography {...typographyStyles.clubSubtitle}>
                   {[safeClub.type, safeClub.make, safeClub.model]
                     .filter(Boolean)
                     .join(" • ")}
@@ -566,31 +522,13 @@ const ClubCard = ({
               </Box>
 
               {!isPutter && hasSummaryData && (
-                <Stack
-                  direction="row"
-                  spacing={{ xs: 2, sm: 3 }}
-                  sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}
-                >
+                <Stack direction="row" spacing={{ xs: 2, sm: 3 }} sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}>
                   {summaryCarryRange && (
                     <Box sx={{ textAlign: { xs: "left", sm: "center" } }}>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: "rgba(255,255,255,0.7)",
-                          fontSize: { xs: "0.65rem", sm: "0.75rem" },
-                          display: "block",
-                        }}
-                      >
+                      <Typography {...typographyStyles.distanceLabel}>
                         Carry
                       </Typography>
-                      <Typography
-                        fontWeight="bold"
-                        color="white"
-                        sx={{
-                          fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                          whiteSpace: "nowrap",
-                        }}
-                      >
+                      <Typography {...typographyStyles.distanceValue}>
                         {summaryCarryRange.lowerBound} -{" "}
                         {summaryCarryRange.median} {unitLabel}
                       </Typography>
@@ -598,24 +536,10 @@ const ClubCard = ({
                   )}
                   {summaryTotalRange && (
                     <Box sx={{ textAlign: { xs: "left", sm: "center" } }}>
-                      <Typography
-                        variant="caption"
-                        sx={{
-                          color: "rgba(255,255,255,0.7)",
-                          fontSize: { xs: "0.65rem", sm: "0.75rem" },
-                          display: "block",
-                        }}
-                      >
+                      <Typography {...typographyStyles.distanceLabel}>
                         Total
                       </Typography>
-                      <Typography
-                        fontWeight="bold"
-                        color="white"
-                        sx={{
-                          fontSize: { xs: "0.75rem", sm: "0.875rem" },
-                          whiteSpace: "nowrap",
-                        }}
-                      >
+                      <Typography {...typographyStyles.distanceValue}>
                         {summaryTotalRange.lowerBound} -{" "}
                         {summaryTotalRange.median} {unitLabel}
                       </Typography>
@@ -956,19 +880,7 @@ const ClubCard = ({
                 variant="outlined"
                 startIcon={<Settings />}
                 onClick={onManageShotTypes}
-                sx={{
-                  borderRadius: 3,
-                  bgcolor: "grey.100",
-                  borderColor: "grey.300",
-                  color: "text.secondary",
-                  fontWeight: 600,
-                  px: 3,
-                  py: 1,
-                  "&:hover": {
-                    bgcolor: "grey.200",
-                    borderColor: "grey.400",
-                  },
-                }}
+                sx={buttonStyles.secondary}
               >
                 Manage Shot Types
               </Button>
@@ -976,21 +888,7 @@ const ClubCard = ({
                 variant="contained"
                 startIcon={<Plus />}
                 onClick={() => onConfigureShots(club, true)}
-                sx={{
-                  borderRadius: 3,
-                  background:
-                    "linear-gradient(90deg, #3b82f6 0%, #6366f1 100%)",
-                  color: "white",
-                  fontWeight: 600,
-                  px: 3,
-                  py: 1,
-                  boxShadow: "0 4px 14px rgba(59, 130, 246, 0.4)",
-                  "&:hover": {
-                    background:
-                      "linear-gradient(90deg, #2563eb 0%, #4f46e5 100%)",
-                    boxShadow: "0 6px 20px rgba(59, 130, 246, 0.5)",
-                  },
-                }}
+                sx={buttonStyles.primary}
               >
                 Add Shot
               </Button>
@@ -1035,17 +933,7 @@ const ClubCard = ({
                   onChange={(e, newOrder) => {
                     if (newOrder) setShotSortOrder(newOrder);
                   }}
-                  sx={{
-                    width: { xs: "100%", sm: "auto" },
-                    "& .MuiToggleButton-root": {
-                      flex: { xs: 1, sm: "initial" },
-                      px: { xs: 0.75, sm: 1.5 },
-                      py: { xs: 0.5, sm: 0.375 },
-                      fontSize: { xs: "0.75rem", sm: "0.8125rem" },
-                      whiteSpace: "nowrap",
-                      minWidth: { xs: "auto", sm: 80 },
-                    },
-                  }}
+                  sx={toggleButtonGroupStyles.small}
                 >
                   <ToggleButton value="distance">Distance</ToggleButton>
                   <ToggleButton value="category">Category</ToggleButton>
@@ -1061,13 +949,7 @@ const ClubCard = ({
                   onChange={(e, newDir) => {
                     if (newDir) setShotSortDirection(newDir);
                   }}
-                  sx={{
-                    "& .MuiToggleButton-root": {
-                      px: { xs: 1, sm: 0.75 },
-                      py: { xs: 0.5, sm: 0.375 },
-                      minWidth: { xs: "50%", sm: "auto" },
-                    },
-                  }}
+                  sx={toggleButtonGroupStyles.sortDirection}
                 >
                   <ToggleButton value="desc">
                     <ArrowDownward fontSize="small" />
@@ -1116,14 +998,7 @@ const ClubCard = ({
           ) : (
             <Paper
               variant="outlined"
-              sx={{
-                borderRadius: 4,
-                border: "2px dashed",
-                borderColor: "grey.300",
-                bgcolor: "grey.50",
-                p: 6,
-                textAlign: "center",
-              }}
+              {...emptyStateStyles.paper}
             >
               <Target
                 sx={{
@@ -1146,21 +1021,7 @@ const ClubCard = ({
                 variant="contained"
                 startIcon={<Plus />}
                 onClick={() => onConfigureShots(club, true)}
-                sx={{
-                  borderRadius: 3,
-                  background:
-                    "linear-gradient(90deg, #3b82f6 0%, #6366f1 100%)",
-                  color: "white",
-                  fontWeight: 600,
-                  px: 3,
-                  py: 1.5,
-                  boxShadow: "0 4px 14px rgba(59, 130, 246, 0.4)",
-                  "&:hover": {
-                    background:
-                      "linear-gradient(90deg, #2563eb 0%, #4f46e5 100%)",
-                    boxShadow: "0 6px 20px rgba(59, 130, 246, 0.5)",
-                  },
-                }}
+                sx={buttonStyles.primary}
               >
                 Add First Shot
               </Button>
