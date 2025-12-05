@@ -85,70 +85,90 @@ const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
   return (
     <Box>
       {/* Header with Stats */}
-<Box sx={{ 
-  display: 'flex', 
-  flexDirection: { xs: 'column', sm: 'row' },
-  justifyContent: 'space-between', 
-  alignItems: { xs: 'stretch', sm: 'center' }, 
-  mb: 2, 
-  gap: 1.5 
-}}>
-  <Typography 
-    variant="h6" 
-    fontWeight="bold"
-    sx={{ 
-      textAlign: { xs: 'center', sm: 'left' },
-      fontSize: { xs: '1rem', sm: '1.25rem' }
-    }}
-  >
-    Club Gapping
-  </Typography>
-  
-  <ToggleButtonGroup 
-    size="small" 
-    value={distanceMetric} 
-    exclusive 
-    onChange={(e, newMetric) => { if (newMetric) setDistanceMetric(newMetric); }}
-    sx={{
-      alignSelf: { xs: 'center', sm: 'flex-end' },
-      '& .MuiToggleButton-root': {
-        px: { xs: 1.5, sm: 2 },
-        py: { xs: 0.5, sm: 0.375 },
-        fontSize: { xs: '0.75rem', sm: '0.8125rem' },
-        whiteSpace: 'nowrap'
-      }
-    }}
-  >
-    <ToggleButton value="total">
-      <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-        Total Distance
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: { xs: "column", sm: "row" },
+          justifyContent: "space-between",
+          alignItems: { xs: "stretch", sm: "center" },
+          mb: 2,
+          gap: 1.5,
+        }}
+      >
+        <Typography
+          variant="h6"
+          fontWeight="bold"
+          sx={{
+            textAlign: { xs: "center", sm: "left" },
+            fontSize: { xs: "1rem", sm: "1.25rem" },
+          }}
+        >
+          Club Gapping
+        </Typography>
+
+        <ToggleButtonGroup
+          size="small"
+          value={distanceMetric}
+          exclusive
+          onChange={(e, newMetric) => {
+            if (newMetric) setDistanceMetric(newMetric);
+          }}
+          sx={{
+            alignSelf: { xs: "center", sm: "flex-end" },
+            "& .MuiToggleButton-root": {
+              px: { xs: 1.5, sm: 2 },
+              py: { xs: 0.5, sm: 0.375 },
+              fontSize: { xs: "0.75rem", sm: "0.8125rem" },
+              whiteSpace: "nowrap",
+            },
+          }}
+        >
+          <ToggleButton value="total">
+            <Box
+              component="span"
+              sx={{ display: { xs: "none", sm: "inline" } }}
+            >
+              Total Distance
+            </Box>
+            <Box
+              component="span"
+              sx={{ display: { xs: "inline", sm: "none" } }}
+            >
+              Total
+            </Box>
+          </ToggleButton>
+          <ToggleButton value="carry">
+            <Box
+              component="span"
+              sx={{ display: { xs: "none", sm: "inline" } }}
+            >
+              Carry Distance
+            </Box>
+            <Box
+              component="span"
+              sx={{ display: { xs: "inline", sm: "none" } }}
+            >
+              Carry
+            </Box>
+          </ToggleButton>
+        </ToggleButtonGroup>
       </Box>
-      <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-        Total
-      </Box>
-    </ToggleButton>
-    <ToggleButton value="carry">
-      <Box component="span" sx={{ display: { xs: 'none', sm: 'inline' } }}>
-        Carry Distance
-      </Box>
-      <Box component="span" sx={{ display: { xs: 'inline', sm: 'none' } }}>
-        Carry
-      </Box>
-    </ToggleButton>
-  </ToggleButtonGroup>
-</Box>
 
       {/* Filters */}
-      <Box sx={{ display: 'flex', justifyContent: 'center', mb: 3 }}>
+      <Box sx={{ display: "flex", justifyContent: "center", mb: 3 }}>
         <ToggleButtonGroup
           size="small"
           value={selectedCategoryId}
           exclusive
-          onChange={(e, newId) => { if (newId) setSelectedCategoryId(newId); }}
+          onChange={(e, newId) => {
+            if (newId) setSelectedCategoryId(newId);
+          }}
         >
           <ToggleButton value="all">All Shots</ToggleButton>
-          {shotConfig.categories.map(cat => (
-            <ToggleButton key={cat.id} value={cat.id}>{cat.name}</ToggleButton>
+          {shotConfig.categories.map((cat) => (
+            <ToggleButton key={cat.id} value={cat.id}>
+              {cat.name}
+            </ToggleButton>
           ))}
         </ToggleButtonGroup>
       </Box>
@@ -156,11 +176,14 @@ const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
       {/* Chart */}
       {clubRanges.length > 0 ? (
         <Stack spacing={2.5}>
-          {clubRanges.map((club, index) => {            
+          {clubRanges.map((club, index) => {
             const chartRange = chartMax - chartMin || 1; // Prevent division by zero
             const leftPercent = ((club.min - chartMin) / chartRange) * 100;
             const widthPercent = ((club.max - club.min) / chartRange) * 100;
-            const gap = index < clubRanges.length - 1 ? club.min - (clubRanges[index + 1]?.max || 0) : 0;
+            const gap =
+              index < clubRanges.length - 1
+                ? club.min - (clubRanges[index + 1]?.max || 0)
+                : 0;
 
             return (
               <Tooltip
@@ -169,107 +192,188 @@ const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
                 placement="right"
                 title={
                   <Box sx={{ p: 1 }}>
-                    <Typography variant="body2" fontWeight="bold">{club.name} ({club.loft})</Typography>
-                    <Typography variant="caption" display="block">Min: {Math.round(club.min)} {unitLabel}</Typography>
-                    <Typography variant="caption" display="block">Avg: {Math.round(club.avg)} {unitLabel}</Typography>
-                    <Typography variant="caption" display="block">Max: {Math.round(club.max)} {unitLabel}</Typography>
-                    <Typography variant="caption" color="primary.light">Range: {Math.round(club.max - club.min)} {unitLabel}</Typography>
+                    <Typography variant="body2" fontWeight="bold">
+                      {club.name} ({club.loft})
+                    </Typography>
+                    <Typography variant="caption" display="block">
+                      Min: {Math.round(club.min)} {unitLabel}
+                    </Typography>
+                    <Typography variant="caption" display="block">
+                      Avg: {Math.round(club.avg)} {unitLabel}
+                    </Typography>
+                    <Typography variant="caption" display="block">
+                      Max: {Math.round(club.max)} {unitLabel}
+                    </Typography>
+                    <Typography variant="caption" color="primary.light">
+                      Range: {Math.round(club.max - club.min)} {unitLabel}
+                    </Typography>
                   </Box>
                 }
               >
                 <Box>
-                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 0.5 }}>
+                  <Box
+                    sx={{
+                      display: "flex",
+                      justifyContent: "space-between",
+                      alignItems: "center",
+                      mb: 0.5,
+                    }}
+                  >
                     <Box>
-                      <Typography variant="body2" fontWeight="bold">{club.name}</Typography>
+                      <Typography variant="body2" fontWeight="bold">
+                        {club.name}
+                      </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {club.type} {club.make && ` • ${club.make} ${club.model}`} {club.loft && ` • ${club.loft}°`} {club.bounce && ` • ${club.bounce}° Bounce`}
+                        {club.type}{" "}
+                        {club.make && ` • ${club.make} ${club.model}`}{" "}
+                        {club.loft && ` • ${club.loft}°`}{" "}
+                        {club.bounce && ` • ${club.bounce}° Bounce`}
                       </Typography>
                     </Box>
                   </Box>
-                  <Box sx={{ position: 'relative', height: 40, mt: 3 }}>
+                  <Box sx={{ position: "relative", height: 40, mt: 3 }}>
                     {/* Distance Labels */}
                     <Typography
                       variant="body2"
                       sx={{
-                        position: 'absolute',
+                        position: "absolute",
                         left: `calc(${leftPercent}% + (${widthPercent}% / 2))`,
-                        bottom: '100%',
-                        transform: 'translateX(-50%)',
+                        bottom: "100%",
+                        transform: "translateX(-50%)",
                         mb: 0.5,
-                        whiteSpace: 'nowrap',
+                        whiteSpace: "nowrap",
                       }}
                     >
-                      <Typography component="span" variant="caption" color="text.secondary">{Math.round(club.min)}</Typography>
-                      <Typography component="span" variant="body2" color="primary.main" fontWeight="bold"> / {Math.round(club.avg)} / </Typography>
-                      <Typography component="span" variant="caption" color="text.secondary">{Math.round(club.max)} {unitLabel}</Typography>
+                      <Typography
+                        component="span"
+                        variant="caption"
+                        color="text.secondary"
+                      >
+                        {Math.round(club.min)}
+                      </Typography>
+                      <Typography
+                        component="span"
+                        variant="body2"
+                        color="primary.main"
+                        fontWeight="bold"
+                      >
+                        {" "}
+                        / {Math.round(club.avg)} /{" "}
+                      </Typography>
+                      <Typography
+                        component="span"
+                        variant="caption"
+                        color="text.secondary"
+                      >
+                        {Math.round(club.max)} {unitLabel}
+                      </Typography>
                     </Typography>
 
-                    <Box sx={{ position: 'absolute', left: 0, right: 0, top: '50%', transform: 'translateY(-50%)', height: 8, bgcolor: 'grey.300', borderRadius: 1 }} />
                     <Box
                       sx={{
-                        position: 'absolute',
+                        position: "absolute",
+                        left: 0,
+                        right: 0,
+                        top: "50%",
+                        transform: "translateY(-50%)",
+                        height: 8,
+                        bgcolor: "grey.300",
+                        borderRadius: 1,
+                      }}
+                    />
+                    <Box
+                      sx={{
+                        position: "absolute",
                         left: `${leftPercent}%`,
                         width: `${widthPercent}%`,
-                        top: '50%',
-                        transform: 'translateY(-50%)',
+                        top: "50%",
+                        transform: "translateY(-50%)",
                         height: 16,
-                        bgcolor: 'primary.main',
+                        bgcolor: "primary.main",
                         borderRadius: 1,
                         boxShadow: 3,
-                        transition: 'all 0.3s ease',
-                        '&:hover': { transform: 'translateY(-50%) scale(1.05)', boxShadow: 6 }
+                        transition: "all 0.3s ease",
+                        "&:hover": {
+                          transform: "translateY(-50%) scale(1.05)",
+                          boxShadow: 6,
+                        },
                       }}
                     >
                       {/* Average Marker */}
-                      <Box sx={{
-                        position: 'absolute',
-                        left: `${((club.avg - club.min) / (club.max - club.min)) * 100}%`,
-                        top: '50%',
-                        transform: 'translate(-50%, -50%)',
-                        width: 4,
-                        height: '120%',
-                        bgcolor: 'black',
-                        borderRadius: '2px',
-                        boxShadow: 1,
-                      }} />
+                      <Box
+                        sx={{
+                          position: "absolute",
+                          left: `${
+                            ((club.avg - club.min) / (club.max - club.min)) *
+                            100
+                          }%`,
+                          top: "50%",
+                          transform: "translate(-50%, -50%)",
+                          width: 4,
+                          height: "120%",
+                          bgcolor: "black",
+                          borderRadius: "2px",
+                          boxShadow: 1,
+                        }}
+                      />
                     </Box>
                     {/* Gap/Overlap Indicator */}
                     {gap > 0 && (
                       <Box
                         sx={{
-                          position: 'absolute',
-                          left: `calc(${((clubRanges[index + 1].max - chartMin) / chartRange) * 100}% + 8px)`,
+                          position: "absolute",
+                          left: `calc(${
+                            ((clubRanges[index + 1].max - chartMin) /
+                              chartRange) *
+                            100
+                          }% + 8px)`,
                           width: `calc(${(gap / chartRange) * 100}%)`,
-                          top: '100%',
+                          top: "100%",
                           mt: 0.5,
                           height: 8,
-                          bgcolor: 'warning.main',
+                          bgcolor: "warning.main",
                           borderRadius: 1,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                         }}
                       >
-                        <Chip label={`${Math.round(gap)} ${unitLabel}`} size="small" color="warning" variant="solid" sx={{ height: 16, fontSize: '0.65rem' }} />
+                        <Chip
+                          label={`${Math.round(gap)} ${unitLabel}`}
+                          size="small"
+                          color="warning"
+                          variant="solid"
+                          sx={{ height: 16, fontSize: "0.65rem" }}
+                        />
                       </Box>
                     )}
                     {gap < 0 && (
                       <Box
                         sx={{
-                          position: 'absolute',
+                          position: "absolute",
                           left: `calc(${leftPercent}% + 8px)`,
                           width: `calc(${(Math.abs(gap) / chartRange) * 100}%)`,
-                          top: '100%',
+                          top: "100%",
                           mt: 0.5,
                           height: 8,
-                          bgcolor: 'success.light',
+                          bgcolor: "success.light",
                           borderRadius: 1,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
                         }}
                       >
-                        <Chip label={`${Math.abs(Math.round(gap))} ${unitLabel}`} size="small" color="success" variant="outlined" sx={{ height: 16, fontSize: '0.65rem', bgcolor: 'white' }} />
+                        <Chip
+                          label={`${Math.abs(Math.round(gap))} ${unitLabel}`}
+                          size="small"
+                          color="success"
+                          variant="outlined"
+                          sx={{
+                            height: 16,
+                            fontSize: "0.65rem",
+                            bgcolor: "white",
+                          }}
+                        />
                       </Box>
                     )}
                   </Box>
@@ -279,7 +383,12 @@ const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
           })}
         </Stack>
       ) : (
-        <Typography variant="body2" color="text.secondary" textAlign="center" sx={{ py: 4 }}>
+        <Typography
+          variant="body2"
+          color="text.secondary"
+          textAlign="center"
+          sx={{ py: 4 }}
+        >
           No distance data available for the selected categories.
         </Typography>
       )}
