@@ -26,18 +26,7 @@ import {
   EmojiEvents,
 } from "@mui/icons-material";
 import { elevatedCardStyles } from "../../styles/commonStyles";
-
-// Helper function (could be moved to a shared utils file later)
-const YARDS_TO_METERS = 0.9144;
-const METERS_TO_YARDS = 1.09361;
-
-const convertDistance = (distance, fromUnit, toUnit) => {
-  if (typeof distance !== 'number') return 0;
-  if (fromUnit === toUnit) return distance;
-  if (fromUnit === 'yards' && toUnit === 'meters') return distance * YARDS_TO_METERS;
-  if (fromUnit === 'meters' && toUnit === 'yards') return distance * METERS_TO_YARDS;
-  return distance;
-};
+import { convertDistance } from "../utils/utils";
 
 const DistanceLookup = ({ myBags, myClubs, displayUnit }) => {
   const [carryQuery, setCarryQuery] = useState("");

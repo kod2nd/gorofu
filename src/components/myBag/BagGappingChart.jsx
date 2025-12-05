@@ -10,21 +10,12 @@ import {
   Paper,
   Tooltip,
 } from "@mui/material";
+import { convertDistance } from "../utils/utils";
 
 // Helper functions moved here to make the component self-contained
 const getShotTypeDetails = (shotTypeName, shotConfig) => {
   if (!shotConfig || !shotConfig.shotTypes) return null;
   return shotConfig.shotTypes.find(st => st.name === shotTypeName);
-};
-
-const convertDistance = (distance, fromUnit, toUnit) => {
-  const YARDS_TO_METERS = 0.9144;
-  const METERS_TO_YARDS = 1.09361;
-  if (typeof distance !== 'number') return 0;
-  if (fromUnit === toUnit) return distance;
-  if (fromUnit === 'yards' && toUnit === 'meters') return distance * YARDS_TO_METERS;
-  if (fromUnit === 'meters' && toUnit === 'yards') return distance * METERS_TO_YARDS;
-  return distance;
 };
 
 const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
