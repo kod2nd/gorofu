@@ -52,6 +52,7 @@ import NoteThreadRow from './studentInteraction/NoteThreadRow';
 import NoteThreadDetailView from './studentInteraction/NoteThreadDetailView';
 import { toProperCase } from './studentInteraction/utils';
 import NoteFilters from './studentInteraction/NoteFilters';
+import ConfirmationDialog from './myBag/ConfirmationDialog';
 
 
 const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
@@ -838,21 +839,15 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
       </Dialog>
 
       {/* Delete Confirmation Dialog */}
-      <Dialog
-        open={deleteConfirm.open}
-        onClose={() => setDeleteConfirm({ open: false, note: null })}
-      >
-        <DialogTitle component="h2">Delete Note?</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to permanently delete the note with the subject "{deleteConfirm.note?.subject}"? This action cannot be undone.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setDeleteConfirm({ open: false, note: null })}>Cancel</Button>
-          <Button onClick={handleConfirmDelete} color="error" autoFocus>Delete</Button>
-        </DialogActions>
-      </Dialog>
+       <ConfirmationDialog
+          open={deleteConfirm.open}
+          onClose={() => setConfirmDelete({ open: false, note: null })}
+          onConfirm={handleConfirmDelete}
+          title="Delete Note?"
+          contentText={`Are you sure you want to permanently delete the note with the subject "${deleteConfirm.note?.subject}"? This action cannot be undone.`}
+          confirmText="Delete"
+          confirmColor="error"
+        />
       </Box>
   );
 });

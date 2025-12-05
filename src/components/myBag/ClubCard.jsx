@@ -970,7 +970,7 @@ const ClubCard = ({
                   },
                 }}
               >
-                Manage Types
+                Manage Shot Types
               </Button>
               <Button
                 variant="contained"

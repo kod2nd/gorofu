@@ -15,11 +15,6 @@ import {
   Tooltip,
   useTheme,
   useMediaQuery,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
 } from "@mui/material";
 
 // Import the child components
@@ -33,6 +28,7 @@ import SportsGolfIcon from "@mui/icons-material/SportsGolf";
 import RoundInsights from "./RoundInsights";
 import SectionHeader from "./SectionHeader";
 import { elevatedCardStyles } from "../styles/commonStyles";
+import ConfirmationDialog from "./myBag/ConfirmationDialog";
 
 const initialHoleState = {
   played: true,
@@ -590,25 +586,15 @@ const RoundForm = ({
       </Paper>
 
       {/* Confirmation Dialog */}
-      <Dialog
+      <ConfirmationDialog
         open={confirmDialogOpen}
         onClose={() => setConfirmDialogOpen(false)}
-      >
-        <DialogTitle>Confirm Save Round</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Are you sure you want to save this round? Please ensure you have entered your scores for all holes played before proceeding.
-          </DialogContentText>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setConfirmDialogOpen(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleConfirmSave} variant="contained" autoFocus>
-            Save Round
-          </Button>
-        </DialogActions>
-      </Dialog>
+        onConfirm={handleConfirmSave}
+        title="Confirm Save Round"
+        contentText="Are you sure you want to save this round? Please ensure you have entered your scores for all holes played before proceeding."
+        confirmText="Save Round"
+        confirmColor="primary"
+      />
 
       <Snackbar
         open={snackbar.open}

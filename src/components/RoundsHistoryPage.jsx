@@ -6,11 +6,6 @@ import {
   Button,
   CircularProgress,
   Alert,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   Stack,
 } from "@mui/material";
 import { Add as AddIcon } from "@mui/icons-material";
@@ -18,6 +13,7 @@ import { roundService } from "../services/roundService";
 import { elevatedCardStyles } from "../styles/commonStyles";
 import RoundsTable from "./RoundsTable";
 import PageHeader from "./PageHeader";
+import ConfirmationDialog from "./myBag/ConfirmationDialog";
 
 const RoundsHistoryPage = ({ user, onViewRound, onAddRound, isActive }) => {
   const [rounds, setRounds] = useState([]);
@@ -114,28 +110,15 @@ const RoundsHistoryPage = ({ user, onViewRound, onAddRound, isActive }) => {
         )}
 
         {/* Delete Confirmation Dialog */}
-        <Dialog
+        <ConfirmationDialog
           open={confirmDelete.open}
           onClose={() => setConfirmDelete({ open: false, roundId: null })}
-        >
-          <DialogTitle>Delete Round?</DialogTitle>
-          <DialogContent>
-            <DialogContentText>
-              Are you sure you want to permanently delete this round? This
-              action cannot be undone.
-            </DialogContentText>
-          </DialogContent>
-          <DialogActions>
-            <Button
-              onClick={() => setConfirmDelete({ open: false, roundId: null })}
-            >
-              Cancel
-            </Button>
-            <Button onClick={handleConfirmDelete} color="error" autoFocus>
-              Delete
-            </Button>
-          </DialogActions>
-        </Dialog>
+          onConfirm={handleConfirmDelete}
+          title="Delete Round?"
+          contentText="Are you sure you want to permanently delete this round? This action cannot be undone."
+          confirmText="Delete"
+          confirmColor="error"
+        />
       </Paper>
     </Box>
   );
