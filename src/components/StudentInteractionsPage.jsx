@@ -541,7 +541,7 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
                 <AddComment color="primary" />
                 {activeTab === 'lesson' ? 'Coach Notes' : 'My Notes'}
               </Typography>
-              {!isViewingOwnNotes && (
+              {(activeTab === 'personal' || (activeTab === 'lesson' && selectedStudentId && !isViewingOwnNotes)) && (
                 <Button 
                   variant="contained" 
                   startIcon={<AddComment />} 
@@ -558,7 +558,7 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
                     },
                   }}
                 >
-                  New
+                  New Note
                 </Button>
               )}
             </Box>
