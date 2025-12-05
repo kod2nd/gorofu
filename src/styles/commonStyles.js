@@ -135,6 +135,28 @@ export const buttonStyles = {
       bgcolor: 'grey.200',
       borderColor: 'grey.400',
     }
+  },
+  action: {
+    borderRadius: 2,
+    px: 3,
+    py: 1.5,
+    textTransform: 'none',
+    fontWeight: 600,
+    boxShadow: 2,
+    '&:hover': {
+      boxShadow: 4,
+    },
+  },
+  dashed: {
+    mt: 2,
+    borderRadius: 2,
+    py: 1.5,
+    borderStyle: 'dashed',
+    borderWidth: 2,
+    '&:hover': {
+      borderWidth: 2,
+      borderStyle: 'dashed',
+    }
   }
 };
 
@@ -220,6 +242,32 @@ export const accordionStyles = {
         overflow: 'hidden',
       },
     }
+  }
+};
+
+// Note specific styles
+export const noteStyles = {
+  card: {
+    elevation: 0,
+    sx: {
+      mb: 2,
+      borderRadius: 2,
+      border: '1px solid',
+      borderColor: 'divider',
+      transition: 'all 0.2s ease',
+      '&:hover': {
+        boxShadow: 2,
+        borderColor: 'primary.light',
+        transform: 'translateY(-2px)',
+      },
+      position: 'relative',
+      overflow: 'visible',
+    }
+  },
+  formPaper: {
+    p: { xs: 2, sm: 3 },
+    mt: 2,
+    borderRadius: 3,
   }
 };
 

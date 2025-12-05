@@ -42,8 +42,8 @@ import {
   AddComment, Edit as EditIcon, Close as CloseIcon, Search as SearchIcon,
   Person, Delete as DeleteIcon, ViewList, ViewModule, ArrowDownward, ArrowUpward, Reply as ReplyIcon, PushPin, PushPinOutlined,
   FilterList, ClearAll
-} from '@mui/icons-material';
-import { elevatedCardStyles } from '../styles/commonStyles';
+} from "@mui/icons-material";
+import { elevatedCardStyles, buttonStyles, noteStyles } from "../styles/commonStyles";
 import { userService } from '../services/userService';
 import PageHeader from './PageHeader';
 import FlippingGolfIcon from "./FlippingGolfIcon";
@@ -51,8 +51,8 @@ import MenuBar from './studentInteraction/MenuBar';
 import NoteThreadRow from './studentInteraction/NoteThreadRow';
 import NoteThreadDetailView from './studentInteraction/NoteThreadDetailView';
 import { toProperCase } from './studentInteraction/utils';
-import NoteFilters from './studentInteraction/NoteFilters';
 import ConfirmationDialog from './myBag/ConfirmationDialog';
+import NoteFilters from './studentInteraction/NoteFilters';
 
 
 const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
@@ -547,17 +547,7 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
                   variant="contained" 
                   startIcon={<AddComment />} 
                   onClick={() => handleOpenForm()}
-                  sx={{
-                    borderRadius: 2,
-                    px: 3,
-                    py: 1.5,
-                    textTransform: 'none',
-                    fontWeight: 600,
-                    boxShadow: 2,
-                    '&:hover': {
-                      boxShadow: 4,
-                    },
-                  }}
+                  sx={buttonStyles.action}
                 >
                   New Note
                 </Button>
@@ -591,14 +581,7 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
             ) : notes.length === 0 ? (
               <Card 
                 variant="outlined"
-                sx={{ 
-                  p: 6, 
-                  textAlign: 'center',
-                  borderRadius: 2,
-                  borderWidth: 2,
-                  borderStyle: 'dashed',
-                  backgroundColor: 'rgba(0, 0, 0, 0.02)',
-                }}
+                sx={noteStyles.card.sx}
               >
                 <AddComment sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
                 <Typography variant="h6" color="text.secondary" gutterBottom>
@@ -822,16 +805,7 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
             variant="contained"
             onClick={handleSaveNote}
             disabled={!noteSubject.trim() || !noteContent.trim()}
-            sx={{
-              borderRadius: 2,
-              px: 3,
-              textTransform: 'none',
-              fontWeight: 600,
-              boxShadow: 2,
-              '&:hover': {
-                boxShadow: 4,
-              },
-            }}
+            sx={buttonStyles.action}
           >
             {editingNote ? 'Update Note' : (replyingToNote ? 'Post Reply' : 'Save Note')}
           </Button>
