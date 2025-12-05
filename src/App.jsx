@@ -27,7 +27,7 @@ import ImpersonationBanner from './components/ImpersonationBanner';
 
 // Lazy load heavy components
 const Dashboard = lazy(() => import('./components/Dashboard'));
-const RoundForm = lazy(() => import('./RoundForm'));
+const RoundForm = lazy(() => import('./components/RoundForm'));
 const UserManagement = lazy(() => import('./components/UserManagement'));
 const AccountPage = lazy(() => import('./components/AccountPage'));
 const RoundsHistoryPage = lazy(() => import('./components/RoundsHistoryPage'));

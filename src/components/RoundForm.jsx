@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
-import { courseService } from "./services/courseService";
-import { roundService } from "./services/roundService";
+import { courseService } from "../services/courseService";
+import { roundService } from "../services/roundService";
 import {
   Box,
   Typography,
@@ -23,16 +23,16 @@ import {
 } from "@mui/material";
 
 // Import the child components
-import CourseDetailsForm from "./components/CourseDetailsForm";
-import HoleDetailsForm from "./components/HoleDetailsForm";
-import MobileHoleEntry from "./components/MobileHoleEntry";
+import CourseDetailsForm from "./CourseDetailsForm";
+import HoleDetailsForm from "./HoleDetailsForm";
+import MobileHoleEntry from "./MobileHoleEntry";
 import ViewListIcon from "@mui/icons-material/ViewList";
-import ScorecardTable from "./components/ScorecardTable";
-import PageHeader from "./components/PageHeader";
+import ScorecardTable from "./ScorecardTable";
+import PageHeader from "./PageHeader";
 import SportsGolfIcon from "@mui/icons-material/SportsGolf";
-import RoundInsights from "./components/RoundInsights";
-import SectionHeader from "./components/SectionHeader";
-import { elevatedCardStyles } from "./styles/commonStyles";
+import RoundInsights from "./RoundInsights";
+import SectionHeader from "./SectionHeader";
+import { elevatedCardStyles } from "../styles/commonStyles";
 
 const initialHoleState = {
   played: true,
