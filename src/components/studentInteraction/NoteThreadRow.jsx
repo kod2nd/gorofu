@@ -1,79 +1,206 @@
-import React from 'react';
-import { Paper, Box, Typography, Tooltip, IconButton, Chip } from '@mui/material';
-import { Star, StarBorder, AddComment, PushPin, PushPinOutlined } from '@mui/icons-material';
+import React, { useState } from 'react';
+import { 
+  Paper, Box, Typography, Tooltip, IconButton, Chip,
+  Avatar, Stack, useTheme, useMediaQuery, alpha
+} from '@mui/material';
+import { 
+  Star, StarBorder, PushPin, PushPinOutlined, 
+  ChatBubbleOutline, KeyboardArrowRight,
+  PersonOutline, School
+} from '@mui/icons-material';
 import { toProperCase, stripHtmlAndTruncate } from './utils';
 
 const NoteThreadRow = ({ note, onClick, onFavorite, onPin, isViewingSelfAsCoach, userProfile }) => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const [isHovered, setIsHovered] = useState(false);
   
   const canFavorite = !isViewingSelfAsCoach;
-  // A user can pin if they are a coach, AND they are not viewing their own notes,
-  // AND they are not a student viewing their own dashboard (where isViewingSelfAsCoach is false).
   const canPin = userProfile.roles.includes('coach') && !isViewingSelfAsCoach;
   const isPersonalNote = note.author_id === note.student_id;
+  
+  const authorInitials = note.author?.full_name
+    ?.split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2) || '??';
 
   return (
     <Paper
       onClick={() => onClick(note.id)}
-      elevation={0}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      elevation={isHovered ? 4 : 1}
       sx={{
         display: 'flex',
         alignItems: 'center',
-        p: 2,
-        borderRadius: 2.5,
+        p: { xs: 1.5, sm: 2 },
+        borderRadius: 3,
         border: '1px solid',
-        borderColor: 'divider',
-        transition: 'all 0.2s ease-in-out',
-        '&:hover': {
-          boxShadow: '0 4px 12px rgba(0,0,0,0.08)',
-          borderColor: 'primary.light',
-          transform: 'translateY(-2px)',
-          cursor: 'pointer',
-        },
+        borderColor: isHovered ? 'primary.light' : 'divider',
+        backgroundColor: isHovered ? alpha(theme.palette.primary.light, 0.03) : 'background.paper',
+        transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+        cursor: 'pointer',
+        position: 'relative',
+        overflow: 'hidden',
+        '&::before': {
+          content: '""',
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: 4,
+          backgroundColor: isPersonalNote ? 'secondary.main' : 'primary.main',
+          transition: 'transform 0.3s ease',
+          transform: isHovered ? 'scaleY(1)' : 'scaleY(0.7)',
+        }
       }}
     >
-      <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: 2 }}>
-        <Box sx={{ display: 'flex', alignItems: 'center' }}>
+      <Box sx={{ 
+        display: 'flex', 
+        alignItems: 'center', 
+        gap: { xs: 1, sm: 2 }, 
+        flex: 1,
+        minWidth: 0 
+      }}>
+        {/* Author Avatar */}
+        <Avatar 
+          sx={{ 
+            width: { xs: 40, sm: 48 },
+            height: { xs: 40, sm: 48 },
+            bgcolor: isPersonalNote ? 'secondary.main' : 'primary.main',
+            fontSize: { xs: '0.875rem', sm: '1rem' },
+            fontWeight: 600
+          }}
+        >
+          {authorInitials}
+        </Avatar>
+
+        {/* Content */}
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography 
+            variant="subtitle1" 
+            fontWeight={700}
+            noWrap
+            sx={{ 
+              fontSize: { xs: '0.875rem', sm: '1rem' },
+              color: 'text.primary',
+              mb: 0.75
+            }}
+          >
+            {note.subject || 'No Subject'}
+          </Typography>
+
+          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5, flexWrap: 'wrap', gap: 0.5 }}>
+            <Chip 
+              icon={isPersonalNote ? <PersonOutline /> : <School />}
+              label={isPersonalNote ? "Personal" : "Lesson"} 
+              size="small"
+              variant="filled"
+              color={isPersonalNote ? "secondary" : "primary"}
+              sx={{
+                height: 24,
+                fontSize: '0.7rem',
+                fontWeight: 600,
+                '& .MuiChip-icon': { fontSize: '0.875rem' }
+              }}
+            />
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+              {toProperCase(note.author?.full_name)}
+            </Typography>
+            <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'divider' }} />
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+              {new Date(note.lesson_date).toLocaleDateString('en-UK', { 
+                month: 'short', 
+                day: 'numeric', 
+                year: 'numeric' 
+              })}
+            </Typography>
+            <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'divider' }} />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+              <ChatBubbleOutline sx={{ fontSize: '0.875rem', color: 'text.secondary' }} />
+              <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+                {note.replies?.length || 0}
+              </Typography>
+            </Box>
+          </Stack>
+
+          <Typography 
+            variant="body2" 
+            color="text.secondary"
+            sx={{ 
+              fontSize: { xs: '0.813rem', sm: '0.875rem' },
+              lineHeight: 1.4,
+              display: '-webkit-box',
+              WebkitLineClamp: 2,
+              WebkitBoxOrient: 'vertical',
+              overflow: 'hidden'
+            }}
+          >
+            {stripHtmlAndTruncate(note.note, 80)}
+          </Typography>
+        </Box>
+
+        {/* Actions */}
+        <Box sx={{ 
+          display: 'flex', 
+          alignItems: 'center', 
+          gap: 0.5,
+          opacity: isHovered ? 1 : 0.7,
+          transition: 'opacity 0.2s ease'
+        }}>
           {canPin && (
-            <Tooltip title={note.is_pinned_to_dashboard ? "Remove from Dashboard" : "Add to Dashboard"}>
+            <Tooltip title={note.is_pinned_to_dashboard ? "Unpin from dashboard" : "Pin to dashboard"}>
               <IconButton
                 size="small"
                 onClick={(e) => {
                   e.stopPropagation();
                   onPin(note);
                 }}
+                sx={{
+                  color: note.is_pinned_to_dashboard ? 'primary.main' : 'text.secondary',
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                    color: 'primary.main'
+                  }
+                }}
               >
-                {note.is_pinned_to_dashboard ? <PushPin sx={{ color: 'primary.main' }} /> : <PushPinOutlined />}
+                <PushPin sx={{ fontSize: { xs: '1rem', sm: '1.125rem' } }} />
               </IconButton>
             </Tooltip>
           )}
+          
           {canFavorite && (
             <Tooltip title={note.is_favorited ? "Remove from favorites" : "Add to favorites"}>
               <IconButton
                 size="small"
                 onClick={(e) => {
-                  e.stopPropagation(); // Prevent row click from firing
+                  e.stopPropagation();
                   onFavorite(note);
                 }}
+                sx={{
+                  color: note.is_favorited ? 'warning.main' : 'text.secondary',
+                  '&:hover': {
+                    backgroundColor: alpha(theme.palette.warning.main, 0.1),
+                    color: 'warning.main'
+                  }
+                }}
               >
-                {note.is_favorited ? <Star sx={{ color: 'warning.main' }} /> : <StarBorder />}
+                <Star sx={{ fontSize: { xs: '1rem', sm: '1.125rem' } }} />
               </IconButton>
             </Tooltip>
           )}
-          {!canFavorite && !canPin && <AddComment color="action" sx={{ opacity: 0.6, ml: 1 }} />}
-        </Box>
-        <Box sx={{ flexGrow: 1 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 0.5 }}>
-            <Typography variant="body1" fontWeight={600}>
-              {note.subject || 'No Subject'}
-            </Typography>
-            <Chip label={isPersonalNote ? "Personal Note" : "Lesson Note"} size="small" variant="outlined" color={isPersonalNote ? "secondary" : "primary"} />
-          </Box>
-          <Typography variant="caption" color="text.secondary">
-            Started by {toProperCase(note.author?.full_name)} on {new Date(note.lesson_date).toLocaleDateString('en-UK', { month: 'short', day: 'numeric', year: 'numeric' })} &bull; {note.replies?.length || 0} {note.replies?.length === 1 ? 'Reply' : 'Replies'}
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, fontStyle: 'italic' }}>
-            {stripHtmlAndTruncate(note.note, 50)}
-          </Typography>
+          
+          <KeyboardArrowRight 
+            sx={{ 
+              fontSize: { xs: '1.25rem', sm: '1.5rem' },
+              color: 'text.secondary',
+              ml: 0.5,
+              transition: 'transform 0.3s ease',
+              transform: isHovered ? 'translateX(4px)' : 'none'
+            }} 
+          />
         </Box>
       </Box>
     </Paper>
