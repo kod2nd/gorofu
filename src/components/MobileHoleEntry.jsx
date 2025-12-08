@@ -38,31 +38,45 @@ const QuickSelector = ({ stat, holeData, onHoleChange, primaryOptions, extendedO
           {stat.label}
         </Typography>
       </Tooltip>
-      <ButtonGroup fullWidth>
+      <Box sx={{ 
+        display: 'grid', 
+        gridTemplateColumns: {
+          xs: 'repeat(auto-fit, minmax(50px, 1fr))',
+          sm: 'repeat(6, 1fr)'
+        }, 
+        gap: 1 }}>
         {primaryOptions.map((option) => (
           <Button
             key={option}
             variant={holeData[stat.name] === option ? "contained" : "outlined"}
             onClick={() => handleChange(option)}
             disabled={!holeData.played}
+            sx={{ py: 1, px: 0.5, minWidth: 'auto', fontSize: '0.8rem' }}
           >
             {option}
           </Button>
         ))}
-      </ButtonGroup>
+      </Box>
       {extendedOptions && showExtended && (
-        <ButtonGroup fullWidth sx={{ mt: 1 }}>
+        <Box sx={{ 
+          display: 'grid', 
+          gridTemplateColumns: {
+            xs: 'repeat(auto-fit, minmax(50px, 1fr))',
+            sm: 'repeat(6, 1fr)'
+          }, 
+          gap: 1, mt: 1 }}>
           {extendedOptions.map((option) => (
             <Button
               key={option}
               variant={holeData[stat.name] === option ? "contained" : "outlined"}
               onClick={() => handleChange(option)}
               disabled={!holeData.played}
+              sx={{ py: 1, px: 0.5, minWidth: 'auto', fontSize: '0.8rem' }}
             >
               {option}
             </Button>
           ))}
-        </ButtonGroup>
+        </Box>
       )}
       {extendedOptions && (
         <Box sx={{ textAlign: "right" }}>
@@ -93,31 +107,45 @@ const PuttSelector = ({ stat, holeData, onHoleChange }) => {
           {stat.label}
         </Typography>
       </Tooltip>
-      <ButtonGroup fullWidth>
+      <Box sx={{ 
+        display: 'grid', 
+        gridTemplateColumns: {
+          xs: 'repeat(auto-fit, minmax(40px, 1fr))',
+          sm: 'repeat(5, 1fr)'
+        }, 
+        gap: 1 }}>
         {primaryOptions.map((putt) => (
           <Button
             key={putt}
             variant={holeData[stat.name] === putt ? "contained" : "outlined"}
             onClick={() => handlePuttChange(putt)}
             disabled={!holeData.played}
+            sx={{ py: 1, px: 0.5, minWidth: 'auto', fontSize: '0.8rem' }}
           >
             {putt}
           </Button>
         ))}
-      </ButtonGroup>
+      </Box>
       {showExtended && (
-        <ButtonGroup fullWidth sx={{ mt: 1 }}>
+        <Box sx={{ 
+          display: 'grid', 
+          gridTemplateColumns: {
+            xs: 'repeat(auto-fit, minmax(40px, 1fr))',
+            sm: 'repeat(5, 1fr)'
+          }, 
+          gap: 1, mt: 1 }}>
           {extendedOptions.map((putt) => (
             <Button
               key={putt}
               variant={holeData[stat.name] === putt ? "contained" : "outlined"}
               onClick={() => handlePuttChange(putt)}
               disabled={!holeData.played}
+              sx={{ py: 1, px: 0.5, minWidth: 'auto', fontSize: '0.8rem' }}
             >
               {putt}
             </Button>
           ))}
-        </ButtonGroup>
+        </Box>
       )}
       <Box sx={{ textAlign: "right" }}>
         <Button
@@ -560,7 +588,13 @@ const MobileHoleEntry = ({
                     Par
                   </Typography>
                 </Tooltip>
-                <ButtonGroup fullWidth>
+                <Box sx={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: {
+                    xs: 'repeat(auto-fit, minmax(40px, 1fr))',
+                    sm: 'repeat(3, 1fr)'
+                  }, 
+                  gap: 1 }}>
                   {parOptions.map((par) => (
                     <Button
                       key={par}
@@ -569,11 +603,12 @@ const MobileHoleEntry = ({
                       }
                       onClick={() => handleQuickParChange(par)}
                       disabled={isEditMode}
+                      sx={{ py: 1, px: 0.5, minWidth: 'auto', fontSize: '0.8rem' }}
                     >
                       {par}
                     </Button>
                   ))}
-                </ButtonGroup>
+                </Box>
                 <Box sx={{ textAlign: "right" }}>
                   <Button
                     onClick={() => setShowExtendedParOptions((prev) => !prev)}
