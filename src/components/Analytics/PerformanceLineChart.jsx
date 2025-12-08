@@ -141,7 +141,8 @@ const PerformanceLineChart = ({
   puttsDataKey,
   scoreColor,
   puttsColor,
-}) => (
+}) => {
+  return (
   <ChartCard
     title={title}
     subtitle="Average score and putts over time"
@@ -159,7 +160,7 @@ const PerformanceLineChart = ({
           style={{ fontSize: "12px" }}
           allowDecimals={false}
           interval={0}
-          domain={["dataMin - 1", "dataMax"]}
+          domain={[(dataMin) => Math.floor(dataMin) - 1, (dataMax) => Math.ceil(dataMax)]}
         />
         <Tooltip content={<CustomTooltip />} />
         <Legend content={<CustomLegend />} />
@@ -185,5 +186,6 @@ const PerformanceLineChart = ({
     </ResponsiveContainer>
   </ChartCard>
 );
+};
 
 export default PerformanceLineChart;
