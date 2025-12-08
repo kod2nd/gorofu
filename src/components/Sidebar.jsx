@@ -23,7 +23,7 @@ const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, active
     const items = [
     { text: "Dashboard", icon: <DashboardIcon />, page: "dashboard" },
     { text: "Add Round", icon: <AddCircleIcon />, page: "addRound" }, 
-    { text: "My Bag (WIP)", icon: <StraightenIcon />, page: "myBag" },
+    { text: "My Bag", icon: <StraightenIcon />, page: "myBag" },
     { text: "Rounds History", icon: <HistoryIcon />, page: "roundsHistory" },
     { text: "Account", icon: <AccountCircleIcon />, page: "account" },
     { text: "View Round", icon: <VisibilityIcon />, page: "viewRound", hidden: true }, // Hidden from main menu
