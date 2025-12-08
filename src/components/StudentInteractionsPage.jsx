@@ -603,7 +603,7 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
                 onDelete={handleDeleteRequest}
                 onFavorite={handleToggleFavorite}
                 onPin={handlePinToDashboard}
-                isViewingSelfAsCoach={isViewingOwnNotes}
+                isViewingSelfAsCoach={false} // Always allow actions in detail view
               />
             ) : viewMode === 'grouped' ? (
               <Stack spacing={4}>
@@ -620,7 +620,7 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
                           </Typography>
                           <Stack spacing={1.5}>
                             {groupedNotes[year][month].map(note => (
-                              <NoteThreadRow key={note.id} note={note} onClick={setViewingThreadId} userProfile={userProfile} onFavorite={handleToggleFavorite} isViewingSelfAsCoach={isViewingOwnNotes} onPin={handlePinToDashboard} />
+                              <NoteThreadRow key={note.id} note={note} onClick={setViewingThreadId} userProfile={userProfile} onFavorite={handleToggleFavorite} isViewingSelfAsCoach={isViewingOwnNotes} onPin={handlePinToDashboard} canInteract={note.author_id === userProfile.user_id} />
                             ))}
                           </Stack>
                         </Box>
@@ -639,7 +639,7 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
                     userProfile={userProfile}
                     onFavorite={handleToggleFavorite}
                     onPin={handlePinToDashboard}
-                    isViewingSelfAsCoach={isViewingOwnNotes}
+                    canInteract={note.author_id === userProfile.user_id}
                   />
                 ))}
               </Stack>
