@@ -14,20 +14,19 @@ import { userService } from '../services/userService';
 import FlippingGolfIcon from './FlippingGolfIcon';
 import NoteThreadRow from './studentInteraction/NoteThreadRow';
 import NoteThreadDetailView from './studentInteraction/NoteThreadDetailView';
-
-const PinnedNotes = ({ studentId, userProfile, onReply }) => {
+const PinnedNotes = ({ studentId, userProfile, onReply, refreshKey }) => {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [viewingThread, setViewingThread] = useState(null);
 
   useEffect(() => {
-    if (studentId) {
+    if (studentId) { // The refreshKey prop will trigger this effect when a note is pinned/unpinned
       loadNotes();
     }
     // Reset view when student changes
     setViewingThread(null);
-  }, [studentId]);
+  }, [studentId, refreshKey]);
 
   const loadNotes = async () => {
     try {

@@ -12,7 +12,7 @@ import RecentInsights from "./RecentInsights";
 import FlippingGolfIcon from "./FlippingGolfIcon";
 import PinnedNotes from "./PinnedNotes";
 
-const Dashboard = ({ user, onViewRound, isActive, impersonatedUser, userProfile, onReply }) => {
+const Dashboard = ({ user, onViewRound, isActive, impersonatedUser, userProfile, onReply, notesRefreshKey, roundsRefreshKey }) => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [isFiltering, setIsFiltering] = useState(false);
   const [error, setError] = useState("");
@@ -149,7 +149,7 @@ useEffect(() => {
     };
 
     fetchData();
-  }, [user, roundLimit, showEligibleRoundsOnly]); // ✅ Removed isActive and impersonatedUser from deps
+  }, [user, roundLimit, showEligibleRoundsOnly, roundsRefreshKey]); // ✅ Added roundsRefreshKey
 
   // ✅ Show centered flipping icon only on initial load
   if (initialLoading) {
@@ -215,7 +215,7 @@ useEffect(() => {
           </Paper>
           {/* Render Pinned Notes if a coach is assigned OR if the user is viewing their own dashboard */}
           {(coach || !impersonatedUser) && (
-            <PinnedNotes studentId={user.id} userProfile={userProfile} onReply={onReply} />
+            <PinnedNotes studentId={user.id} userProfile={userProfile} onReply={onReply} refreshKey={notesRefreshKey} />
           )}
         </Box>
 

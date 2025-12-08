@@ -55,7 +55,7 @@ import ConfirmationDialog from './myBag/ConfirmationDialog';
 import NoteFilters from './studentInteraction/NoteFilters';
 
 
-const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
+const StudentInteractionsPage = forwardRef(({ userProfile, isActive, onNoteUpdate }, ref) => {
   const [students, setStudents] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [allMappings, setAllMappings] = useState([]);
@@ -354,6 +354,7 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive }, ref) => {
           n.id === note.id ? { ...n, is_pinned_to_dashboard: !n.is_pinned_to_dashboard } : n
         )
       );
+      if (onNoteUpdate) onNoteUpdate(); // Notify parent of the change
     } catch (err) {
       setError('Failed to update pin status: ' + err.message);
     }

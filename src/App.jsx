@@ -58,6 +58,8 @@ function App() {
   const [viewingRoundId, setViewingRoundId] = useState(null);
   const [impersonatedUser, setImpersonatedUser] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [notesRefreshKey, setNotesRefreshKey] = useState(0);
+  const [roundsRefreshKey, setRoundsRefreshKey] = useState(0);
   const interactionsPageRef = useRef(null);
 
   useEffect(() => {
@@ -166,6 +168,14 @@ function App() {
     setActivePage('studentInteractions');
     interactionsPageRef.current?.handleReplyClick(note);
   }
+
+  const triggerNotesRefresh = () => {
+    setNotesRefreshKey(prev => prev + 1);
+  };
+
+  const triggerRoundsRefresh = () => {
+    setRoundsRefreshKey(prev => prev + 1);
+  };
 
   const showSnackbar = (message, severity = 'success') => {
     setSnackbar({ open: true, message, severity });
@@ -352,6 +362,8 @@ function App() {
                     impersonatedUser={impersonatedUser}
                     userProfile={userProfile}
                     onReply={handleDashboardReply}
+                    roundsRefreshKey={roundsRefreshKey}
+                    notesRefreshKey={notesRefreshKey}
                   />
                 </PageContainer>
                 
@@ -364,7 +376,10 @@ function App() {
                       setEditingRoundId(null);
                       setActivePage('roundsHistory');
                     }}
-                    onSuccess={(message) => showSnackbar(message)}
+                    onSuccess={(message) => {
+                      showSnackbar(message);
+                      triggerRoundsRefresh();
+                    }}
                     roundIdToEdit={editingRoundId}
                   />
                 </PageContainer>
@@ -418,6 +433,7 @@ function App() {
                     userProfile={userProfile}
                     isActive={activePage === 'studentInteractions'}
                     ref={interactionsPageRef}
+                    onNoteUpdate={triggerNotesRefresh}
                   />
                 </PageContainer>
 
