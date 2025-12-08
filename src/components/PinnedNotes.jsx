@@ -14,7 +14,7 @@ import { userService } from '../services/userService';
 import FlippingGolfIcon from './FlippingGolfIcon';
 import NoteThreadRow from './studentInteraction/NoteThreadRow';
 import NoteThreadDetailView from './studentInteraction/NoteThreadDetailView';
-const PinnedNotes = ({ studentId, userProfile, onReply, refreshKey }) => {
+const PinnedNotes = ({ studentId, userProfile, onReply, refreshKey, onNoteUpdate }) => {
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -66,6 +66,19 @@ const PinnedNotes = ({ studentId, userProfile, onReply, refreshKey }) => {
     }
   };
 
+  const handleTogglePin = async (note) => {
+    try {
+      await userService.updateNoteForStudent(note.id, { is_pinned_to_dashboard: !note.is_pinned_to_dashboard });
+      // Unpinning should remove the note from this component's view.
+      setNotes(prevNotes => prevNotes.filter(n => n.id !== note.id));
+      // Notify the parent (App.jsx) that notes have been updated.
+      if (onNoteUpdate) {
+        onNoteUpdate();
+      }
+    } catch (err) {
+      setError('Failed to update pin status: ' + err.message);
+    }
+  };
   const handleNoteClick = (note) => {
     setViewingThread(note);
   };
@@ -92,7 +105,7 @@ const PinnedNotes = ({ studentId, userProfile, onReply, refreshKey }) => {
               note={note}
               onClick={() => handleNoteClick(note)}
               onFavorite={handleToggleFavorite}
-              onPin={() => {}} // Students can't pin from dashboard, so pass a no-op
+              onPin={handleTogglePin}
               isViewingSelfAsCoach={false} // Student is never viewing self as coach on their dashboard
               userProfile={userProfile}
             />
