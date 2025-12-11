@@ -28,8 +28,16 @@ import {
   ArrowDownward,
   Sort,
   AutoAwesome as Sparkles,
+  TrackChanges as Target,
 } from "@mui/icons-material";
-import { elevatedCardStyles, typographyStyles, buttonStyles, accordionStyles, toggleButtonGroupStyles } from "../../styles/commonStyles";
+import {
+  elevatedCardStyles,
+  typographyStyles,
+  buttonStyles,
+  accordionStyles,
+  toggleButtonGroupStyles,
+  emptyStateStyles,
+} from "../../styles/commonStyles";
 
 import ShotCard from "./ShotCard";
 import { convertDistance } from "../utils/utils";
