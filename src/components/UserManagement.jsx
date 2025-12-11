@@ -151,6 +151,8 @@ const UserManagement = ({ currentUser, isActive, onImpersonate }) => {
           onViewAuditLog={handleViewAuditLog}
           onImpersonate={onImpersonate}
           currentUser={currentUser} />;
+      case 1:
+        return <AuditLog logs={auditLogs} users={users} />;
       default:
         return null;
     }

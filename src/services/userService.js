@@ -304,9 +304,7 @@ export const userService = {
 
   async stopImpersonation() {
     // Setting the variable to null or an empty string effectively clears it.
-    const { data, error } = await supabase.rpc('set_impersonation', {
-      user_email_to_impersonate: '',
-    });
+    const { data, error } = await supabase.rpc('clear_impersonation');
     if (error) throw error;
     return data;
   },

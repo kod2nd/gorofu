@@ -201,9 +201,10 @@ DECLARE
   user_roles_array TEXT[];
 BEGIN
   -- Check for impersonation variable
+  -- Use 'true' as the second argument to prevent an error if the setting is missing.
   IF current_setting('app.impersonated_user_email', true) IS NOT NULL AND current_setting('app.impersonated_user_email', true) <> '' THEN
     -- If impersonating, return the role of the impersonated user from the unrestricted view
-    SELECT roles INTO user_roles_array FROM internal.user_profiles_unrestricted WHERE email = current_setting('app.impersonated_user_email');
+    SELECT roles INTO user_roles_array FROM internal.user_profiles_unrestricted WHERE email = current_setting('app.impersonated_user_email', true);
   ELSE
     -- Otherwise, get roles for the currently authenticated user
     SELECT roles INTO user_roles_array FROM internal.user_profiles_unrestricted WHERE user_id = auth.uid();
@@ -223,9 +224,10 @@ SET search_path = internal, public
 AS $$
 BEGIN
   -- Check for impersonation variable
+  -- Use 'true' as the second argument to prevent an error if the setting is missing.
   IF current_setting('app.impersonated_user_email', true) IS NOT NULL AND current_setting('app.impersonated_user_email', true) <> '' THEN
     -- If impersonating, return the roles of the impersonated user from the unrestricted view
-    RETURN (SELECT roles FROM internal.user_profiles_unrestricted WHERE email = current_setting('app.impersonated_user_email'));
+    RETURN (SELECT roles FROM internal.user_profiles_unrestricted WHERE email = current_setting('app.impersonated_user_email', true));
   ELSE
     -- Otherwise, return the role of the currently authenticated user
     RETURN (SELECT roles FROM internal.user_profiles_unrestricted WHERE user_id = auth.uid());
@@ -293,6 +295,29 @@ BEGIN
 
   -- Return true if user is a coach
   RETURN 'coach' = ANY(user_roles_array);
+END;
+$$;
+
+-- Helper function to get the user_id of the current user, respecting impersonation
+CREATE OR REPLACE FUNCTION get_current_user_id()
+RETURNS UUID
+LANGUAGE plpgsql
+STABLE
+SECURITY DEFINER
+SET search_path = internal, public
+AS $$
+DECLARE
+  impersonated_email TEXT;
+  user_id_to_return UUID;
+BEGIN
+  -- Read the session-local variable.
+  impersonated_email := current_setting('app.impersonated_user_email', true);
+  IF impersonated_email IS NOT NULL AND impersonated_email <> '' THEN
+    SELECT user_id INTO user_id_to_return FROM internal.user_profiles_unrestricted WHERE email = impersonated_email;
+    RETURN user_id_to_return;
+  ELSE
+    RETURN auth.uid();
+  END IF;
 END;
 $$;
 
@@ -646,15 +671,29 @@ BEGIN
     RAISE EXCEPTION 'Only super_admins can impersonate users.';
   END IF;
 
-  -- Set the session variable. The 'true' means it's a local setting for the current transaction.
-  PERFORM set_config('app.impersonated_user_email', user_email_to_impersonate, true);
+  -- Set the session variable. 'false' makes it local to the entire session, not just the transaction.
+  PERFORM set_config('app.impersonated_user_email', user_email_to_impersonate, false);
   
   RETURN 'Impersonating ' || user_email_to_impersonate;
 END;
 $$;
 
+-- Function for super_admins to clear an impersonation session variable
+CREATE OR REPLACE FUNCTION clear_impersonation()
+RETURNS TEXT
+LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = 'public'
+AS $$
+BEGIN
+  -- Set the session variable to an empty string to clear it.
+  PERFORM set_config('app.impersonated_user_email', '', false);
+  RETURN 'Impersonation stopped.';
+END;
+$$;
+
 -- Grant execute permissions for the impersonation function
 GRANT EXECUTE ON FUNCTION public.set_impersonation(TEXT) TO authenticated, service_role;
+GRANT EXECUTE ON FUNCTION public.clear_impersonation() TO authenticated, service_role;
 
 -- Row Level Security (RLS) Policies
 ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
@@ -866,11 +905,12 @@ CREATE TABLE public.user_shot_types (
 ALTER TABLE public.user_shot_types ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can only see and manage their own shot types.
+DROP POLICY IF EXISTS "Allow users to manage their own shot types" ON public.user_shot_types;
 CREATE POLICY "Allow users to manage their own shot types"
-ON public.user_shot_types
-FOR ALL
-USING (auth.uid() = user_id)
-WITH CHECK (auth.uid() = user_id);
+  ON public.user_shot_types
+  FOR ALL
+  USING (user_id = get_current_user_id())
+  WITH CHECK (user_id = get_current_user_id());
 
 
 -- Update handle_new_user function to seed default shot types
@@ -888,9 +928,9 @@ BEGIN
   INSERT INTO public.user_shot_types (user_id, name, category_ids, is_default)
   VALUES
     (new.id, 'Full', ARRAY['cat_long'], TRUE),
-    (new.id, '3/4 Swing', ARRAY['cat_long', 'cat_approach'], TRUE),
+    (new.id, '3/4 Swing', ARRAY['cat_long', 'cat_approach'], TRUE), 
     (new.id, '1/2 Swing', ARRAY['cat_approach', 'cat_short'], TRUE),
-    (newid, 'Pitch', ARRAY['cat_short'], TRUE),
+    (new.id, 'Pitch', ARRAY['cat_short'], TRUE),
     (new.id, 'Chip', ARRAY['cat_short'], TRUE);
 
   RETURN new;
@@ -925,12 +965,12 @@ CREATE TABLE public.clubs (
 ALTER TABLE public.clubs ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can only see and manage their own clubs.
+DROP POLICY IF EXISTS "Allow users to manage their own clubs" ON public.clubs;
 CREATE POLICY "Allow users to manage their own clubs"
-ON public.clubs
-FOR ALL
-USING (auth.uid() = user_id)
-WITH CHECK (auth.uid() = user_id);
-
+  ON public.clubs
+  FOR ALL
+  USING (user_id = get_current_user_id())
+  WITH CHECK (user_id = get_current_user_id());
 
 -- 2. SHOTS TABLE
 -- Stores shot data for each club.
@@ -954,12 +994,12 @@ CREATE TABLE public.shots (
 ALTER TABLE public.shots ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can manage shots only for clubs they own.
+DROP POLICY IF EXISTS "Allow users to manage shots for their own clubs" ON public.shots;
 CREATE POLICY "Allow users to manage shots for their own clubs"
-ON public.shots
-FOR ALL
-USING (auth.uid() = (SELECT user_id FROM public.clubs WHERE id = club_id))
-WITH CHECK (auth.uid() = (SELECT user_id FROM public.clubs WHERE id = club_id));
-
+  ON public.shots
+  FOR ALL
+  USING ((SELECT user_id FROM public.clubs WHERE id = club_id) = get_current_user_id())
+  WITH CHECK ((SELECT user_id FROM public.clubs WHERE id = club_id) = get_current_user_id());
 
 -- 3. BAGS TABLE (PRESETS)
 -- Stores user-created bag presets.
@@ -976,12 +1016,12 @@ CREATE TABLE public.bags (
 ALTER TABLE public.bags ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can only see and manage their own bags.
+DROP POLICY IF EXISTS "Allow users to manage their own bags" ON public.bags;
 CREATE POLICY "Allow users to manage their own bags"
-ON public.bags
-FOR ALL
-USING (auth.uid() = user_id)
-WITH CHECK (auth.uid() = user_id);
-
+  ON public.bags
+  FOR ALL
+  USING (user_id = get_current_user_id())
+  WITH CHECK (user_id = get_current_user_id());
 
 -- 4. BAG_CLUBS JOIN TABLE
 -- Manages the many-to-many relationship between bags and clubs.
@@ -995,14 +1035,15 @@ CREATE TABLE public.bag_clubs (
 ALTER TABLE public.bag_clubs ENABLE ROW LEVEL SECURITY;
 
 -- Policy: Users can only link clubs and bags that they own.
+DROP POLICY IF EXISTS "Allow users to manage their own bag_clubs links" ON public.bag_clubs;
 CREATE POLICY "Allow users to manage their own bag_clubs links"
-ON public.bag_clubs
-FOR ALL
-USING (
-  auth.uid() = (SELECT user_id FROM public.bags WHERE id = bag_id) AND
-  auth.uid() = (SELECT user_id FROM public.clubs WHERE id = club_id)
-)
-WITH CHECK (
-  auth.uid() = (SELECT user_id FROM public.bags WHERE id = bag_id) AND
-  auth.uid() = (SELECT user_id FROM public.clubs WHERE id = club_id)
-);
+  ON public.bag_clubs
+  FOR ALL
+  USING (
+    (SELECT user_id FROM public.bags WHERE id = bag_id) = get_current_user_id() AND
+    (SELECT user_id FROM public.clubs WHERE id = club_id) = get_current_user_id()
+  )
+  WITH CHECK (
+    (SELECT user_id FROM public.bags WHERE id = bag_id) = get_current_user_id() AND
+    (SELECT user_id FROM public.clubs WHERE id = club_id) = get_current_user_id()
+  );

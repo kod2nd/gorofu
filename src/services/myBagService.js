@@ -8,24 +8,32 @@ import { supabase } from '../supabaseClient'; // Corrected import path
  * - `clubs(*, shots(*))`: Fetches all clubs and for each club, embeds all its related shots.
  * - `bags(*, bag_clubs(club_id))`: Fetches all bags and for each bag, embeds the IDs of the clubs it contains.
  */
-export const getMyBagData = async () => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("User not authenticated for getMyBagData.");
+export const getMyBagData = async (impersonatedUser = null) => {
+  let targetUserId;
 
-  // Fetch clubs and bags in parallel for the current user
+  if (impersonatedUser) {
+    targetUserId = impersonatedUser.user_id;
+    console.log(`[myBagService] getMyBagData called for impersonated user ID: ${targetUserId}`);
+  } else {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error("User not authenticated for getMyBagData.");
+    targetUserId = user.id;
+    console.log(`[myBagService] getMyBagData called for current user ID: ${targetUserId}`);
+  }
+
   const [clubsResponse, bagsResponse, shotTypesResponse] = await Promise.all([
     supabase
       .from('clubs')
-      .select('*, shots(*)') // Fetch all clubs and their related shots
-      .eq('user_id', user.id),
+      .select('*, shots(*)')
+      .eq('user_id', targetUserId),
     supabase
       .from('bags')
-      .select('*, bag_clubs(club_id)') // Fetch all bags and the IDs of clubs in them
-      .eq('user_id', user.id),
+      .select('*, bag_clubs(club_id)')
+      .eq('user_id', targetUserId),
     supabase
       .from('user_shot_types')
       .select('*')
-      .eq('user_id', user.id)
+      .eq('user_id', targetUserId)
   ]);
 
   if (clubsResponse.error) {
@@ -40,6 +48,8 @@ export const getMyBagData = async () => {
     console.error('Error fetching shot types:', shotTypesResponse.error);
     throw shotTypesResponse.error;
   }
+
+  console.log('[myBagService] Data fetched from Supabase:', { clubs: clubsResponse.data, bags: bagsResponse.data, shotTypes: shotTypesResponse.data });
 
   const clubs = clubsResponse.data || [];
   const bags = bagsResponse.data || [];
@@ -73,12 +83,23 @@ export const getMyBagData = async () => {
  * @param {object} clubData - The club data to insert. e.g., { name, type, loft, ... }
  */
 export const createClub = async (clubData) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("User not authenticated.");
+  // This is a write operation, so we need to explicitly get the correct user ID,
+  // respecting impersonation. RLS `WITH CHECK` will use get_current_user_id(),
+  // but we must provide the correct user_id in the row we are inserting.
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const impersonatedEmail = session.user.user_metadata?.impersonatedUser;
+  let targetUserId = session.user.id;
+
+  if (impersonatedEmail) {
+    const { data: profile } = await supabase.from('user_profiles').select('user_id').eq('email', impersonatedEmail).single();
+    if (profile) targetUserId = profile.user_id;
+  }
 
   const { data, error } = await supabase
     .from('clubs')
-    .insert([{ ...clubData, user_id: user.id }])
+    .insert([{ ...clubData, user_id: targetUserId }])
     .select()
     .single();
 
@@ -91,11 +112,19 @@ export const createClub = async (clubData) => {
  * @param {object[]} clubsData - An array of club data objects to insert.
  */
 export const bulkCreateClubs = async (clubsData) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("User not authenticated.");
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const impersonatedEmail = session.user.user_metadata?.impersonatedUser;
+  let targetUserId = session.user.id;
+
+  if (impersonatedEmail) {
+    const { data: profile } = await supabase.from('user_profiles').select('user_id').eq('email', impersonatedEmail).single();
+    if (profile) targetUserId = profile.user_id;
+  }
 
   // Add user_id to each club object
-  const clubsToInsert = clubsData.map(club => ({ ...club, user_id: user.id }));
+  const clubsToInsert = clubsData.map(club => ({ ...club, user_id: targetUserId }));
 
   const { data, error } = await supabase
     .from('clubs')
@@ -174,12 +203,20 @@ export const deleteShot = async (shotId) => {
  * @param {object} shotTypeData - e.g., { name, category_ids }
  */
 export const createShotType = async (shotTypeData) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("User not authenticated.");
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const impersonatedEmail = session.user.user_metadata?.impersonatedUser;
+  let targetUserId = session.user.id;
+
+  if (impersonatedEmail) {
+    const { data: profile } = await supabase.from('user_profiles').select('user_id').eq('email', impersonatedEmail).single();
+    if (profile) targetUserId = profile.user_id;
+  }
 
   const { data, error } = await supabase
     .from('user_shot_types')
-    .insert([{ ...shotTypeData, user_id: user.id }])
+    .insert([{ ...shotTypeData, user_id: targetUserId }])
     .select()
     .single();
 
@@ -220,15 +257,23 @@ export const deleteShotType = async (shotTypeId) => {
  * @param {number[]} clubIds - An array of club IDs to associate with this bag.
  */
 export const createBag = async (bagData, clubIds = []) => {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("User not authenticated.");
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session) throw new Error("User not authenticated.");
+
+  const impersonatedEmail = session.user.user_metadata?.impersonatedUser;
+  let targetUserId = session.user.id;
+
+  if (impersonatedEmail) {
+    const { data: profile } = await supabase.from('user_profiles').select('user_id').eq('email', impersonatedEmail).single();
+    if (profile) targetUserId = profile.user_id;
+  }
 
   // If this bag is being set as default, unset any other default bag for this user in a transaction.
   if (bagData.is_default) {
     const { error: unsetError } = await supabase
       .from('bags')
       .update({ is_default: false })
-      .eq('user_id', user.id)
+      .eq('user_id', targetUserId)
       .eq('is_default', true);
 
     if (unsetError) throw unsetError;
@@ -237,7 +282,7 @@ export const createBag = async (bagData, clubIds = []) => {
   // Create the bag
   const { data: newBag, error: bagError } = await supabase
     .from('bags')
-    .insert([{ ...bagData, user_id: user.id }])
+    .insert([{ ...bagData, user_id: targetUserId }])
     .select()
     .single();
 
@@ -262,13 +307,21 @@ export const createBag = async (bagData, clubIds = []) => {
 export const updateBag = async (bagId, updates, clubIds) => {
   // If this bag is being set as default, unset any other default bag for this user.
   if (updates.is_default) {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("User not authenticated.");
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) throw new Error("User not authenticated.");
+
+    const impersonatedEmail = session.user.user_metadata?.impersonatedUser;
+    let targetUserId = session.user.id;
+
+    if (impersonatedEmail) {
+      const { data: profile } = await supabase.from('user_profiles').select('user_id').eq('email', impersonatedEmail).single();
+      if (profile) targetUserId = profile.user_id;
+    }
 
     const { error: unsetError } = await supabase
       .from('bags')
       .update({ is_default: false })
-      .eq('user_id', user.id)
+      .eq('user_id', targetUserId)
       .eq('is_default', true)
       .neq('id', bagId); // Don't unset the current bag we are updating
 

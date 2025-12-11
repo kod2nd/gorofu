@@ -123,14 +123,21 @@ function App() {
   const handleImpersonate = async (targetUser) => {
     try {
       await userService.startImpersonation(targetUser.email);
+      // Set the state, but don't navigate immediately.
+      // Let the useEffect handle the navigation after the state is confirmed.
       setImpersonatedUser(targetUser);
-      setActivePage('dashboard'); // Go to the user's dashboard
     } catch (error) {
       console.error("Failed to start impersonation:", error);
       // Optionally, show a snackbar error to the admin
     }
   };
 
+  // This effect runs when impersonation starts.
+  useEffect(() => {
+    if (impersonatedUser) {
+      setActivePage('dashboard'); // Go to the user's dashboard after state is set.
+    }
+  }, [impersonatedUser]);
 
   const handleExitImpersonation = async () => {
     try {
@@ -441,6 +448,7 @@ function App() {
                   <MyBagPage
                     userProfile={impersonatedUser || userProfile}
                     isActive={activePage === 'myBag'}
+                    impersonatedUser={impersonatedUser}
                   />
                 </PageContainer>
               </Suspense>
