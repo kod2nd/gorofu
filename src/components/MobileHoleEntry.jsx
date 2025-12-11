@@ -110,10 +110,12 @@ const PuttSelector = ({ stat, holeData, onHoleChange }) => {
       <Box sx={{ 
         display: 'grid', 
         gridTemplateColumns: {
-          xs: 'repeat(auto-fit, minmax(40px, 1fr))',
-          sm: 'repeat(5, 1fr)'
+          xs: 'repeat(5, 1fr)',
+          sm: 'repeat(5, minmax(40px, 50px))'
         }, 
-        gap: 1 }}>
+        gap: 1,
+        justifyContent: { sm: 'start' }
+      }}>
         {primaryOptions.map((putt) => (
           <Button
             key={putt}
@@ -130,10 +132,13 @@ const PuttSelector = ({ stat, holeData, onHoleChange }) => {
         <Box sx={{ 
           display: 'grid', 
           gridTemplateColumns: {
-            xs: 'repeat(auto-fit, minmax(40px, 1fr))',
-            sm: 'repeat(5, 1fr)'
+            xs: 'repeat(5, 1fr)',
+            sm: 'repeat(5, minmax(40px, 50px))'
           }, 
-          gap: 1, mt: 1 }}>
+          gap: 1, 
+          mt: 1,
+          justifyContent: { sm: 'start' }
+        }}>
           {extendedOptions.map((putt) => (
             <Button
               key={putt}
@@ -591,10 +596,12 @@ const MobileHoleEntry = ({
                 <Box sx={{ 
                   display: 'grid', 
                   gridTemplateColumns: {
-                    xs: 'repeat(auto-fit, minmax(40px, 1fr))',
-                    sm: 'repeat(3, 1fr)'
+                    xs: 'repeat(3, 1fr)',
+                    sm: 'repeat(3, minmax(40px, 50px))'
                   }, 
-                  gap: 1 }}>
+                  gap: 1,
+                  justifyContent: { sm: 'start' }
+                }}>
                   {parOptions.map((par) => (
                     <Button
                       key={par}
