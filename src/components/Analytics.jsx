@@ -17,10 +17,10 @@ import {
 } from '@mui/material';
 import { LineChart, Line, BarChart, Bar, Tooltip, XAxis, YAxis, CartesianGrid, Legend, ResponsiveContainer, Cell, LabelList } from 'recharts';
 import { TrendingUp, TrendingDown, ShowChart, Remove } from '@mui/icons-material';
-import RelativeDistanceAnalysis from './analytics/RelativeDistanceAnalysis';
-import PerformanceLineChart from './analytics/PerformanceLineChart';
-import CustomTooltip from './analytics/CustomTooltip';
-import CustomLegend from './analytics/CustomLegend';
+import RelativeDistanceAnalysis from './analytics_temp/RelativeDistanceAnalysis';
+import PerformanceLineChart from './analytics_temp/PerformanceLineChart';
+import CustomTooltip from './analytics_temp/CustomTooltip';
+import CustomLegend from './analytics_temp/CustomLegend';
 
 // Modern color palette
 const COLORS = {
