@@ -4,7 +4,7 @@ import { userService } from "../services/userService";
 import { roundService } from "../services/roundService";
 import { elevatedCardStyles } from "../styles/commonStyles";
 import RoundsTable from "./RoundsTable";
-import Analytics from "./analytics_temp";
+import Analytics from "./analytics";
 import AllTimeStats from "./AllTimeStats";
 import PageHeader from "./PageHeader";
 import DashboardFilters from "./DashboardFilters";
