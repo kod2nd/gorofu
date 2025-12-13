@@ -171,17 +171,17 @@ useEffect(() => {
 
   return (
     <Box>
-      <PageHeader
-        title="All Time Stats"
-        subtitle="Golf Performance Overview"
-        actions={
+      <Box sx={{
+          mb: 3,
+        }}>
+        <Paper {...elevatedCardStyles}>
           <AllTimeStats
-            cumulativeStats={cumulativeStats}
-            szirStreak={szirStreak}
-            szParStreak={szParStreak}
-          />
-        }
-      />
+                cumulativeStats={cumulativeStats}
+                szirStreak={szirStreak}
+                szParStreak={szParStreak}
+              />
+        </Paper>
+      </Box>
 
       {/* Main content area with two columns on larger screens */}
       <Box

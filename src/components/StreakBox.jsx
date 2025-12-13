@@ -12,7 +12,7 @@ const szirTiers = [
 const szParTiers = [
   { name: 'Platinum', min: 36, bgColor: 'linear-gradient(135deg, #e5e4e2, #b8b8b8)', borderColor: '#c0c0c0', textColor: '#212121' },
   { name: 'Gold', min: 18, bgColor: 'linear-gradient(135deg, #ffd700, #d4af37)', borderColor: '#b8860b', textColor: '#212121' },
-  { name: 'Silver', min: 10, bgColor: 'linear-gradient(135deg, #c0c0c0, #a8a8a8)', borderColor: '#808080', textColor: '#212121' },
+  { name: 'Silver', min: 10, bgColor: 'linear-gradient(135deg, #c0c0c0, #a8a8a8)', borderColor: '#c0c0c0', textColor: '#212121' },
   { name: 'Bronze', min: 5, bgColor: 'linear-gradient(135deg, #cd7f32, #8b4513)', borderColor: '#654321', textColor: 'white' },
 ];
 

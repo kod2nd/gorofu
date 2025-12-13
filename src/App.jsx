@@ -7,6 +7,10 @@ import {
   Container,
   AppBar,
   Toolbar,
+  Menu,
+  MenuItem,
+  Avatar,
+  Divider,
   Typography,
   Snackbar,
   Alert,
@@ -58,6 +62,7 @@ function App() {
   const [viewingRoundId, setViewingRoundId] = useState(null);
   const [impersonatedUser, setImpersonatedUser] = useState(null);
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
+  const [anchorEl, setAnchorEl] = useState(null);
   const [notesRefreshKey, setNotesRefreshKey] = useState(0);
   const [roundsRefreshKey, setRoundsRefreshKey] = useState(0);
   const interactionsPageRef = useRef(null);
@@ -154,6 +159,14 @@ function App() {
     await userService.stopImpersonation(); // Ensure impersonation is cleared on sign out
     if (error) console.error('Error signing out:', error.message);
     setImpersonatedUser(null); // Clear impersonation on sign out
+  };
+
+  const handleMenu = (event) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleCloseMenu = () => {
+    setAnchorEl(null);
   };
 
   // Determine which user's data to show
@@ -327,6 +340,64 @@ function App() {
               <Typography variant="h6" noWrap component="div">
                 {getPageTitle(activePage)}
               </Typography>
+              
+              {/* User Profile Menu - Desktop Only */}
+              {!isMobile && userProfile && (
+                <Box sx={{ ml: 'auto' }}>
+                  <IconButton
+                    size="large"
+                    aria-label="account of current user"
+                    aria-controls="menu-appbar"
+                    aria-haspopup="true"
+                    onClick={handleMenu}
+                    color="inherit"
+                  >
+                    <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
+                      {userProfile.full_name ? userProfile.full_name.charAt(0).toUpperCase() : '?'}
+                    </Avatar>
+                  </IconButton>
+                  <Menu
+                    id="menu-appbar"
+                    anchorEl={anchorEl}
+                    anchorOrigin={{
+                      vertical: 'bottom',
+                      horizontal: 'right',
+                    }}
+                    keepMounted
+                    transformOrigin={{
+                      vertical: 'top',
+                      horizontal: 'right',
+                    }}
+                    open={Boolean(anchorEl)}
+                    onClose={handleCloseMenu}
+                    slotProps={{
+                      paper: {
+                        sx: {
+                          mt: 1.5,
+                          borderRadius: 2,
+                          boxShadow: '0px 10px 30px -5px rgba(0,0,0,0.15)',
+                        }
+                      }
+                    }}
+                  >
+                    <Box sx={{ px: 2, py: 1, borderBottom: 1, borderColor: 'divider' }}>
+                      <Typography variant="subtitle1" fontWeight={600}>
+                        Hello, {userProfile.full_name || 'User'}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        {userProfile.email}
+                      </Typography>
+                    </Box>
+                    <MenuItem onClick={() => { handleCloseMenu(); setActivePage('account'); }}>
+                      My Account
+                    </MenuItem>
+                    <Divider />
+                    <MenuItem onClick={() => { handleCloseMenu(); handleSignOut(); }} sx={{ color: 'error.main' }}>
+                      Sign Out
+                    </MenuItem>
+                  </Menu>
+                </Box>
+              )}
             </Toolbar>
           </AppBar>
           <Box
