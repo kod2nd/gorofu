@@ -501,6 +501,7 @@ function App() {
                   <RoundDetailsPage
                     roundId={viewingRoundId}
                     user={activeUser}
+                    userProfile={userProfile}
                     onEdit={handleEditRound}
                     onBack={() => { setViewingRoundId(null); setActivePage('roundsHistory'); }}
                   />
