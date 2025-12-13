@@ -6,7 +6,7 @@ import FormatListBulletedAddIcon from '@mui/icons-material/FormatListBulletedAdd
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import EditNote from "@mui/icons-material/EditNote";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
-import BallotIcon from '@mui/icons-material/Ballot';
+import HistoryIcon from '@mui/icons-material/History';
 import LogoutIcon from '@mui/icons-material/Logout';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import LuggageIcon from '@mui/icons-material/Luggage';
@@ -25,7 +25,7 @@ const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, active
     { text: "Dashboard", icon: <ViewQuiltIcon />, page: "dashboard" },
     { text: "Account", icon: <AccountCircleIcon />, page: "account" },
     { text: "Add Round", icon: <FormatListBulletedAddIcon />, page: "addRound" }, 
-    { text: "Rounds History", icon: <BallotIcon />, page: "roundsHistory" },
+    { text: "Rounds History", icon: <HistoryIcon />, page: "roundsHistory" },
     { text: "My Bag", icon: <LuggageIcon />, page: "myBag" },
     { text: "Notes", icon: <EditNote />, page: "studentInteractions" },
     { text: "View Round", icon: <VisibilityIcon />, page: "viewRound", hidden: true }, // Hidden from main menu
