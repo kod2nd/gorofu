@@ -84,11 +84,12 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive, onNoteUpdat
   const [activeTab, setActiveTab] = useState('lesson'); // 'lesson' or 'personal'
   
   // State for delete confirmation
-  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, note: null });
+const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, type: '' });
 
   const [replyingToNote, setReplyingToNote] = useState(null);
   // State for forum-style view
   const [viewingThreadId, setViewingThreadId] = useState(null);
+  const [currentThreadData, setCurrentThreadData] = useState(null);
 
   const editor = useEditor({
     extensions: [
@@ -316,19 +317,44 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive, onNoteUpdat
     handleReplyClick,
   }));
 
-    const handleDeleteRequest = (note) => {
-    setDeleteConfirm({ open: true, note: note });
+  const handleDeleteRequest = (item) => {
+    console.log('[StudentInteractionsPage] handleDeleteRequest triggered for item:', item);
+    // A reply will have a parent_note_id, a top-level note will not.
+    const type = item.parent_note_id ? 'reply' : 'note';
+    setDeleteConfirm({ open: true, item: item, type: type });
   };
 
   const handleConfirmDelete = async () => {
-    if (!deleteConfirm.note) return;
+    console.log('[StudentInteractionsPage] handleConfirmDelete called.');
+    if (!deleteConfirm.item) {
+      console.log('[StudentInteractionsPage] No item to delete in state. Aborting.');
+      return;
+    }
+    const { item, type } = deleteConfirm;
+    console.log(`[StudentInteractionsPage] Attempting to delete ${type} with ID:`, item.id);
     try {
-      await userService.deleteNote(deleteConfirm.note.id);
-      setDeleteConfirm({ open: false, note: null });
-      loadNotesForStudent(activeTab === 'personal' ? userProfile.user_id : selectedStudentId, 0, true); // Refresh notes
+      await userService.deleteNote(item.id);
+      console.log('[StudentInteractionsPage] userService.deleteNote successful.');
+      setDeleteConfirm({ open: false, item: null, type: '' });
+
+      if (type === 'reply' && viewingThreadId) {
+        console.log('[StudentInteractionsPage] Deleting a reply. Refreshing thread view for ID:', viewingThreadId);
+        // If we deleted a reply, just refresh the current thread view
+        const updatedThread = await userService.getNoteThread(viewingThreadId);
+        console.log('[StudentInteractionsPage] Fetched updated thread data:', updatedThread);        
+        // By setting the explicit data for the viewing thread, we force a re-render
+        // of the detail view with the new replies array.
+        setCurrentThreadData(updatedThread);
+      } else {
+        console.log('[StudentInteractionsPage] Deleting a parent note. Refreshing note list.');
+        // If we deleted a parent note, go back to the list and refresh
+        setViewingThreadId(null);
+        loadNotesForStudent(activeTab === 'personal' ? userProfile.user_id : selectedStudentId, 0, true);
+      }
     } catch (err) {
+      console.error('[StudentInteractionsPage] Failed to delete note:', err);
       setError('Failed to delete note: ' + err.message);
-      setDeleteConfirm({ open: false, note: null });
+      setDeleteConfirm({ open: false, item: null, type: '' });
     }
   };
 
@@ -401,7 +427,12 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive, onNoteUpdat
 
   const viewingThread = useMemo(() => {
     if (!viewingThreadId) return null;
-    return threadedNotes.find(note => note.id === viewingThreadId);
+    const thread = threadedNotes.find(note => note.id === viewingThreadId);
+    if (thread) {
+      // Set the separate state for the detail view to ensure it has the latest data
+      setCurrentThreadData(thread);
+    }
+    return thread;
   }, [viewingThreadId, threadedNotes]);
 
 
@@ -593,11 +624,14 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive, onNoteUpdat
                     ? 'Start by adding your first personal note.'
                     : 'No lesson notes found for this student.'}
                 </Typography>
-              </Card>
-            ) : viewingThread ? (
+              </Card> 
+            ) : viewingThreadId && currentThreadData ? (
               <NoteThreadDetailView 
-                note={viewingThread}
-                onBack={() => setViewingThreadId(null)}
+                note={currentThreadData}
+                onBack={() => {
+                  setViewingThreadId(null);
+                  setCurrentThreadData(null);
+                }}
                 userProfile={userProfile}
                 onReply={handleReplyClick}
                 onEdit={handleOpenForm}
@@ -778,14 +812,49 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive, onNoteUpdat
                 backgroundColor: 'white',
               }}
               sx={{
-                // Styles for Tiptap placeholder
-                '& .tiptap p.is-editor-empty:first-child::before': {
+                // This is the key: Target ProseMirror
+                '& .ProseMirror': {
+                  // Paragraph spacing
+                  p: {
+                    marginTop: '0.25rem !important',
+                    marginBottom: '0.25rem !important',
+                    lineHeight: 1.4,
+                  },
+                  
+                  // Headings
+                  'h1, h2, h3, h4, h5, h6': {
+                    marginTop: '0.75rem',
+                    marginBottom: '0.25rem',
+                  },
+                  
+                  // Lists
+                  'ul, ol': {
+                    marginTop: '0.5rem',
+                    marginBottom: '0.5rem',
+                    paddingLeft: '1.5rem',
+                  },
+                  
+                  // Code blocks
+                  pre: {
+                    marginTop: '0.75rem',
+                    marginBottom: '0.75rem',
+                  },
+                  
+                  // Blockquotes
+                  blockquote: {
+                    marginTop: '0.75rem',
+                    marginBottom: '0.75rem',
+                  }
+                },
+                
+                // Placeholder (this works differently)
+                '& .ProseMirror p.is-editor-empty:first-child::before': {
                   content: 'attr(data-placeholder)',
                   float: 'left',
                   color: '#adb5bd',
                   pointerEvents: 'none',
                   height: 0,
-                },
+                }
               }}
             />
           </Box>
@@ -816,10 +885,14 @@ const StudentInteractionsPage = forwardRef(({ userProfile, isActive, onNoteUpdat
       {/* Delete Confirmation Dialog */}
        <ConfirmationDialog
           open={deleteConfirm.open}
-          onClose={() => setConfirmDelete({ open: false, note: null })}
+          onClose={() => setDeleteConfirm({ open: false, item: null, type: '' })}
           onConfirm={handleConfirmDelete}
-          title="Delete Note?"
-          contentText={`Are you sure you want to permanently delete the note with the subject "${deleteConfirm.note?.subject}"? This action cannot be undone.`}
+          title={`Delete ${deleteConfirm.type}?`}
+          contentText={
+            deleteConfirm.type === 'reply'
+              ? 'Are you sure you want to permanently delete this reply? This action cannot be undone.'
+              : `Are you sure you want to permanently delete the note with the subject "${deleteConfirm.item?.subject}"? This action cannot be undone.`
+          }
           confirmText="Delete"
           confirmColor="error"
         />

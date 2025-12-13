@@ -18,13 +18,6 @@ const NoteThreadRow = ({ note, onClick, onFavorite, onPin, isViewingSelfAsCoach,
   const canFavorite = !isViewingSelfAsCoach;
   const canPin = userProfile.roles.includes('coach') && !isViewingSelfAsCoach;
   const isPersonalNote = note.author_id === note.student_id;
-  
-  const authorInitials = note.author?.full_name
-    ?.split(' ')
-    .map(n => n[0])
-    .join('')
-    .toUpperCase()
-    .slice(0, 2) || '??';
 
   return (
     <Paper
@@ -34,7 +27,7 @@ const NoteThreadRow = ({ note, onClick, onFavorite, onPin, isViewingSelfAsCoach,
       elevation={isHovered ? 4 : 1}
       sx={{
         display: 'flex',
-        alignItems: 'center',
+        alignItems: 'flex-start', // Align items to the top
         p: { xs: 1.5, sm: 2 },
         borderRadius: 3,
         border: '1px solid',
@@ -60,39 +53,27 @@ const NoteThreadRow = ({ note, onClick, onFavorite, onPin, isViewingSelfAsCoach,
       <Box sx={{ 
         display: 'flex', 
         alignItems: 'center', 
-        gap: { xs: 1, sm: 2 }, 
+        gap: { xs: 1.5, sm: 2 }, 
         flex: 1,
         minWidth: 0 
       }}>
-        {/* Author Avatar */}
-        <Avatar 
-          sx={{ 
-            width: { xs: 40, sm: 48 },
-            height: { xs: 40, sm: 48 },
-            bgcolor: isPersonalNote ? 'secondary.main' : 'primary.main',
-            fontSize: { xs: '0.875rem', sm: '1rem' },
-            fontWeight: 600
-          }}
-        >
-          {authorInitials}
-        </Avatar>
-
         {/* Content */}
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography 
             variant="subtitle1" 
             fontWeight={700}
-            noWrap
             sx={{ 
-              fontSize: { xs: '0.875rem', sm: '1rem' },
+              fontSize: { xs: '1rem', sm: '1.1rem' },
               color: 'text.primary',
-              mb: 0.75
+              mb: 1,
+              lineHeight: 1.3,
+              wordBreak: 'break-word', // Allow long subjects to wrap
             }}
           >
             {note.subject || 'No Subject'}
           </Typography>
 
-          <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 0.5, flexWrap: 'wrap', gap: 0.5 }}>
+          <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 1, flexWrap: 'wrap', gap: 0.5 }}>
             <Chip 
               icon={isPersonalNote ? <PersonOutline /> : <School />}
               label={isPersonalNote ? "Personal" : "Lesson"} 
@@ -106,19 +87,19 @@ const NoteThreadRow = ({ note, onClick, onFavorite, onPin, isViewingSelfAsCoach,
                 '& .MuiChip-icon': { fontSize: '0.875rem' }
               }}
             />
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem', flexShrink: 0 }}>
               {toProperCase(note.author?.full_name)}
             </Typography>
-            <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'divider' }} />
-            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
+            <Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: 'divider', display: { xs: 'none', sm: 'block' } }} />
+            <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem', display: { xs: 'none', sm: 'block' } }}>
               {new Date(note.lesson_date).toLocaleDateString('en-UK', { 
                 month: 'short', 
                 day: 'numeric', 
                 year: 'numeric' 
               })}
             </Typography>
-            <Box sx={{ width: 4, height: 4, borderRadius: '50%', bgcolor: 'divider' }} />
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+            <Box sx={{ width: 3, height: 3, borderRadius: '50%', bgcolor: 'divider' }} />
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, flexShrink: 0 }}>
               <ChatBubbleOutline sx={{ fontSize: '0.875rem', color: 'text.secondary' }} />
               <Typography variant="caption" color="text.secondary" sx={{ fontSize: '0.75rem' }}>
                 {note.replies?.length || 0}
@@ -135,7 +116,8 @@ const NoteThreadRow = ({ note, onClick, onFavorite, onPin, isViewingSelfAsCoach,
               display: '-webkit-box',
               WebkitLineClamp: 2,
               WebkitBoxOrient: 'vertical',
-              overflow: 'hidden'
+              overflow: 'hidden',
+              wordBreak: 'break-word', // Ensure long words wrap
             }}
           >
             {stripHtmlAndTruncate(note.note, 80)}
@@ -146,10 +128,11 @@ const NoteThreadRow = ({ note, onClick, onFavorite, onPin, isViewingSelfAsCoach,
         <Box sx={{ 
           display: 'flex', 
           alignItems: 'center', 
-          gap: 0.5,
+          gap: { xs: 0, sm: 0.5 },
           opacity: isHovered ? 1 : 0.7,
-          transition: 'opacity 0.2s ease'
+          transition: 'opacity 0.2s ease',
         }}>
+          {/* Pin and Favorite buttons are removed as per user feedback in another thread, keeping it clean */}
           {canPin && (
             <Tooltip title={note.is_pinned_to_dashboard ? "Unpin from dashboard" : "Pin to dashboard"}>
               <IconButton
@@ -196,7 +179,7 @@ const NoteThreadRow = ({ note, onClick, onFavorite, onPin, isViewingSelfAsCoach,
             sx={{ 
               fontSize: { xs: '1.25rem', sm: '1.5rem' },
               color: 'text.secondary',
-              ml: 0.5,
+              ml: { xs: 0, sm: 0.5 },
               transition: 'transform 0.3s ease',
               transform: isHovered ? 'translateX(4px)' : 'none'
             }} 

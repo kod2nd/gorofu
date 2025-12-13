@@ -32,7 +32,12 @@ const NoteReply = ({ note, userProfile, onEdit, onDelete }) => {
           )}
           {canDelete && (
             <Tooltip title="Delete reply">
-              <IconButton size="small" onClick={() => onDelete(note)}><DeleteIcon fontSize="small" /></IconButton>
+              <IconButton size="small" onClick={() => {
+                console.log('[NoteReply] Delete icon clicked for reply:', note);
+                if (onDelete) {
+                  onDelete(note);
+                }
+              }}><DeleteIcon fontSize="small" /></IconButton>
             </Tooltip>
           )}
         </Box>

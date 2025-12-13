@@ -815,6 +815,14 @@ CREATE POLICY "Users can update their own notes" ON public.coach_notes FOR UPDAT
   author_id = auth.uid()
 );
 
+DROP POLICY IF EXISTS "Users can delete their own notes or replies" ON public.coach_notes;
+CREATE POLICY "Users can delete their own notes or replies" ON public.coach_notes FOR DELETE USING (
+  -- The user is the author of the note/reply
+  (author_id = auth.uid()) OR
+  -- Or the user is a coach involved in the student's thread
+  (has_roles(ARRAY['coach']))
+);
+
 -- Rounds: Users can only access their own rounds
 CREATE POLICY "Users can view their own rounds, super admins can view all" ON rounds FOR SELECT USING (user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR is_my_student(user_email) OR has_roles(ARRAY['super_admin']));
 CREATE POLICY "Users can create their own rounds, super admins can create for others" ON rounds FOR INSERT WITH CHECK (auth.role() = 'authenticated' AND (user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR has_roles(ARRAY['super_admin'])));
