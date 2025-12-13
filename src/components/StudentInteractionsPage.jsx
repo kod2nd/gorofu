@@ -318,35 +318,27 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
   }));
 
   const handleDeleteRequest = (item) => {
-    console.log('[StudentInteractionsPage] handleDeleteRequest triggered for item:', item);
     // A reply will have a parent_note_id, a top-level note will not.
     const type = item.parent_note_id ? 'reply' : 'note';
     setDeleteConfirm({ open: true, item: item, type: type });
   };
 
   const handleConfirmDelete = async () => {
-    console.log('[StudentInteractionsPage] handleConfirmDelete called.');
     if (!deleteConfirm.item) {
-      console.log('[StudentInteractionsPage] No item to delete in state. Aborting.');
       return;
     }
     const { item, type } = deleteConfirm;
-    console.log(`[StudentInteractionsPage] Attempting to delete ${type} with ID:`, item.id);
     try {
       await userService.deleteNote(item.id);
-      console.log('[StudentInteractionsPage] userService.deleteNote successful.');
       setDeleteConfirm({ open: false, item: null, type: '' });
 
       if (type === 'reply' && viewingThreadId) {
-        console.log('[StudentInteractionsPage] Deleting a reply. Refreshing thread view for ID:', viewingThreadId);
         // If we deleted a reply, just refresh the current thread view
-        const updatedThread = await userService.getNoteThread(viewingThreadId);
-        console.log('[StudentInteractionsPage] Fetched updated thread data:', updatedThread);        
+        const updatedThread = await userService.getNoteThread(viewingThreadId);     
         // By setting the explicit data for the viewing thread, we force a re-render
         // of the detail view with the new replies array.
         setCurrentThreadData(updatedThread);
       } else {
-        console.log('[StudentInteractionsPage] Deleting a parent note. Refreshing note list.');
         // If we deleted a parent note, go back to the list and refresh
         setViewingThreadId(null);
         loadNotesForStudent(activeTab === 'personal' ? userProfile.user_id : selectedStudentId, 0, true);

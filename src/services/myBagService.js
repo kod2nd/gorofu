@@ -13,12 +13,10 @@ export const getMyBagData = async (impersonatedUser = null) => {
 
   if (impersonatedUser) {
     targetUserId = impersonatedUser.user_id;
-    console.log(`[myBagService] getMyBagData called for impersonated user ID: ${targetUserId}`);
   } else {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) throw new Error("User not authenticated for getMyBagData.");
     targetUserId = user.id;
-    console.log(`[myBagService] getMyBagData called for current user ID: ${targetUserId}`);
   }
 
   const [clubsResponse, bagsResponse, shotTypesResponse] = await Promise.all([
@@ -48,8 +46,6 @@ export const getMyBagData = async (impersonatedUser = null) => {
     console.error('Error fetching shot types:', shotTypesResponse.error);
     throw shotTypesResponse.error;
   }
-
-  console.log('[myBagService] Data fetched from Supabase:', { clubs: clubsResponse.data, bags: bagsResponse.data, shotTypes: shotTypesResponse.data });
 
   const clubs = clubsResponse.data || [];
   const bags = bagsResponse.data || [];

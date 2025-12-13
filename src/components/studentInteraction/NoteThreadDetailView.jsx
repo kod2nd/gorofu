@@ -512,7 +512,6 @@ const NoteThreadDetailView = ({ note, onBack, userProfile, ...handlers }) => {
                         userProfile={userProfile}
                         onEdit={() => handlers.onEdit && handlers.onEdit(reply)}
                         onDelete={(replyToDelete) => {
-                          console.log('[NoteThreadDetailView] onDelete handler called for reply:', replyToDelete);
                           handlers.onDelete && handlers.onDelete(replyToDelete);
                         }}
                       />

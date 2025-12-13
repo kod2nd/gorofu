@@ -33,7 +33,6 @@ const NoteReply = ({ note, userProfile, onEdit, onDelete }) => {
           {canDelete && (
             <Tooltip title="Delete reply">
               <IconButton size="small" onClick={() => {
-                console.log('[NoteReply] Delete icon clicked for reply:', note);
                 if (onDelete) {
                   onDelete(note);
                 }
