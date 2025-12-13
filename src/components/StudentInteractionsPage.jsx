@@ -786,33 +786,21 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
             </>
           )}
           
-          <Box> {/* Tiptap editor section */}
-            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-              {replyingToNote ? 'Your Reply' : 'Notes'}
-            </Typography>
-            <MenuBar editor={editor} />
-            <EditorContent 
-              editor={editor} 
-              style={{ 
-                border: '1px solid #e0e0e0',
-                borderTop: 'none',
-                borderRadius: '0 0 12px 12px',
-                padding: '8px 16px 16px 16px',
-                minHeight: '250px',
-                maxHeight: '400px',
-                overflow: 'auto',
-                backgroundColor: 'white',
-              }}
-              sx={{
+          <Box
+          sx={{
                 // This is the key: Target ProseMirror
-                '& .ProseMirror': {
-                  // Paragraph spacing
-                  p: {
-                    marginTop: '0.25rem !important',
-                    marginBottom: '0.25rem !important',
-                    lineHeight: 1.4,
+                '& .ProseMirror p': {
+                    margin: 0,
+                    lineHeight: 1.6,
                   },
-                  
+                '& .ProseMirror:focus': {
+                  outline: 'none',
+                },
+                '& .ProseMirror:focus-visible': {
+                  outline: 'none',
+                },
+                '& .ProseMirror': {
+                                    
                   // Headings
                   'h1, h2, h3, h4, h5, h6': {
                     marginTop: '0.75rem',
@@ -836,6 +824,7 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
                   blockquote: {
                     marginTop: '0.75rem',
                     marginBottom: '0.75rem',
+                    backgroundColor: 'red'
                   }
                 },
                 
@@ -848,6 +837,24 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
                   height: 0,
                 }
               }}
+          > {/* Tiptap editor section */}
+            <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
+              {replyingToNote ? 'Your Reply' : 'Notes'}
+            </Typography>
+            <MenuBar editor={editor} />
+            <EditorContent 
+              editor={editor} 
+              style={{ 
+                border: '1px solid #e0e0e0',
+                borderTop: 'none',
+                borderRadius: '0 0 12px 12px',
+                padding: '8px 16px 16px 16px',
+                minHeight: '250px',
+                maxHeight: '400px',
+                overflow: 'auto',
+                backgroundColor: 'white',
+              }}
+              
             />
           </Box>
         </DialogContent>

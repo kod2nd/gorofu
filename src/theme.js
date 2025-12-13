@@ -58,6 +58,13 @@ const theme = createTheme({
     },
   },
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        '*:focus:not(:focus-visible)': {
+          outline: 'none',
+        },
+      },
+    },
     MuiButton: {
       styleOverrides: {
         root: {
