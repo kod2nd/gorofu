@@ -1,18 +1,19 @@
 import React, { useMemo } from 'react';
 import { Box, Button, Typography, Divider, Paper, List, ListItem, ListItemButton, ListItemIcon, ListItemText, IconButton } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
-import DashboardIcon from "@mui/icons-material/Dashboard";
-import AddCircleIcon from "@mui/icons-material/AddCircle";
+import ViewQuiltIcon from '@mui/icons-material/ViewQuilt';
+import FormatListBulletedAddIcon from '@mui/icons-material/FormatListBulletedAdd';
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
-import AddComment from "@mui/icons-material/AddComment";
+import EditNote from "@mui/icons-material/EditNote";
 import AdminPanelSettingsIcon from "@mui/icons-material/AdminPanelSettings";
+import BallotIcon from '@mui/icons-material/Ballot';
 import LogoutIcon from '@mui/icons-material/Logout';
-import HistoryIcon from '@mui/icons-material/History';
 import VisibilityIcon from '@mui/icons-material/Visibility';
-import GroupIcon from '@mui/icons-material/Group'; 
-import StraightenIcon from '@mui/icons-material/Straighten';
-import SupervisedUserCircleIcon from '@mui/icons-material/SupervisedUserCircle';
+import LuggageIcon from '@mui/icons-material/Luggage';
+import PeopleOutlineOutlinedIcon from '@mui/icons-material/PeopleOutlineOutlined';
+import ManageAccountsIcon from '@mui/icons-material/ManageAccounts';
 import SportsGolfIcon from '@mui/icons-material/SportsGolf';
+import GolfCourseIcon from '@mui/icons-material/GolfCourse';
 import MenuIcon from '@mui/icons-material/Menu';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 
@@ -21,29 +22,24 @@ const Sidebar = ({ onNavClick, onSignOut, isExpanded, handleDrawerToggle, active
 
   const menuItems = useMemo(() => {
     const items = [
-    { text: "Dashboard", icon: <DashboardIcon />, page: "dashboard" },
-    { text: "Add Round", icon: <AddCircleIcon />, page: "addRound" }, 
-    { text: "My Bag", icon: <StraightenIcon />, page: "myBag" },
-    { text: "Rounds History", icon: <HistoryIcon />, page: "roundsHistory" },
+    { text: "Dashboard", icon: <ViewQuiltIcon />, page: "dashboard" },
     { text: "Account", icon: <AccountCircleIcon />, page: "account" },
+    { text: "Add Round", icon: <FormatListBulletedAddIcon />, page: "addRound" }, 
+    { text: "Rounds History", icon: <BallotIcon />, page: "roundsHistory" },
+    { text: "My Bag", icon: <LuggageIcon />, page: "myBag" },
+    { text: "Notes", icon: <EditNote />, page: "studentInteractions" },
     { text: "View Round", icon: <VisibilityIcon />, page: "viewRound", hidden: true }, // Hidden from main menu
     ];
 
     const isAdmin = userRoles?.some(role => ['admin', 'super_admin'].includes(role));
     const isCoach = userRoles?.includes('coach');
 
-    if (isCoach || isAdmin) {
-      items.push({ text: "Notes", icon: <AddComment />, page: "studentInteractions" });
-    } else {
-      items.push({ text: "Notes", icon: <AddComment />, page: "studentInteractions" });
-    }
-
     if (isAdmin) {
       items.push({ type: 'divider' }); // Add a divider before admin items
       items.push(
-        { text: "User Mgmt", icon: <GroupIcon />, page: "userManagement" },
-        { text: "Course Mgmt", icon: <SportsGolfIcon />, page: "courseManagement" },
-        { text: "Coach Mgmt", icon: <SupervisedUserCircleIcon />, page: "coachManagement" }
+        { text: "User Mgmt", icon: <ManageAccountsIcon />, page: "userManagement" },
+        { text: "Course Mgmt", icon: <GolfCourseIcon />, page: "courseManagement" },
+        { text: "Coach Mgmt", icon: <PeopleOutlineOutlinedIcon />, page: "coachManagement" }
       );
     }
 
