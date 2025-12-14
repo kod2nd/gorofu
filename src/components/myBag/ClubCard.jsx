@@ -538,7 +538,8 @@ const ClubCard = ({
                       </Typography>
                       <Typography {...typographyStyles.distanceValue}>
                         {summaryCarryRange.lowerBound} -{" "}
-                        {summaryCarryRange.median} {unitLabel}
+                        {summaryCarryRange.median}
+                        {" "}- {summaryCarryRange.upperBound} {unitLabel}
                       </Typography>
                     </Box>
                   )}
@@ -549,7 +550,8 @@ const ClubCard = ({
                       </Typography>
                       <Typography {...typographyStyles.distanceValue}>
                         {summaryTotalRange.lowerBound} -{" "}
-                        {summaryTotalRange.median} {unitLabel}
+                        {summaryTotalRange.median} 
+                        {" "}- {summaryTotalRange.upperBound} {unitLabel}
                       </Typography>
                     </Box>
                   )}
