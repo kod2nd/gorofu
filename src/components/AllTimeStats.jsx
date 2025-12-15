@@ -14,12 +14,21 @@ const StatCard = ({ label, value, tooltip, icon: Icon, color = 'primary', glow =
   const theme = useTheme();
   
   const colorMap = {
-    primary: theme.palette.primary.main,
-    secondary: theme.palette.secondary.main,
-    success: theme.palette.success.main,
-    warning: theme.palette.warning.main,
-    info: theme.palette.info.main,
-    error: theme.palette.error.main,
+    // primary: theme.palette.primary.main,
+    // secondary: theme.palette.secondary.main,
+    // success: theme.palette.success.main,
+    // warning: theme.palette.warning.main,
+    // info: theme.palette.info.main,
+    // error: theme.palette.error.main,
+    primary: '#0077C8',     // Garmin's electric blue
+    secondary: '#00A862',   // Bright sports green
+    success: '#34C759',     // Apple-style success green
+    warning: '#FF9500',     // Garmin orange
+    info: '#5AC8FA',        // Light info blue
+    error: '#FF3B30',       // Alert red
+    performance: '#5856D6', // Performance purple
+    endurance: '#FF2D55',   // Endurance pink/red
+    
   };
 
   const mainColor = colorMap[color] || colorMap.primary;
