@@ -530,7 +530,7 @@ const ClubCard = ({
               </Box>
 
               {!isPutter && hasSummaryData && (
-                <Stack direction="row" spacing={{ xs: 2, sm: 3 }} sx={{ alignItems: "center", flexWrap: "wrap", gap: 1 }}>
+                <Stack direction="row" sx={{ alignItems: "center", flexWrap: "wrap", gap: { xs: 2, sm: 3 } }}>
                   {summaryCarryRange && (
                     <Box sx={{ textAlign: { xs: "left", sm: "center" } }}>
                       <Typography {...typographyStyles.distanceLabel}>

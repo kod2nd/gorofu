@@ -96,6 +96,7 @@ const StatCard = ({ label, value, tooltip, icon: Icon, color = 'primary', glow =
                 alignItems: 'center',
                 justifyContent: 'center',
                 mr: 1.5,
+                flexShrink: 0, // Prevent the circle from shrinking and distorting
                 border: `1px solid ${alpha(mainColor, 0.2)}`,
               }}
             >
