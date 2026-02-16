@@ -17,17 +17,22 @@ export const cardStyles = {
 
 // Elevated card variant for main containers
 export const elevatedCardStyles = {
-  elevation: 4,
+  elevation: 0,
   sx: {
-    p: { xs: 2, md: 4 },
+    p: { xs: 2, md: 3 },
     borderRadius: 4,
-    transition: 'all 0.2s ease-in-out',
-    '&:hover': {
-      transform: 'translateY(-3px)',
-      boxShadow: 8,
-    }
-  }
+    border: "1px solid",
+    borderColor: "divider",
+    backgroundColor: "background.paper",
+    transition: "box-shadow 160ms ease, border-color 160ms ease",
+    boxShadow: "0 1px 2px rgba(16,24,40,0.06)",
+    "&:hover": {
+      boxShadow: "0 8px 24px rgba(16,24,40,0.10)",
+      borderColor: "rgba(99,102,241,0.35)", // subtle indigo-ish
+    },
+  },
 };
+
 
 // Section header styles for consistent typography
 export const sectionHeaderStyles = {
@@ -42,11 +47,11 @@ export const sectionHeaderStyles = {
 // Common hover effects for interactive elements
 export const hoverEffects = {
   card: {
-    transition: 'all 0.2s',
-    '&:hover': {
-      boxShadow: 1,
-      borderColor: 'primary.light',
-    }
+    transition: "box-shadow 160ms ease, border-color 160ms ease",
+    "&:hover": {
+      boxShadow: "0 6px 16px rgba(16,24,40,0.10)",
+      borderColor: "rgba(0,0,0,0.10)",
+    },
   },
   button: {
     transition: 'filter 0.2s ease-in-out',
@@ -61,6 +66,7 @@ export const hoverEffects = {
     }
   }
 };
+
 
 // Action button styles for edit/delete etc.
 export const actionButtonStyles = {
@@ -137,16 +143,14 @@ export const flexboxGridStyles = {
 export const buttonStyles = {
   primary: {
     borderRadius: 3,
-    background: 'linear-gradient(90deg, #3b82f6 0%, #6366f1 100%)',
-    color: 'white',
-    fontWeight: 600,
+    textTransform: "none",
+    fontWeight: 700,
     px: 3,
     py: 1,
-    boxShadow: '0 4px 14px rgba(59, 130, 246, 0.4)',
-    '&:hover': {
-      background: 'linear-gradient(90deg, #2563eb 0%, #4f46e5 100%)',
-      boxShadow: '0 6px 20px rgba(59, 130, 246, 0.5)',
-    }
+    boxShadow: "0 1px 2px rgba(16,24,40,0.08)",
+    "&:hover": {
+      boxShadow: "0 6px 16px rgba(16,24,40,0.12)",
+    },
   },
   secondary: {
     borderRadius: 3,
@@ -276,18 +280,17 @@ export const noteStyles = {
     elevation: 0,
     sx: {
       mb: 2,
-      borderRadius: 2,
-      border: '1px solid',
-      borderColor: 'divider',
-      transition: 'all 0.2s ease',
-      '&:hover': {
-        boxShadow: 2,
-        borderColor: 'primary.light',
-        transform: 'translateY(-2px)',
+      borderRadius: 3,
+      border: "1px solid",
+      borderColor: "divider",
+      transition: "box-shadow 160ms ease, border-color 160ms ease",
+      "&:hover": {
+        boxShadow: "0 6px 16px rgba(16,24,40,0.10)",
+        borderColor: "rgba(0,0,0,0.12)",
       },
-      position: 'relative',
-      overflow: 'visible',
-    }
+      position: "relative",
+      overflow: "visible",
+    },
   },
   formPaper: {
     p: { xs: 2, sm: 3 },
