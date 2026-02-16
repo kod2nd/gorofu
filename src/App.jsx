@@ -343,75 +343,122 @@ function App() {
             overflow: "hidden",
           }}
         >
-          <AppBar position="static" elevation={1}>
-            <Toolbar>
+          <AppBar
+            position="sticky"
+            elevation={0}
+            sx={{
+              backdropFilter: "blur(10px)",
+              backgroundColor: "rgba(18, 34, 48, 0.88)", // or theme.palette.custom.primaryDarkBlue with opacity
+              borderBottom: "1px solid rgba(255,255,255,0.08)",
+            }}
+          >
+            <Toolbar sx={{ minHeight: 64, gap: 1.5 }}>
               {isMobile && (
                 <IconButton
                   color="inherit"
                   aria-label="open drawer"
                   edge="start"
                   onClick={handleDrawerToggle}
-                  sx={{ mr: 2 }}
+                  sx={{
+                    mr: 1,
+                    borderRadius: 2,
+                    backgroundColor: "rgba(255,255,255,0.08)",
+                    "&:hover": { backgroundColor: "rgba(255,255,255,0.14)" },
+                  }}
                 >
                   <MenuIcon />
                 </IconButton>
               )}
-              <Typography variant="h6" noWrap component="div">
-                {getPageTitle(activePage)}
-              </Typography>
-              
+
+              <Box sx={{ display: "flex", flexDirection: "column", lineHeight: 1 }}>
+                <Typography
+                  variant="h6"
+                  noWrap
+                  component="div"
+                  sx={{ fontWeight: 700, letterSpacing: 0.2 }}
+                >
+                  {getPageTitle(activePage)}
+                </Typography>
+                {/* Optional: tiny subtitle later if you want */}
+                {/* <Typography variant="caption" sx={{ opacity: 0.8 }}>
+                  Overview & recent activity
+                </Typography> */}
+              </Box>
+
+              <Box sx={{ ml: "auto" }} />
+
               {/* User Profile Menu - Desktop Only */}
               {!isMobile && userProfile && (
-                <Box sx={{ ml: 'auto' }}>
+                <Box>
                   <IconButton
-                    size="large"
-                    aria-label="account of current user"
-                    aria-controls="menu-appbar"
-                    aria-haspopup="true"
                     onClick={handleMenu}
                     color="inherit"
+                    sx={{
+                      p: 0.5,
+                      borderRadius: 999,
+                      backgroundColor: "rgba(255,255,255,0.08)",
+                      "&:hover": { backgroundColor: "rgba(255,255,255,0.14)" },
+                    }}
                   >
-                    <Avatar sx={{ width: 32, height: 32, bgcolor: 'secondary.main' }}>
-                      {userProfile.full_name ? userProfile.full_name.charAt(0).toUpperCase() : '?'}
+                    <Avatar
+                      sx={{
+                        width: 32,
+                        height: 32,
+                        bgcolor: "secondary.main",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {userProfile.full_name ? userProfile.full_name.charAt(0).toUpperCase() : "?"}
                     </Avatar>
                   </IconButton>
+
                   <Menu
                     id="menu-appbar"
                     anchorEl={anchorEl}
-                    anchorOrigin={{
-                      vertical: 'bottom',
-                      horizontal: 'right',
-                    }}
-                    keepMounted
-                    transformOrigin={{
-                      vertical: 'top',
-                      horizontal: 'right',
-                    }}
+                    anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                    transformOrigin={{ vertical: "top", horizontal: "right" }}
                     open={Boolean(anchorEl)}
                     onClose={handleCloseMenu}
                     slotProps={{
                       paper: {
                         sx: {
                           mt: 1.5,
-                          borderRadius: 2,
-                          boxShadow: '0px 10px 30px -5px rgba(0,0,0,0.15)',
-                        }
-                      }
+                          borderRadius: 3,
+                          overflow: "hidden",
+                          minWidth: 240,
+                          boxShadow: "0px 18px 45px -12px rgba(0,0,0,0.35)",
+                          border: "1px solid rgba(0,0,0,0.06)",
+                        },
+                      },
                     }}
                   >
-                    <Box sx={{ px: 2, py: 1, borderBottom: 1, borderColor: 'divider' }}>
-                      <Typography variant="subtitle1" fontWeight={600}>
-                        Hello, {userProfile.full_name || 'User'}
+                    <Box sx={{ px: 2, py: 1.5, bgcolor: "rgba(0,0,0,0.02)" }}>
+                      <Typography variant="subtitle1" fontWeight={800} sx={{ lineHeight: 1.2 }}>
+                        {userProfile.full_name || "User"}
                       </Typography>
-                      <Typography variant="body2" color="text.secondary">
+                      <Typography variant="body2" color="text.secondary" noWrap>
                         {userProfile.email}
                       </Typography>
                     </Box>
-                    <MenuItem onClick={() => { handleCloseMenu(); setActivePage('account'); }}>
+
+                    <MenuItem
+                      onClick={() => {
+                        handleCloseMenu();
+                        setActivePage("account");
+                      }}
+                    >
                       My Account
                     </MenuItem>
+
                     <Divider />
-                    <MenuItem onClick={() => { handleCloseMenu(); handleSignOut(); }} sx={{ color: 'error.main' }}>
+
+                    <MenuItem
+                      onClick={() => {
+                        handleCloseMenu();
+                        handleSignOut();
+                      }}
+                      sx={{ color: "error.main", fontWeight: 600 }}
+                    >
                       Sign Out
                     </MenuItem>
                   </Menu>
@@ -419,6 +466,7 @@ function App() {
               )}
             </Toolbar>
           </AppBar>
+
           <Box
             component="main"
             sx={{
