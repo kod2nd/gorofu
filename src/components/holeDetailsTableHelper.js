@@ -130,3 +130,10 @@ export const gameTypeHeaderStyles = {
 // Switch styles using centralized system
 export { switchStyles };
 export const redSwitchStyles = switchStyles.warning;
+
+export const flexboxGridStyles = {
+  twoColumn: {
+    flex: "1 1 48%",
+    minWidth: "48%",
+  },
+};

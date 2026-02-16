@@ -778,49 +778,66 @@ CREATE POLICY "Coaches can view their own student mappings" ON public.coach_stud
 
 -- Coach notes policies
 DROP POLICY IF EXISTS "Users can view relevant notes" ON public.coach_notes;
-CREATE POLICY "Users can view relevant notes" ON public.coach_notes FOR SELECT USING (
-  -- Users can see notes where they are the student
-  (student_id = auth.uid()) OR
-  -- A coach can see notes of their own students
+CREATE POLICY "Users can view relevant notes"
+ON public.coach_notes
+FOR SELECT
+USING (
+  -- Student can see their own notes
+  (student_id = get_current_user_id())
+  OR
+  -- Coach can see notes for assigned students
   (
     has_roles(ARRAY['coach']) AND
     EXISTS (
-      SELECT 1 FROM public.coach_student_mappings
-      WHERE coach_user_id = auth.uid() AND student_user_id = coach_notes.student_id
+      SELECT 1
+      FROM public.coach_student_mappings csm
+      WHERE csm.coach_user_id = get_current_user_id()
+        AND csm.student_user_id = public.coach_notes.student_id
     )
   )
 );
 
 DROP POLICY IF EXISTS "Users can create lesson notes or personal notes" ON public.coach_notes;
-CREATE POLICY "Users can create lesson notes or personal notes" ON public.coach_notes FOR INSERT WITH CHECK (
-  -- The person creating the note must be the author
-  author_id = auth.uid() AND (
-    -- CASE 1: Any user creating a personal note for themselves.
-    (auth.uid() = student_id)
+CREATE POLICY "Users can create lesson notes or personal notes"
+ON public.coach_notes
+FOR INSERT
+WITH CHECK (
+  author_id = get_current_user_id()
+  AND (
+    -- Personal note
+    student_id = get_current_user_id()
     OR
-    -- CASE 2: A coach creating a lesson note or reply for an assigned student.
+    -- Coach writing for their mapped student
     (
-      (SELECT 'coach' = ANY(roles) FROM public.user_profiles WHERE user_id = auth.uid())
+      (SELECT 'coach' = ANY(roles)
+       FROM public.user_profiles
+       WHERE user_id = get_current_user_id())
       AND
       EXISTS (
-        SELECT 1 FROM coach_student_mappings
-        WHERE coach_user_id = auth.uid() AND student_user_id = student_id
+        SELECT 1
+        FROM public.coach_student_mappings
+        WHERE coach_user_id = get_current_user_id()
+          AND student_user_id = student_id
       )
     )
   )
 );
 
 DROP POLICY IF EXISTS "Users can update their own notes" ON public.coach_notes;
-CREATE POLICY "Users can update their own notes" ON public.coach_notes FOR UPDATE USING (
-  author_id = auth.uid()
+CREATE POLICY "Users can update their own notes"
+ON public.coach_notes
+FOR UPDATE
+USING (
+  author_id = get_current_user_id()
 );
 
 DROP POLICY IF EXISTS "Users can delete their own notes or replies" ON public.coach_notes;
-CREATE POLICY "Users can delete their own notes or replies" ON public.coach_notes FOR DELETE USING (
-  -- The user is the author of the note/reply
-  (author_id = auth.uid()) OR
-  -- Or the user is a coach involved in the student's thread
-  (has_roles(ARRAY['coach']))
+CREATE POLICY "Users can delete their own notes or replies"
+ON public.coach_notes
+FOR DELETE
+USING (
+  author_id = get_current_user_id()
+  OR has_roles(ARRAY['coach'])
 );
 
 -- Rounds: Users can only access their own rounds

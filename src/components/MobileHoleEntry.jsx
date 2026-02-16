@@ -1,15 +1,12 @@
 import React, { useState } from "react";
 import {
   Box,
-  ButtonGroup,
   Typography,
   IconButton,
   Button,
   Paper,
-  Grid,
   TextField,
   Switch,
-  Checkbox,
   Chip,
   Tooltip,
   Divider,
@@ -20,6 +17,7 @@ import {
   boldTextStyles,
   switchStyles,
   textFieldStyles,
+  flexboxGridStyles,
 } from "./holeDetailsTableHelper";
 
 const QuickSelector = ({ stat, holeData, onHoleChange, primaryOptions, extendedOptions }) => {
@@ -662,7 +660,7 @@ const MobileHoleEntry = ({
 
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
                 {playerStats.map((stat) => (
-                  <Box key={stat.name} sx={{ flex: '1 1 calc(50% - 8px)' }}>
+                  <Box key={stat.name} sx={flexboxGridStyles.twoColumn}>
                     <StatInput
                       stat={stat}
                       holeData={currentHoleData}

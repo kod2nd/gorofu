@@ -107,6 +107,31 @@ export const chipContainerStyles = {
   }
 };
 
+// Styles for creating responsive grid-like layouts with flexbox
+export const flexboxGridStyles = {
+  // Two-column layout: 100% on xs, 50% on sm+
+  twoColumn: {
+    flex: '1 1 100%',
+    '@media (min-width:600px)': {
+      flex: '1 1 calc(50% - 16px)', // 16px is the typical gap
+    },
+  },
+  // Three-column layout: 100% on xs, 50% on sm, 33% on md+
+  threeColumn: {
+    flex: '1 1 100%',
+    '@media (min-width:600px)': {
+      flex: '1 1 calc(50% - 16px)',
+    },
+    '@media (min-width:900px)': {
+      flex: '1 1 calc(33.33% - 16px)',
+    },
+  },
+  // Four-column layout, often used for distances
+  fourColumn: {
+    flexBasis: 'calc(50% - 8px)',
+    '@media (min-width:900px)': { flexBasis: 'calc(25% - 12px)' },
+  },
+};
 
 // Button styles
 export const buttonStyles = {

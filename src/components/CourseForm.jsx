@@ -18,9 +18,9 @@ import {
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
-import DeleteIcon from '@mui/icons-material/Delete';
+import DeleteIcon from '@mui/icons-material/Delete'; 
 import { Download, UploadFile } from '@mui/icons-material';
-import { elevatedCardStyles } from '../styles/commonStyles';
+import { elevatedCardStyles, flexboxGridStyles } from '../styles/commonStyles';
 import { countries } from './countries';
 
 const createHolesArray = (numHoles) => Array.from({ length: numHoles }, (_, i) => ({
@@ -251,10 +251,7 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
         {/* Course Details */}
         <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2, mb: 2 }}>
           <Box
-            sx={{
-              flex: "1 1 100%",
-              "@media (min-width:600px)": { flex: "1 1 calc(50% - 8px)" },
-            }}
+            sx={flexboxGridStyles.twoColumn}
           >
             <TextField
               name="name"
@@ -266,10 +263,7 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
             />
           </Box>
           <Box
-            sx={{
-              flex: "1 1 calc(50% - 8px)",
-              "@media (min-width:600px)": { flex: "1 1 calc(25% - 12px)" },
-            }}
+            sx={flexboxGridStyles.fourColumn}
           >
             <Autocomplete
               options={countries}
@@ -311,10 +305,7 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
             />
           </Box>
           <Box
-            sx={{
-              flex: "1 1 calc(50% - 8px)",
-              "@media (min-width:600px)": { flex: "1 1 calc(25% - 12px)" },
-            }}
+            sx={flexboxGridStyles.fourColumn}
           >
             <TextField
               name="city"
@@ -325,11 +316,7 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
             />
           </Box>
           <Box
-            sx={{
-              flex: '1 1 100%',
-              "@media (min-width:600px)": { flex: "1 1 calc(50% - 8px)" },
-              px: { xs: 1, sm: 2 },
-            }}
+            sx={{ ...flexboxGridStyles.twoColumn, px: { xs: 1, sm: 2 } }}
           >
             <Typography id="number-of-holes-slider" gutterBottom>
               Number of Holes
@@ -381,13 +368,7 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
             {course.tee_boxes.map((teeBox, index) => (
               <Box
                 key={index}
-                sx={{
-                  flexBasis: "100%",
-                  "@media (min-width:600px)": { flexBasis: "calc(50% - 8px)" },
-                  "@media (min-width:900px)": {
-                    flexBasis: "calc(33.33% - 11px)",
-                  },
-                }}
+                sx={flexboxGridStyles.threeColumn}
               >
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Box sx={{ flexGrow: 1 }}>
@@ -566,15 +547,7 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
                   {course.tee_boxes.map((teeBox) => (
                     <Box
                       key={teeBox.name}
-                      sx={{
-                        flexBasis: "calc(50% - 8px)",
-                        "@media (min-width:600px)": {
-                          flexBasis: "calc(33.33% - 11px)",
-                        },
-                        "@media (min-width:900px)": {
-                          flexBasis: "calc(25% - 12px)",
-                        },
-                      }}
+                      sx={flexboxGridStyles.fourColumn}
                     >
                       <TextField
                         label={`${teeBox.name} Distance`}
@@ -628,15 +601,7 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
                     {course.tee_boxes.map((teeBox) => (
                       <Box
                         key={`${teeBox.name}-par`}
-                        sx={{
-                          flexBasis: "calc(50% - 8px)",
-                          "@media (min-width:600px)": {
-                            flexBasis: "calc(33.33% - 11px)",
-                          },
-                          "@media (min-width:900px)": {
-                            flexBasis: "calc(25% - 12px)",
-                          },
-                        }}
+                        sx={flexboxGridStyles.fourColumn}
                       >
                         <TextField
                           label={`${teeBox.name} Par`}

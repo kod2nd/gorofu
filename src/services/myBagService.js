@@ -8,69 +8,40 @@ import { supabase } from '../supabaseClient'; // Corrected import path
  * - `clubs(*, shots(*))`: Fetches all clubs and for each club, embeds all its related shots.
  * - `bags(*, bag_clubs(club_id))`: Fetches all bags and for each bag, embeds the IDs of the clubs it contains.
  */
-export const getMyBagData = async (impersonatedUser = null) => {
-  let targetUserId;
+const getEffectiveUserId = async () => {
+  const { data, error } = await supabase.rpc("get_current_user_id");
+  if (error) throw error;
+  if (!data) throw new Error("Failed to resolve effective user id.");
+  return data; // UUID
+};
 
-  if (impersonatedUser) {
-    targetUserId = impersonatedUser.user_id;
-  } else {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) throw new Error("User not authenticated for getMyBagData.");
-    targetUserId = user.id;
-  }
+export const getMyBagData = async () => {
+  const targetUserId = await getEffectiveUserId();
 
   const [clubsResponse, bagsResponse, shotTypesResponse] = await Promise.all([
-    supabase
-      .from('clubs')
-      .select('*, shots(*)')
-      .eq('user_id', targetUserId),
-    supabase
-      .from('bags')
-      .select('*, bag_clubs(club_id)')
-      .eq('user_id', targetUserId),
-    supabase
-      .from('user_shot_types')
-      .select('*')
-      .eq('user_id', targetUserId)
+    supabase.from("clubs").select("*, shots(*)"),
+    supabase.from("bags").select("*, bag_clubs(club_id)"),
+    supabase.from("user_shot_types").select("*"),
   ]);
 
-  if (clubsResponse.error) {
-    console.error('Error fetching clubs:', clubsResponse.error);
-    throw clubsResponse.error;
-  }
-  if (bagsResponse.error) {
-    console.error('Error fetching bags:', bagsResponse.error);
-    throw bagsResponse.error;
-  }
-  if (shotTypesResponse.error) {
-    console.error('Error fetching shot types:', shotTypesResponse.error);
-    throw shotTypesResponse.error;
-  }
+  if (clubsResponse.error) throw clubsResponse.error;
+  if (bagsResponse.error) throw bagsResponse.error;
+  if (shotTypesResponse.error) throw shotTypesResponse.error;
 
   const clubs = clubsResponse.data || [];
   const bags = bagsResponse.data || [];
   const shotTypes = shotTypesResponse.data || [];
 
-  // The query for bags returns `bag_clubs` as an array of objects: [{club_id: 1}, {club_id: 2}].
-  // We'll transform this into a simple array of IDs: [1, 2] for easier use in the frontend.
-  const formattedBags = bags.map(bag => ({
+  const formattedBags = bags.map((bag) => ({
     ...bag,
-    clubIds: bag.bag_clubs ? bag.bag_clubs.map(bc => bc.club_id) : [],
+    clubIds: bag.bag_clubs ? bag.bag_clubs.map((bc) => bc.club_id) : [],
   }));
 
-  // Sort clubs by loft or name as a fallback
-  const sortedClubs = clubs.sort((a, b) => {
-    const loftA = parseInt(a.loft, 10);
-    const loftB = parseInt(b.loft, 10);
-    return a.name.localeCompare(b.name);
-  });
+  const sortedClubs = clubs.sort((a, b) => a.name.localeCompare(b.name));
 
-  return {
-    myClubs: sortedClubs,
-    myBags: formattedBags,
-    shotTypes: shotTypes,
-  };
+  return { myClubs: sortedClubs, myBags: formattedBags, shotTypes };
 };
+
 
 // --- Club Functions ---
 

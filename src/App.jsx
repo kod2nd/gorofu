@@ -1,4 +1,4 @@
-import { useState, useEffect, lazy, Suspense, useRef } from 'react';
+import { useState, useEffect, lazy, Suspense, useRef, useMemo } from 'react';
 import { supabase } from './supabaseClient';
 import { ThemeProvider } from '@mui/material/styles';
 import {
@@ -170,9 +170,23 @@ function App() {
   };
 
   // Determine which user's data to show
-  const activeUser = impersonatedUser 
-    ? { id: impersonatedUser.user_id, email: impersonatedUser.email } 
-    : session?.user;
+  const activeUser = useMemo(() => {
+    if (impersonatedUser) {
+      return {
+        id: impersonatedUser.user_id,
+        email: impersonatedUser.email,
+      };
+    }
+
+    if (session?.user) {
+      return {
+        id: session.user.id,
+        email: session.user.email,
+      };
+    }
+
+    return null;
+  }, [impersonatedUser, session]);
 
   const handleEditRound = (roundId) => {
     setEditingRoundId(roundId);
@@ -435,10 +449,9 @@ function App() {
                 <PageContainer active={activePage === 'dashboard'}>
                   <Dashboard
                     user={activeUser}
+                    userProfile={impersonatedUser ?? userProfile}
                     onViewRound={handleViewRound} 
                     isActive={activePage === 'dashboard'} 
-                    impersonatedUser={impersonatedUser}
-                    userProfile={userProfile}
                     onReply={handleDashboardReply}
                     roundsRefreshKey={roundsRefreshKey}
                     notesRefreshKey={notesRefreshKey}
@@ -448,7 +461,7 @@ function App() {
                 <PageContainer active={activePage === 'addRound'}>
                   <RoundForm 
                     user={activeUser}
-                    userProfile={userProfile}
+                    userProfile={impersonatedUser ?? userProfile}
                     isActive={activePage === 'addRound'}
                     closeForm={() => {
                       setEditingRoundId(null);
@@ -501,7 +514,7 @@ function App() {
                   <RoundDetailsPage
                     roundId={viewingRoundId}
                     user={activeUser}
-                    userProfile={userProfile}
+                    userProfile={impersonatedUser ?? userProfile}
                     onEdit={handleEditRound}
                     onBack={() => { setViewingRoundId(null); setActivePage('roundsHistory'); }}
                   />
@@ -509,7 +522,8 @@ function App() {
 
                 <PageContainer active={activePage === 'studentInteractions'}>
                   <StudentInteractionsPage
-                    userProfile={userProfile}
+                    user={activeUser}
+                    userProfile={impersonatedUser || userProfile} 
                     isActive={activePage === 'studentInteractions'}
                     ref={interactionsPageRef}
                     onNoteUpdate={triggerNotesRefresh}
@@ -518,9 +532,8 @@ function App() {
 
                 <PageContainer active={activePage === 'myBag'}>
                   <MyBagPage
-                    userProfile={impersonatedUser || userProfile}
+                    user={activeUser}
                     isActive={activePage === 'myBag'}
-                    impersonatedUser={impersonatedUser}
                   />
                 </PageContainer>
               </Suspense>

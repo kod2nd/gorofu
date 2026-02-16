@@ -12,7 +12,7 @@ import RecentInsights from "./RecentInsights";
 import FlippingGolfIcon from "./FlippingGolfIcon";
 import PinnedNotes from "./PinnedNotes";
 
-const Dashboard = ({ user, onViewRound, isActive, impersonatedUser, userProfile, onReply, notesRefreshKey, roundsRefreshKey }) => {
+const Dashboard = ({ user, onViewRound, isActive, userProfile, onReply, notesRefreshKey, roundsRefreshKey }) => {
   const [initialLoading, setInitialLoading] = useState(true);
   const [isFiltering, setIsFiltering] = useState(false);
   const [error, setError] = useState("");
@@ -33,21 +33,17 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser, userProfile,
   const lastFetchedFilters = useRef(null);
   const lastFetchedUser = useRef(null);
 
-    // ✅ Use impersonated user data when available
-  const currentUser = impersonatedUser || user;
-
   useEffect(() => {
-    // When the user being viewed changes (due to impersonation), reset flags
-    if (impersonatedUser !== lastFetchedUser.current) {
+    if (user?.email !== lastFetchedUser.current) {
       hasFetchedAllTime.current = false;
       lastFetchedFilters.current = null;
-      lastFetchedUser.current = impersonatedUser;
+      lastFetchedUser.current = user?.email;
     }
-  }, [impersonatedUser]);
+  }, [user]);
 
   useEffect(() => {
     const fetchAllTimeDataIfNeeded = async () => {
-      const fetchAllTimeData = async (isImpersonating) => {
+      const fetchAllTimeData = async () => {
         try {
           const [szirStreakData, szParStreakData, allTimeStats] =
             await Promise.all([
@@ -68,12 +64,12 @@ const Dashboard = ({ user, onViewRound, isActive, impersonatedUser, userProfile,
       // Fetch if the component is now active and wasn't before,
       // or if the user/impersonatedUser has changed.
       if (isActive && user && (isActive !== wasActive.current || !hasFetchedAllTime.current)) {
-        await fetchAllTimeData(!!impersonatedUser);
+        await fetchAllTimeData();
       }
     };
     fetchAllTimeDataIfNeeded();
     wasActive.current = isActive;
-  }, [user, isActive, impersonatedUser, userProfile]);
+  }, [user, isActive]);
 
 useEffect(() => {
     const loadCoach = async () => {
@@ -214,7 +210,7 @@ useEffect(() => {
             <RecentInsights recentStats={recentStats} isFiltering={isFiltering} />
           </Paper>
           {/* Render Pinned Notes if a coach is assigned OR if the user is viewing their own dashboard */}
-          {(coach || !impersonatedUser) && (
+          {coach && (
             <PinnedNotes studentId={user.id} userProfile={userProfile} onReply={onReply} refreshKey={notesRefreshKey} />
           )}
         </Box>

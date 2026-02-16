@@ -13,10 +13,14 @@ import {
 import { convertDistance } from "../utils/utils";
 
 // Helper functions moved here to make the component self-contained
-const getShotTypeDetails = (shotTypeName, shotConfig) => {
-  if (!shotConfig || !shotConfig.shotTypes) return null;
-  return shotConfig.shotTypes.find(st => st.name === shotTypeName);
-};
+  const getShotTypeDetails = (shotTypeValue, shotConfig) => {
+    if (!shotConfig?.shotTypes?.length) return null;
+
+    return (
+      shotConfig.shotTypes.find(st => st.name === shotTypeValue) ||
+      shotConfig.shotTypes.find(st => String(st.id) === String(shotTypeValue))
+    );
+  };
 
 const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
   const [distanceMetric, setDistanceMetric] = useState('total');
@@ -44,8 +48,11 @@ const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
 
       const filteredShots = club.shots.filter(shot => {
         const shotDetails = getShotTypeDetails(shot.shot_type, shotConfig);
+
         if (selectedCategoryId === 'all') return true;
-        return shotDetails?.category_ids?.includes(selectedCategoryId);
+
+        const categoryIds = shotDetails?.category_ids || [];
+        return Array.isArray(categoryIds) && categoryIds.includes(selectedCategoryId);
       });
 
       if (filteredShots.length === 0) {
@@ -165,7 +172,7 @@ const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
           }}
         >
           <ToggleButton value="all">All Shots</ToggleButton>
-          {shotConfig.categories.map((cat) => (
+         {(shotConfig?.categories || []).map((cat) => (
             <ToggleButton key={cat.id} value={cat.id}>
               {cat.name}
             </ToggleButton>

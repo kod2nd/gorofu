@@ -35,7 +35,7 @@ const mockUserShotConfig = {
   ],
 };
  
-const MyBagPage = ({ userProfile, isActive, impersonatedUser }) => {
+const MyBagPage = ({ user, isActive }) => {
   const [myClubs, setMyClubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [shotConfig, setShotConfig] = useState({ categories: [], shotTypes: [] });
@@ -58,15 +58,15 @@ const MyBagPage = ({ userProfile, isActive, impersonatedUser }) => {
 
   const fetchData = async () => {
     if (!isActive) return;
-    setLoading(true);
+    if (!user?.id) return;
 
+    setLoading(true);
     try {
-      const { myClubs, myBags, shotTypes } = await getMyBagData(impersonatedUser);
+      const { myClubs, myBags, shotTypes } = await getMyBagData();
       setMyClubs(myClubs);
       setMyBags(myBags);
-      // Replace mock config with fetched data
       setShotConfig({
-        categories: mockUserShotConfig.categories, // Categories are still static for now
+        categories: mockUserShotConfig.categories,
         shotTypes: shotTypes || [],
       });
     } catch (error) {
@@ -78,7 +78,7 @@ const MyBagPage = ({ userProfile, isActive, impersonatedUser }) => {
 
   useEffect(() => {
     fetchData();
-  }, [userProfile, isActive, impersonatedUser]);
+  }, [user?.email, isActive]);
 
   const handleSaveClub = async (clubData) => {
     if (editingClub) {
