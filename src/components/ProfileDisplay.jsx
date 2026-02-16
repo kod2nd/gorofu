@@ -1,11 +1,5 @@
-import React from 'react';
-import {
-  Box,
-  Typography,
-  Grid,
-  Card,
-  CardContent,
-} from '@mui/material';
+import React from "react";
+import { Box, Typography, Paper, Divider, useTheme, alpha } from "@mui/material";
 import {
   Person as PersonIcon,
   Email as EmailIcon,
@@ -14,151 +8,127 @@ import {
   Cake as CakeIcon,
   SportsGolf as SportsGolfIcon,
   Tune as TuneIcon,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
-const InfoCard = ({ icon, label, value, color = 'primary.main' }) => (
-  <Card sx={{
-    height: '100%',
-    position: 'relative',
-    overflow: 'visible',
-    minHeight: { xs: 140, sm: 160 },
-    display: 'flex',
-    flexDirection: 'column',
-  }}>
-    <CardContent sx={{
-      pb: 2,
-      flex: 1,
-      display: 'flex',
-      flexDirection: 'column',
-    }}>
-      <Box
-        sx={{
-          position: 'absolute',
-          top: -20,
-          left: 16,
-          width: 48,
-          height: 48,
-          borderRadius: 2,
-          background: color,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: 'white',
-          boxShadow: 2,
-          zIndex: 1,
-        }}
-      >
-        {React.cloneElement(icon, { sx: { fontSize: 28 } })}
-      </Box>
-      <Box sx={{
-        mt: 2,
-        pt: 1,
-        flex: 1,
-        display: 'flex',
-        flexDirection: 'column',
-      }}>
-        <Typography
-          variant="caption"
-          color="text.secondary"
-          sx={{
-            fontWeight: 500,
-            textTransform: 'uppercase',
-            letterSpacing: 0.5,
-            lineHeight: 1.2,
-          }}
-        >
-          {label}
-        </Typography>
-        <Typography
-          variant="h6"
-          sx={{
-            mt: 1,
-            wordBreak: 'break-word',
-            fontSize: { xs: '1rem', sm: '1.1rem' },
-            flex: 1,
-            display: 'flex',
-            alignItems: 'center',
-          }}
-        >
-          {value || 'Not set'}
-        </Typography>
-      </Box>
-    </CardContent>
-  </Card>
-);
-
-const ProfileDisplay = ({ userProfile }) => {
-  const scoringBiasMap = {
-    0: 'Par',
-    1: 'Bogey',
-    2: 'Double Bogey',
-  };
-  const scoringBiasText = scoringBiasMap[userProfile.scoring_bias] ?? 'Bogey';
+const FieldCard = ({ icon: Icon, label, value }) => {
+  const theme = useTheme();
 
   return (
-    <>
-      <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ mb: 4, px: 1 }}>
-        Personal Information
-      </Typography>
+    <Paper
+      elevation={0}
+      sx={{
+        borderRadius: 3,
+        border: `1px solid ${alpha(theme.palette.text.primary, 0.08)}`,
+        p: 2,
+        transition: "all 0.18s ease",
+        "&:hover": {
+          borderColor: alpha(theme.palette.primary.main, 0.25),
+          boxShadow: `0 8px 24px ${alpha(theme.palette.common.black, 0.06)}`,
+          transform: "translateY(-1px)",
+        },
+      }}
+    >
+      <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
+        <Box
+          sx={{
+            width: 34,
+            height: 34,
+            borderRadius: 2,
+            display: "grid",
+            placeItems: "center",
+            bgcolor: alpha(theme.palette.primary.main, 0.10),
+            color: theme.palette.primary.main,
+            border: `1px solid ${alpha(theme.palette.primary.main, 0.16)}`,
+            flexShrink: 0,
+            mt: 0.25,
+          }}
+        >
+          <Icon sx={{ fontSize: 18 }} />
+        </Box>
+
+        <Box sx={{ minWidth: 0, flex: 1 }}>
+          <Typography
+            variant="caption"
+            sx={{
+              display: "block",
+              color: "text.secondary",
+              fontWeight: 800,
+              letterSpacing: "0.08em",
+              textTransform: "uppercase",
+              lineHeight: 1.2,
+            }}
+          >
+            {label}
+          </Typography>
+
+          <Typography
+            sx={{
+              mt: 0.75,
+              fontWeight: 800,
+              letterSpacing: "-0.01em",
+              lineHeight: 1.2,
+              wordBreak: "break-word",
+            }}
+          >
+            {value || "—"}
+          </Typography>
+        </Box>
+      </Box>
+    </Paper>
+  );
+};
+
+const ProfileDisplay = ({ userProfile }) => {
+  const scoringBiasMap = { 0: "Par", 1: "Bogey", 2: "Double Bogey" };
+  const scoringBiasText = scoringBiasMap[userProfile.scoring_bias] ?? "Bogey";
+
+  const fields = [
+    { icon: PersonIcon, label: "Display name", value: userProfile.full_name },
+    { icon: EmailIcon, label: "Email", value: userProfile.email },
+    { icon: PublicIcon, label: "Country", value: userProfile.country },
+    {
+      icon: SportsGolfIcon,
+      label: "Handicap",
+      value: userProfile.handicap != null ? Number(userProfile.handicap).toFixed(1) : null,
+    },
+    { icon: PhoneIcon, label: "Phone", value: userProfile.phone },
+    {
+      icon: CakeIcon,
+      label: "Date of birth",
+      value: userProfile.date_of_birth ? new Date(userProfile.date_of_birth).toLocaleDateString() : null,
+    },
+    { icon: TuneIcon, label: "Scorecard bias", value: scoringBiasText },
+  ];
+
+  return (
+    <Box>
+      <Box sx={{ mb: 2 }}>
+        <Typography sx={{ fontWeight: 900, letterSpacing: "-0.01em" }}>
+          Personal information
+        </Typography>
+        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.25 }}>
+          Your profile details used for scoring and personalization.
+        </Typography>
+      </Box>
+
+      <Divider sx={{ mb: 2 }} />
+
       <Box
         sx={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: 3, // Consistent gap
-          '& > *': {
-            // Responsive width calculation
-            flexBasis: { xs: '100%', sm: 'calc(50% - 12px)', md: 'calc(33.333% - 16px)' },
-          }
+          display: "grid",
+          gap: 2,
+          gridTemplateColumns: {
+            xs: "1fr",
+            sm: "repeat(2, 1fr)",
+            md: "repeat(3, 1fr)",
+          },
         }}
       >
-          <InfoCard
-            icon={<PersonIcon />}
-            label="Display Name"
-            value={userProfile.full_name}
-            color="linear-gradient(135deg, #667eea 0%, #764ba2 100%)"
-          />
-          <InfoCard
-            icon={<EmailIcon />}
-            label="Email"
-            value={userProfile.email}
-            color="linear-gradient(135deg, #f093fb 0%, #f5576c 100%)"
-          />
-          <InfoCard
-            icon={<PublicIcon />}
-            label="Country"
-            value={userProfile.country}
-            color="linear-gradient(135deg, #4facfe 0%, #00f2fe 100%)"
-          />
-          <InfoCard
-            icon={<SportsGolfIcon />}
-            label="Handicap"
-            value={userProfile.handicap != null ? Number(userProfile.handicap).toFixed(1) : null}
-            color="linear-gradient(135deg, #43e97b 0%, #38f9d7 100%)"
-          />
-          <InfoCard
-            icon={<PhoneIcon />}
-            label="Phone"
-            value={userProfile.phone}
-            color="linear-gradient(135deg, #fa709a 0%, #fee140 100%)"
-          />
-          <InfoCard
-            icon={<CakeIcon />}
-            label="Date of Birth"
-            value={
-              userProfile.date_of_birth
-                ? new Date(userProfile.date_of_birth).toLocaleDateString()
-                : null
-            }
-            color="linear-gradient(135deg, #30cfd0 0%, #330867 100%)"
-          />
-          <InfoCard
-            icon={<TuneIcon />}
-            label="Scorecard Color Bias"
-            value={scoringBiasText}
-            color="linear-gradient(135deg, #868f96 0%, #596164 100%)"
-          />
+        {fields.map((f) => (
+          <FieldCard key={f.label} icon={f.icon} label={f.label} value={f.value} />
+        ))}
       </Box>
-    </>
+    </Box>
   );
 };
 

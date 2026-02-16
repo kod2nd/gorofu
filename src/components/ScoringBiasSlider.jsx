@@ -4,8 +4,8 @@ import { Box, Typography, Slider } from "@mui/material";
 const ScoringBiasSlider = ({ currentScoringBias, handleBiasChange }) => {
   const marks = [
     { value: 0, label: "Par" },
-    { value: 1, label: "Bogey" },
-    { value: 2, label: "Dbl Bogey" },
+    { value: 1, label: "Bogey (Par +1)" },
+    { value: 2, label: "Dbl Bogey (Par +2)" },
   ];
 
   return (
