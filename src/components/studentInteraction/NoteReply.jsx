@@ -3,9 +3,11 @@ import { Paper, Box, Typography, Tooltip, IconButton } from '@mui/material';
 import { Edit as EditIcon, Delete as DeleteIcon } from '@mui/icons-material';
 import { toProperCase } from './utils';
 
-const NoteReply = ({ note, userProfile, onEdit, onDelete }) => {
-  const canEdit = note.author_id === userProfile.user_id;
-  const canDelete = note.author_id === userProfile.user_id || userProfile.roles.includes('coach');
+const NoteReply = ({ note, user, onEdit, onDelete }) => {
+  const canEdit = note.author_id === user?.user_id;
+  const canDelete =
+    note.author_id === user?.user_id ||
+    (user?.roles || []).includes('coach');
 
   return (
     <Paper
@@ -27,7 +29,7 @@ const NoteReply = ({ note, userProfile, onEdit, onDelete }) => {
           </Typography>
           {canEdit && (
             <Tooltip title="Edit reply">
-              <IconButton size="small" onClick={() => onEdit(note)}><EditIcon fontSize="small" /></IconButton>
+              <IconButton size="small" onClick={() => onEdit && onEdit(note)}><EditIcon fontSize="small" /></IconButton>
             </Tooltip>
           )}
           {canDelete && (
@@ -41,7 +43,7 @@ const NoteReply = ({ note, userProfile, onEdit, onDelete }) => {
           )}
         </Box>
       </Box>
-      <Box component="div" dangerouslySetInnerHTML={{ __html: note.note }} className="tiptap-display" sx={{ fontSize: '0.95rem' }} />
+      <Box component="div" dangerouslySetInnerHTML={{ __html: note.note || ''}} className="tiptap-display" sx={{ fontSize: '0.95rem' }} />
     </Paper>
   );
 };

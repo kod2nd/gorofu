@@ -1,4 +1,11 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo, forwardRef, useImperativeHandle } from 'react';
+import React, {
+  useState,
+  useEffect,
+  useRef,
+  useMemo,
+  forwardRef,
+  useImperativeHandle,
+} from "react";
 import {
   Box,
   Typography,
@@ -19,158 +26,95 @@ import {
   IconButton,
   Tabs,
   Tab,
-  DialogContentText,
   Divider,
-  InputAdornment,
-  Fade,
-  FormControlLabel,
-  Switch,
-  Tooltip,
   Stack,
-  ToggleButton,
-  ToggleButtonGroup,
-} from '@mui/material';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-import { DatePicker } from '@mui/x-date-pickers/DatePicker';
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Link from '@tiptap/extension-link';
-import Placeholder from '@tiptap/extension-placeholder';
-import { useDebounce } from '../hooks/useDebounce';
-import {
-  AddComment, Edit as EditIcon, Close as CloseIcon, Search as SearchIcon,
-  Person, Delete as DeleteIcon, ViewList, ViewModule, ArrowDownward, ArrowUpward, Reply as ReplyIcon, PushPin, PushPinOutlined,
-  FilterList, ClearAll
-} from "@mui/icons-material";
+} from "@mui/material";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Placeholder from "@tiptap/extension-placeholder";
+import { useDebounce } from "../hooks/useDebounce";
+import { AddComment, Close as CloseIcon, Person } from "@mui/icons-material";
 import { elevatedCardStyles, buttonStyles, noteStyles } from "../styles/commonStyles";
-import { userService } from '../services/userService';
-import PageHeader from './PageHeader';
+import { userService } from "../services/userService";
+import PageHeader from "./PageHeader";
 import FlippingGolfIcon from "./FlippingGolfIcon";
-import MenuBar from './studentInteraction/MenuBar';
-import NoteThreadRow from './studentInteraction/NoteThreadRow';
-import NoteThreadDetailView from './studentInteraction/NoteThreadDetailView';
-import { toProperCase } from './studentInteraction/utils';
-import ConfirmationDialog from './myBag/ConfirmationDialog';
-import NoteFilters from './studentInteraction/NoteFilters';
+import MenuBar from "./studentInteraction/MenuBar";
+import NoteThreadRow from "./studentInteraction/NoteThreadRow";
+import NoteThreadDetailView from "./studentInteraction/NoteThreadDetailView";
+import { toProperCase } from "./studentInteraction/utils";
+import ConfirmationDialog from "./myBag/ConfirmationDialog";
+import NoteFilters from "./studentInteraction/NoteFilters";
 
-
-const StudentInteractionsPage = forwardRef(({ userProfile, isActive, onNoteUpdate }, ref) => {
+const StudentInteractionsPage = forwardRef(({ user, isActive, onNoteUpdate }, ref) => {
   const [students, setStudents] = useState([]);
   const [allUsers, setAllUsers] = useState([]);
   const [allMappings, setAllMappings] = useState([]);
-  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [selectedStudentId, setSelectedStudentId] = useState("");
   const [notes, setNotes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [notesLoading, setNotesLoading] = useState(false);
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const [showFilters, setShowFilters] = useState(false);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingNote, setEditingNote] = useState(null);
-  const [noteSubject, setNoteSubject] = useState('');
-  const [noteContent, setNoteContent] = useState('');
+  const [noteSubject, setNoteSubject] = useState("");
+  const [noteContent, setNoteContent] = useState("");
   const [lessonDate, setLessonDate] = useState(new Date());
 
-  const [searchTerm, setSearchTerm] = useState('');
+  const [searchTerm, setSearchTerm] = useState("");
   const debouncedSearchTerm = useDebounce(searchTerm, 500);
   const [filterStartDate, setFilterStartDate] = useState(null);
   const [filterEndDate, setFilterEndDate] = useState(null);
   const [currentPage, setCurrentPage] = useState(0);
-  const [sortOrder, setSortOrder] = useState('desc'); // 'desc' for recent first, 'asc' for oldest first
-  const [viewMode, setViewMode] = useState('list'); // 'list' or 'grouped'
+  const [sortOrder, setSortOrder] = useState("desc");
+  const [viewMode, setViewMode] = useState("list");
   const [showFavorites, setShowFavorites] = useState(false);
   const [hasMore, setHasMore] = useState(false);
-  const [activeTab, setActiveTab] = useState('lesson'); // 'lesson' or 'personal'
-  
-  // State for delete confirmation
-const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, type: '' });
+  const [activeTab, setActiveTab] = useState("lesson"); // 'lesson' or 'personal'
+
+  const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, type: "" });
 
   const [replyingToNote, setReplyingToNote] = useState(null);
-  // State for forum-style view
   const [viewingThreadId, setViewingThreadId] = useState(null);
   const [currentThreadData, setCurrentThreadData] = useState(null);
+
+  // ✅ Normalize ID to support both profile-shape (user_id) and auth-shape (id)
+  const userId = user?.user_id ?? user?.id ?? null;
+  const isCoach = (user?.roles || []).includes("coach");
+  const isViewingOwnNotes = selectedStudentId === userId || activeTab === "personal";
 
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
-        link: {
-          openOnClick: false,
-        },
+        link: { openOnClick: false },
       }),
       Placeholder.configure({
-        placeholder: 'Add your notes here...',
+        placeholder: "Add your notes here...",
       }),
     ],
     content: noteContent,
-    editable: true, // Explicitly set the editor to be editable
-    autofocus: 'end', // Focus the editor at the end of the content on load
-
-    onUpdate: ({ editor }) => {
-      setNoteContent(editor.getHTML());
-    },
-
-    // --- Editor Props ---
+    editable: true,
+    autofocus: "end",
+    onUpdate: ({ editor }) => setNoteContent(editor.getHTML()),
     editorProps: {
-      attributes: { 
-        class: 'tiptap-editor',
-        // You can add other attributes like this:
-        // spellcheck: 'false',
-      },
+      attributes: { class: "tiptap-editor" },
     },
   });
 
   const hasLoadedForActiveState = useRef(false);
-  const isCoach = userProfile?.roles?.includes('coach');
-  const isViewingOwnNotes = selectedStudentId === userProfile.user_id || activeTab === 'personal';
-
-  useEffect(() => {
-    if (isActive && userProfile && !hasLoadedForActiveState.current) {
-      loadAllStudents(); // Load students for all users to populate dropdowns
-      // If user is not a coach, default to their personal notes view.
-      // Otherwise, coaches see the student selection.
-      if (!isCoach) {
-        setActiveTab('personal');
-        setSelectedStudentId(userProfile.user_id);
-      }
-      hasLoadedForActiveState.current = true;
-    } else if (!isActive) {
-      hasLoadedForActiveState.current = false;
-    }
-  }, [userProfile, isCoach, isActive]);
-
-  useEffect(() => {
-    if (editor && editor.isEditable) {
-      if (editor.getHTML() !== noteContent) {
-        editor.commands.setContent(noteContent, false);
-      }
-    }
-  }, [noteContent, editor]);
-
-  useEffect(() => {
-    const studentIdToLoad = activeTab === 'personal' ? userProfile.user_id : selectedStudentId;
-    if (studentIdToLoad) {
-      setNotes([]);
-      setCurrentPage(0);
-      loadNotesForStudent(studentIdToLoad, 0, true);
-      setViewingThreadId(null); // Go back to list view when student changes
-    } else {
-      setNotes([]);
-    }
-  }, [selectedStudentId, debouncedSearchTerm, filterStartDate, filterEndDate, sortOrder, showFavorites, activeTab, userProfile.user_id]);
-
-  useEffect(() => {
-    // When switching tabs, clear filters and reset view
-    handleClearFilters();
-  }, [activeTab]);
+  const lastUserIdRef = useRef(null);
 
   const handleClearFilters = () => {
-    setSearchTerm('');
+    setSearchTerm("");
     setFilterStartDate(null);
     setFilterEndDate(null);
     setShowFavorites(false);
-    setSortOrder('desc');
-    setViewMode('list');
+    setSortOrder("desc");
+    setViewMode("list");
     setViewingThreadId(null);
   };
 
@@ -186,7 +130,7 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
       setAllMappings(mappingsData);
       setStudents(studentsData);
     } catch (err) {
-      setError('Failed to load students: ' + err.message);
+      setError("Failed to load students: " + err.message);
     } finally {
       setLoading(false);
     }
@@ -201,38 +145,121 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
         startDate: filterStartDate,
         endDate: filterEndDate,
         page: pageToLoad,
-        sortOrder: sortOrder,
+        sortOrder,
         showFavoritesOnly: showFavorites,
-        personalNotesOnly: activeTab === 'personal',
+        personalNotesOnly: activeTab === "personal",
         limit: 10,
       });
 
-      setNotes(prevNotes => isReset ? newNotes : [...prevNotes, ...newNotes]);
+      setNotes((prev) => (isReset ? newNotes : [...prev, ...newNotes]));
       setHasMore(moreNotesExist);
       setCurrentPage(pageToLoad);
     } catch (err) {
-      setError('Failed to load notes: ' + err.message);
+      setError("Failed to load notes: " + err.message);
     } finally {
       setNotesLoading(false);
     }
   };
 
+  // ✅ Load/reset when page becomes active OR impersonated user changes
+  useEffect(() => {
+    if (!isActive) {
+      hasLoadedForActiveState.current = false;
+      lastUserIdRef.current = null;
+      return;
+    }
+    if (!userId) return;
+
+    const userChanged = lastUserIdRef.current && lastUserIdRef.current !== userId;
+
+    if (!hasLoadedForActiveState.current || userChanged) {
+      // reset identity-dependent state
+      setStudents([]);
+      setAllUsers([]);
+      setAllMappings([]);
+      setSelectedStudentId("");
+      setNotes([]);
+      setCurrentPage(0);
+      setViewingThreadId(null);
+      setCurrentThreadData(null);
+      handleClearFilters();
+
+      loadAllStudents();
+
+      // If user is not a coach, default to their personal notes view.
+      if (!isCoach) {
+        setActiveTab("personal");
+        setSelectedStudentId(userId);
+      } else {
+        // For coaches, default to lesson tab (keep selection empty until they choose)
+        setActiveTab("lesson");
+      }
+
+      hasLoadedForActiveState.current = true;
+      lastUserIdRef.current = userId;
+    }
+  }, [isActive, userId, isCoach]);
+
+  // Keep editor content in sync
+  useEffect(() => {
+    if (!editor || !editor.isEditable) return;
+    if (editor.getHTML() !== noteContent) {
+      editor.commands.setContent(noteContent, false);
+    }
+  }, [noteContent, editor]);
+
+  // Load notes when filters / selection changes
+  useEffect(() => {
+    if (!userId) {
+      setNotes([]);
+      return;
+    }
+
+    const studentIdToLoad = activeTab === "personal" ? userId : selectedStudentId;
+
+    if (studentIdToLoad) {
+      setNotes([]);
+      setCurrentPage(0);
+      loadNotesForStudent(studentIdToLoad, 0, true);
+      setViewingThreadId(null);
+    } else {
+      setNotes([]);
+    }
+  }, [
+    selectedStudentId,
+    debouncedSearchTerm,
+    filterStartDate,
+    filterEndDate,
+    sortOrder,
+    showFavorites,
+    activeTab,
+    userId,
+  ]);
+
+  // Clear filters when switching tabs
+  useEffect(() => {
+    handleClearFilters();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
   const handleLoadMore = () => {
     const nextPage = currentPage + 1;
-    loadNotesForStudent(activeTab === 'personal' ? userProfile.user_id : selectedStudentId, nextPage);
+    const studentIdToLoad = activeTab === "personal" ? userId : selectedStudentId;
+    if (!studentIdToLoad) return;
+    loadNotesForStudent(studentIdToLoad, nextPage);
   };
 
   const handleOpenForm = (noteToEdit = null) => {
     if (noteToEdit) {
       setEditingNote(noteToEdit);
-      setNoteSubject(noteToEdit.subject || '');
-      setNoteContent(noteToEdit.note || '');
+      setNoteSubject(noteToEdit.subject || "");
+      setNoteContent(noteToEdit.note || "");
       setLessonDate(new Date(noteToEdit.lesson_date));
     } else {
       setEditingNote(null);
-      setNoteSubject('');
-      setNoteContent(''); // Explicitly clear the state for the editor
-      setLessonDate(new Date()); // Reset the date for the new note
+      setNoteSubject("");
+      setNoteContent("");
+      setLessonDate(new Date());
     }
     setIsFormOpen(true);
   };
@@ -241,23 +268,22 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
     setIsFormOpen(false);
     setTimeout(() => {
       setEditingNote(null);
-      setNoteSubject('');
-      setNoteContent('');
+      setNoteSubject("");
+      setNoteContent("");
       setLessonDate(new Date());
     }, 300);
     setReplyingToNote(null);
   };
 
   const handleSaveNote = async () => {
-    const studentIdForNote = activeTab === 'personal' ? userProfile.user_id : selectedStudentId;
-    if (!noteSubject.trim() || !noteContent.trim() || !studentIdForNote) return;
+    const studentIdForNote = activeTab === "personal" ? userId : selectedStudentId;
+    if (!noteSubject.trim() || !noteContent.trim() || !studentIdForNote || !userId) return;
 
     try {
       if (replyingToNote) {
-        // This is a reply
         const replyData = {
-          author_id: userProfile.user_id,
-          student_id: replyingToNote.student_id, // Always use the parent note's student_id for threading
+          author_id: userId,
+          student_id: replyingToNote.student_id,
           parent_note_id: replyingToNote.id,
           note: noteContent,
           subject: noteSubject,
@@ -265,50 +291,44 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
         };
         await userService.saveNoteForStudent(replyData);
       } else if (editingNote) {
-        // This is an edit of an existing note
         const noteData = {
           subject: noteSubject,
           note: noteContent,
           lesson_date: lessonDate.toISOString(),
         };
-        // Remove fields that shouldn't be on an update
         await userService.updateNoteForStudent(editingNote.id, noteData);
       } else {
-        // This is a new note thread
         const noteData = {
           subject: noteSubject,
           note: noteContent,
           lesson_date: lessonDate.toISOString(),
-          author_id: userProfile.user_id,
+          author_id: userId,
           student_id: studentIdForNote,
         };
         await userService.saveNoteForStudent(noteData);
       }
-      
+
       handleCloseForm();
       loadNotesForStudent(studentIdForNote, 0, true);
     } catch (err) {
-      setError('Failed to save note: ' + err.message);
+      setError("Failed to save note: " + err.message);
     }
   };
 
   const getAssignedCoaches = (studentId) => {
-    if (!studentId || allMappings.length === 0 || allUsers.length === 0) {
-      return [];
-    }
+    if (!studentId || allMappings.length === 0 || allUsers.length === 0) return [];
     const coachIds = allMappings
-      .filter(m => m.student_user_id === studentId)
-      .map(m => m.coach_user_id);
-    
-    return allUsers.filter(u => coachIds.includes(u.user_id));
+      .filter((m) => m.student_user_id === studentId)
+      .map((m) => m.coach_user_id);
+
+    return allUsers.filter((u) => coachIds.includes(u.user_id));
   };
 
   const handleReplyClick = (parentNote) => {
     setReplyingToNote(parentNote);
-    setEditingNote(null); // Ensure we are not in edit mode
-    // Pre-fill subject for the reply for context
+    setEditingNote(null);
     setNoteSubject(`Re: ${parentNote.subject}`);
-    setNoteContent(''); // Clear content for the new reply
+    setNoteContent("");
     setLessonDate(new Date(parentNote.lesson_date));
     setIsFormOpen(true);
   };
@@ -318,119 +338,107 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
   }));
 
   const handleDeleteRequest = (item) => {
-    // A reply will have a parent_note_id, a top-level note will not.
-    const type = item.parent_note_id ? 'reply' : 'note';
-    setDeleteConfirm({ open: true, item: item, type: type });
+    const type = item.parent_note_id ? "reply" : "note";
+    setDeleteConfirm({ open: true, item, type });
   };
 
   const handleConfirmDelete = async () => {
-    if (!deleteConfirm.item) {
-      return;
-    }
+    if (!deleteConfirm.item) return;
+
     const { item, type } = deleteConfirm;
     try {
       await userService.deleteNote(item.id);
-      setDeleteConfirm({ open: false, item: null, type: '' });
+      setDeleteConfirm({ open: false, item: null, type: "" });
 
-      if (type === 'reply' && viewingThreadId) {
-        // If we deleted a reply, just refresh the current thread view
-        const updatedThread = await userService.getNoteThread(viewingThreadId);     
-        // By setting the explicit data for the viewing thread, we force a re-render
-        // of the detail view with the new replies array.
+      if (type === "reply" && viewingThreadId) {
+        const updatedThread = await userService.getNoteThread(viewingThreadId);
         setCurrentThreadData(updatedThread);
       } else {
-        // If we deleted a parent note, go back to the list and refresh
         setViewingThreadId(null);
-        loadNotesForStudent(activeTab === 'personal' ? userProfile.user_id : selectedStudentId, 0, true);
+        const studentIdToLoad = activeTab === "personal" ? userId : selectedStudentId;
+        if (studentIdToLoad) loadNotesForStudent(studentIdToLoad, 0, true);
       }
     } catch (err) {
-      console.error('[StudentInteractionsPage] Failed to delete note:', err);
-      setError('Failed to delete note: ' + err.message);
-      setDeleteConfirm({ open: false, item: null, type: '' });
+      console.error("[StudentInteractionsPage] Failed to delete note:", err);
+      setError("Failed to delete note: " + err.message);
+      setDeleteConfirm({ open: false, item: null, type: "" });
     }
   };
 
-  // Add this function before the return statement
   const handleToggleFavorite = async (note) => {
     try {
       await userService.updateNoteForStudent(note.id, { is_favorited: !note.is_favorited });
-      setNotes(prevNotes => 
-        prevNotes.map(n => 
-          n.id === note.id ? { ...n, is_favorited: !n.is_favorited } : n
-        )
+      setNotes((prev) =>
+        prev.map((n) => (n.id === note.id ? { ...n, is_favorited: !n.is_favorited } : n))
       );
     } catch (err) {
-      setError('Failed to update favorite status: ' + err.message);
+      setError("Failed to update favorite status: " + err.message);
     }
   };
 
   const handlePinToDashboard = async (note) => {
     try {
-      await userService.updateNoteForStudent(note.id, { is_pinned_to_dashboard: !note.is_pinned_to_dashboard });
-      setNotes(prevNotes =>
-        prevNotes.map(n =>
+      await userService.updateNoteForStudent(note.id, {
+        is_pinned_to_dashboard: !note.is_pinned_to_dashboard,
+      });
+      setNotes((prev) =>
+        prev.map((n) =>
           n.id === note.id ? { ...n, is_pinned_to_dashboard: !n.is_pinned_to_dashboard } : n
         )
       );
-      if (onNoteUpdate) onNoteUpdate(); // Notify parent of the change
+      if (onNoteUpdate) onNoteUpdate();
     } catch (err) {
-      setError('Failed to update pin status: ' + err.message);
+      setError("Failed to update pin status: " + err.message);
     }
   };
 
-    const threadedNotes = useMemo(() => {
+  const threadedNotes = useMemo(() => {
     const noteMap = {};
     const topLevelNotes = [];
-    notes.forEach(note => {
-      noteMap[note.id] = { ...note, replies: [] };
+
+    notes.forEach((n) => {
+      noteMap[n.id] = { ...n, replies: [] };
     });
-    notes.forEach(note => {
-      if (note.parent_note_id && noteMap[note.parent_note_id]) {
-        noteMap[note.parent_note_id].replies.push(noteMap[note.id]);
+
+    notes.forEach((n) => {
+      if (n.parent_note_id && noteMap[n.parent_note_id]) {
+        noteMap[n.parent_note_id].replies.push(noteMap[n.id]);
       } else {
-        topLevelNotes.push(noteMap[note.id]);
+        topLevelNotes.push(noteMap[n.id]);
       }
     });
-    Object.values(noteMap).forEach(note => note.replies.sort((a, b) => new Date(a.created_at) - new Date(b.created_at)));
+
+    Object.values(noteMap).forEach((n) =>
+      n.replies.sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+    );
+
     return topLevelNotes;
   }, [notes]);
 
   const groupedNotes = useMemo(() => {
     const groups = {};
-    // The order of months is important, so we define it here.
-    const monthOrder = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
-
-    threadedNotes.forEach(note => {
-      const date = new Date(note.lesson_date);
+    threadedNotes.forEach((n) => {
+      const date = new Date(n.lesson_date);
       const year = date.getFullYear();
-      const month = date.toLocaleString('en-US', { month: 'long' });
+      const month = date.toLocaleString("en-US", { month: "long" });
 
-      if (!groups[year]) {
-        groups[year] = {};
-      }
-      if (!groups[year][month]) {
-        groups[year][month] = [];
-      }
-      groups[year][month].push(note);
+      if (!groups[year]) groups[year] = {};
+      if (!groups[year][month]) groups[year][month] = [];
+      groups[year][month].push(n);
     });
-
     return groups;
   }, [threadedNotes]);
 
-  const viewingThread = useMemo(() => {
+  useMemo(() => {
     if (!viewingThreadId) return null;
-    const thread = threadedNotes.find(note => note.id === viewingThreadId);
-    if (thread) {
-      // Set the separate state for the detail view to ensure it has the latest data
-      setCurrentThreadData(thread);
-    }
+    const thread = threadedNotes.find((n) => n.id === viewingThreadId);
+    if (thread) setCurrentThreadData(thread);
     return thread;
   }, [viewingThreadId, threadedNotes]);
 
-
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', minHeight: '400px' }}>
+      <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", minHeight: "400px" }}>
         <FlippingGolfIcon size={60} />
       </Box>
     );
@@ -447,36 +455,41 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
         subtitle="Manage lesson notes and takeaways for your students."
         icon={<AddComment />}
       />
-      
-      <Tabs value={activeTab} onChange={(e, newValue) => setActiveTab(newValue)} sx={{ mb: 3, borderBottom: 1, borderColor: 'divider' }}>
+
+      <Tabs
+        value={activeTab}
+        onChange={(e, newValue) => setActiveTab(newValue)}
+        sx={{ mb: 3, borderBottom: 1, borderColor: "divider" }}
+      >
         <Tab label="Coach Notes" value="lesson" />
         <Tab label="My Notes" value="personal" />
       </Tabs>
 
-      <Paper 
-        {...elevatedCardStyles} 
-        sx={{ 
+      <Paper
+        {...elevatedCardStyles}
+        sx={{
           p: { xs: 2, sm: 4 },
           borderRadius: 3,
-          background: 'linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%)',
+          background: "linear-gradient(to bottom, #ffffff 0%, #f8f9fa 100%)",
         }}
       >
-        {activeTab === 'lesson' && isCoach && (
+        {activeTab === "lesson" && isCoach && (
           <Box sx={{ mb: 4 }}>
-            <Typography 
-              variant="h6" 
-              gutterBottom 
-              sx={{ 
-                display: 'flex', 
-                alignItems: 'center', 
+            <Typography
+              variant="h6"
+              gutterBottom
+              sx={{
+                display: "flex",
+                alignItems: "center",
                 gap: 1,
                 fontWeight: 600,
-                mb: 2
+                mb: 2,
               }}
             >
               <Person color="primary" />
               Student
             </Typography>
+
             <FormControl fullWidth>
               <InputLabel>Student</InputLabel>
               <Select
@@ -484,64 +497,59 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
                 label="Student"
                 onChange={(e) => setSelectedStudentId(e.target.value)}
                 renderValue={(selected) => {
-                  if (!selected) {
-                    return <em>-- Select a Student --</em>;
-                  }
-                  const student = students.find(s => s.user_id === selected);
+                  if (!selected) return <em>-- Select a Student --</em>;
+                  const student = students.find((s) => s.user_id === selected);
                   if (!student) return null;
 
                   const coaches = getAssignedCoaches(selected);
 
                   return (
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%' }}>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
                       <Box>
                         <Typography fontWeight={500}>{toProperCase(student.full_name)}</Typography>
                         <Typography variant="caption" color="text.secondary">{student.email}</Typography>
+
                         {coaches.length > 0 && (
-                          <Box sx={{ mt: 1, display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
-                          <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
-                            Coach{coaches.length > 1 ? 'es' : ''}:
-                          </Typography>
-                          <Box sx={{ display: 'flex', gap: 0.5, flexWrap: 'wrap' }}>
-                            {coaches.map(coach => (
-                              <Chip 
-                                key={coach.user_id} 
-                                label={toProperCase(coach.full_name)} 
-                                size="small"
-                                variant="outlined"
-                              />
-                            ))}
+                          <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
+                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
+                              Coach{coaches.length > 1 ? "es" : ""}:
+                            </Typography>
+                            <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
+                              {coaches.map((coach) => (
+                                <Chip
+                                  key={coach.user_id}
+                                  label={toProperCase(coach.full_name)}
+                                  size="small"
+                                  variant="outlined"
+                                />
+                              ))}
+                            </Box>
                           </Box>
-                        </Box>
-                      )}
+                        )}
                       </Box>
                     </Box>
                   );
                 }}
                 sx={{
                   borderRadius: 2,
-                  '& .MuiOutlinedInput-notchedOutline': {
-                    borderWidth: 2,
-                  },
+                  "& .MuiOutlinedInput-notchedOutline": { borderWidth: 2 },
                 }}
               >
-                <MenuItem value=""><em>-- Select a Student --</em></MenuItem>
+                <MenuItem value="">
+                  <em>-- Select a Student --</em>
+                </MenuItem>
                 {students.map((student) => (
-                  <MenuItem 
-                    key={student.user_id} 
+                  <MenuItem
+                    key={student.user_id}
                     value={student.user_id}
-                    sx={{ 
+                    sx={{
                       py: 1.5,
-                      '&:hover': { backgroundColor: 'rgba(0, 0, 0, 0.04)' }
+                      "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.04)" },
                     }}
                   >
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center' }}>
-                      <Typography fontWeight={500}>
-                        {toProperCase(student.full_name) || 'Unnamed Student'}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {student.email}
-                      </Typography>
+                    <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
+                      <Typography fontWeight={500}>{toProperCase(student.full_name) || "Unnamed Student"}</Typography>
+                      <Typography variant="caption" color="text.secondary">{student.email}</Typography>
                     </Box>
                   </MenuItem>
                 ))}
@@ -550,26 +558,21 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
           </Box>
         )}
 
-        {(selectedStudentId || activeTab === 'personal') && (
+        {(selectedStudentId || activeTab === "personal") && (
           <>
-
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography 
-                variant="h5" 
-                sx={{ 
-                  fontWeight: 600,
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 1
-                }}
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+              <Typography
+                variant="h5"
+                sx={{ fontWeight: 600, display: "flex", alignItems: "center", gap: 1 }}
               >
                 <AddComment color="primary" />
-                {activeTab === 'lesson' ? 'Coach Notes' : 'My Notes'}
+                {activeTab === "lesson" ? "Coach Notes" : "My Notes"}
               </Typography>
-              {(activeTab === 'personal' || (activeTab === 'lesson' && selectedStudentId && !isViewingOwnNotes)) && (
-                <Button 
-                  variant="contained" 
-                  startIcon={<AddComment />} 
+
+              {(activeTab === "personal" || (activeTab === "lesson" && selectedStudentId && !isViewingOwnNotes)) && (
+                <Button
+                  variant="contained"
+                  startIcon={<AddComment />}
                   onClick={() => handleOpenForm()}
                   sx={buttonStyles.action}
                 >
@@ -577,7 +580,8 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
                 </Button>
               )}
             </Box>
-              <NoteFilters
+
+            <NoteFilters
               searchTerm={searchTerm}
               setSearchTerm={setSearchTerm}
               showFilters={showFilters}
@@ -599,55 +603,62 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
             <Divider sx={{ my: 3 }} />
 
             {notesLoading && currentPage === 0 ? (
-              <Box sx={{ display: 'flex', justifyContent: 'center', py: 8 }}>
+              <Box sx={{ display: "flex", justifyContent: "center", py: 8 }}>
                 <FlippingGolfIcon />
               </Box>
             ) : notes.length === 0 ? (
-              <Card 
-                variant="outlined"
-                sx={noteStyles.card.sx}
-              >
-                <AddComment sx={{ fontSize: 60, color: 'text.disabled', mb: 2 }} />
+              <Card variant="outlined" sx={noteStyles.card.sx}>
+                <AddComment sx={{ fontSize: 60, color: "text.disabled", mb: 2 }} />
                 <Typography variant="h6" color="text.secondary" gutterBottom>
                   No notes found
                 </Typography>
                 <Typography color="text.secondary">
-                  {activeTab === 'personal'
-                    ? 'Start by adding your first personal note.'
-                    : 'No lesson notes found for this student.'}
+                  {activeTab === "personal"
+                    ? "Start by adding your first personal note."
+                    : "No lesson notes found for this student."}
                 </Typography>
-              </Card> 
+              </Card>
             ) : viewingThreadId && currentThreadData ? (
-              <NoteThreadDetailView 
+              <NoteThreadDetailView
                 note={currentThreadData}
                 onBack={() => {
                   setViewingThreadId(null);
                   setCurrentThreadData(null);
                 }}
-                userProfile={userProfile}
+                user={user}
                 onReply={handleReplyClick}
                 onEdit={handleOpenForm}
                 onDelete={handleDeleteRequest}
                 onFavorite={handleToggleFavorite}
                 onPin={handlePinToDashboard}
-                isViewingSelfAsCoach={false} // Always allow actions in detail view
+                isViewingSelfAsCoach={false}
               />
-            ) : viewMode === 'grouped' ? (
+            ) : viewMode === "grouped" ? (
               <Stack spacing={4}>
-                {Object.keys(groupedNotes).map(year => (
+                {Object.keys(groupedNotes).map((year) => (
                   <Box key={year}>
-                    <Divider sx={{ mb: 2, '&::before, &::after': { borderWidth: '2px' } }}>
-                      <Chip label={year} sx={{ fontWeight: 'bold', fontSize: '1.1rem' }} />
+                    <Divider sx={{ mb: 2, "&::before, &::after": { borderWidth: "2px" } }}>
+                      <Chip label={year} sx={{ fontWeight: "bold", fontSize: "1.1rem" }} />
                     </Divider>
+
                     <Stack spacing={3}>
-                      {Object.keys(groupedNotes[year]).map(month => (
+                      {Object.keys(groupedNotes[year]).map((month) => (
                         <Box key={month}>
                           <Typography variant="h6" color="text.secondary" sx={{ mb: 2, ml: 1, fontWeight: 500 }}>
                             {month}
                           </Typography>
+
                           <Stack spacing={1.5}>
-                            {groupedNotes[year][month].map(note => (
-                              <NoteThreadRow key={note.id} note={note} onClick={setViewingThreadId} userProfile={userProfile} onFavorite={handleToggleFavorite} isViewingSelfAsCoach={isViewingOwnNotes} onPin={handlePinToDashboard} canInteract={note.author_id === userProfile.user_id} />
+                            {groupedNotes[year][month].map((note) => (
+                              <NoteThreadRow
+                                key={note.id}
+                                note={note}
+                                onClick={setViewingThreadId}
+                                user={user}
+                                onFavorite={handleToggleFavorite}
+                                isViewingSelfAsCoach={isViewingOwnNotes}
+                                onPin={handlePinToDashboard}
+                              />
                             ))}
                           </Stack>
                         </Box>
@@ -656,25 +667,25 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
                   </Box>
                 ))}
               </Stack>
-            ) : ( // Default to 'list' view
+            ) : (
               <Stack spacing={1.5}>
-                {threadedNotes.map(note => (
-                  <NoteThreadRow 
+                {threadedNotes.map((note) => (
+                  <NoteThreadRow
                     key={note.id}
                     note={note}
                     onClick={setViewingThreadId}
-                    userProfile={userProfile}
+                    user={user}
                     onFavorite={handleToggleFavorite}
                     onPin={handlePinToDashboard}
-                    canInteract={note.author_id === userProfile.user_id}
+                    isViewingSelfAsCoach={isViewingOwnNotes}
                   />
                 ))}
               </Stack>
             )}
 
             {hasMore && !notesLoading && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-                <Button 
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+                <Button
                   onClick={handleLoadMore}
                   variant="outlined"
                   sx={{
@@ -682,11 +693,9 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
                     px: 4,
                     py: 1.5,
                     borderWidth: 2,
-                    textTransform: 'none',
+                    textTransform: "none",
                     fontWeight: 600,
-                    '&:hover': {
-                      borderWidth: 2,
-                    },
+                    "&:hover": { borderWidth: 2 },
                   }}
                 >
                   Load More Notes
@@ -695,7 +704,7 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
             )}
 
             {notesLoading && currentPage > 0 && (
-              <Box sx={{ display: 'flex', justifyContent: 'center', mt: 3 }}>
+              <Box sx={{ display: "flex", justifyContent: "center", mt: 3 }}>
                 <FlippingGolfIcon size={32} />
               </Box>
             )}
@@ -703,52 +712,47 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
         )}
       </Paper>
 
-      <Dialog 
-        open={isFormOpen} 
-        onClose={handleCloseForm} 
-        fullWidth 
+      <Dialog
+        open={isFormOpen}
+        onClose={handleCloseForm}
+        fullWidth
         maxWidth="md"
         slotProps={{
-          paper: {
-            sx: {
-              borderRadius: 3,
-            },
-          },
-          transition: {
-            onExited: () => editor?.destroy(),
-          }
+          paper: { sx: { borderRadius: 3 } },
+          transition: { onExited: () => editor?.destroy() },
         }}
       >
         <DialogTitle
           component="div"
-          sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: 'center',
+          sx={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
             pb: 2,
-            borderBottom: '1px solid',
-            borderColor: 'divider'
+            borderBottom: "1px solid",
+            borderColor: "divider",
           }}
         >
           <Typography variant="h6" component="h2" fontWeight={600}>
-            {editingNote ? 'Edit Note' : (replyingToNote ? 'Add Reply' : 'Add New Note')}
+            {editingNote ? "Edit Note" : replyingToNote ? "Add Reply" : "Add New Note"}
           </Typography>
-          <IconButton 
+
+          <IconButton
             onClick={handleCloseForm}
             sx={{
-              '&:hover': {
-                backgroundColor: 'error.light',
-                color: 'white',
+              "&:hover": {
+                backgroundColor: "error.light",
+                color: "white",
               },
             }}
           >
             <CloseIcon />
           </IconButton>
         </DialogTitle>
+
         <DialogContent sx={{ pt: 3 }}>
           {!replyingToNote && (
             <>
-              {/* Removed Stack to use explicit Box margins for better control */}
               <Box sx={{ mb: 3, mt: 3 }}>
                 <LocalizationProvider dateAdapter={AdapterDateFns}>
                   <DatePicker
@@ -758,17 +762,13 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
                     slotProps={{
                       textField: {
                         fullWidth: true,
-                        sx: {
-                          '& .MuiOutlinedInput-root': {
-                            borderRadius: 2,
-                          },
-                        },
+                        sx: { "& .MuiOutlinedInput-root": { borderRadius: 2 } },
                       },
                     }}
                   />
                 </LocalizationProvider>
               </Box>
-              
+
               <Box sx={{ mb: 3 }}>
                 <TextField
                   label="Title"
@@ -776,126 +776,91 @@ const [deleteConfirm, setDeleteConfirm] = useState({ open: false, item: null, ty
                   onChange={(e) => setNoteSubject(e.target.value)}
                   variant="outlined"
                   fullWidth
-                  sx={{
-                    '& .MuiOutlinedInput-root': {
-                      borderRadius: 2,
-                    },
-                  }}
+                  sx={{ "& .MuiOutlinedInput-root": { borderRadius: 2 } }}
                 />
               </Box>
             </>
           )}
-          
+
           <Box
-          sx={{
-                // This is the key: Target ProseMirror
-                '& .ProseMirror p': {
-                    margin: 0,
-                    lineHeight: 1.6,
-                  },
-                '& .ProseMirror:focus': {
-                  outline: 'none',
-                },
-                '& .ProseMirror:focus-visible': {
-                  outline: 'none',
-                },
-                '& .ProseMirror': {
-                                    
-                  // Headings
-                  'h1, h2, h3, h4, h5, h6': {
-                    marginTop: '0.75rem',
-                    marginBottom: '0.25rem',
-                  },
-                  
-                  // Lists
-                  'ul, ol': {
-                    marginTop: '0.5rem',
-                    marginBottom: '0.5rem',
-                    paddingLeft: '1.5rem',
-                  },
-                  
-                  // Code blocks
-                  pre: {
-                    marginTop: '0.75rem',
-                    marginBottom: '0.75rem',
-                  },
-                  
-                  // Blockquotes
-                  blockquote: {
-                    marginTop: '0.75rem',
-                    marginBottom: '0.75rem',
-                    backgroundColor: 'red'
-                  }
-                },
-                
-                // Placeholder (this works differently)
-                '& .ProseMirror p.is-editor-empty:first-child::before': {
-                  content: 'attr(data-placeholder)',
-                  float: 'left',
-                  color: '#adb5bd',
-                  pointerEvents: 'none',
-                  height: 0,
-                }
-              }}
-          > {/* Tiptap editor section */}
+            sx={{
+              "& .ProseMirror p": { margin: 0, lineHeight: 1.6 },
+              "& .ProseMirror:focus": { outline: "none" },
+              "& .ProseMirror:focus-visible": { outline: "none" },
+              "& .ProseMirror h1, & .ProseMirror h2, & .ProseMirror h3, & .ProseMirror h4, & .ProseMirror h5, & .ProseMirror h6": {
+                marginTop: "0.75rem",
+                marginBottom: "0.25rem",
+              },
+              "& .ProseMirror ul, & .ProseMirror ol": {
+                marginTop: "0.5rem",
+                marginBottom: "0.5rem",
+                paddingLeft: "1.5rem",
+              },
+              "& .ProseMirror pre": { marginTop: "0.75rem", marginBottom: "0.75rem" },
+              "& .ProseMirror p.is-editor-empty:first-child::before": {
+                content: "attr(data-placeholder)",
+                float: "left",
+                color: "#adb5bd",
+                pointerEvents: "none",
+                height: 0,
+              },
+            }}
+          >
             <Typography variant="body2" color="text.secondary" sx={{ mb: 1, fontWeight: 500 }}>
-              {replyingToNote ? 'Your Reply' : 'Notes'}
+              {replyingToNote ? "Your Reply" : "Notes"}
             </Typography>
+
             <MenuBar editor={editor} />
-            <EditorContent 
-              editor={editor} 
-              style={{ 
-                border: '1px solid #e0e0e0',
-                borderTop: 'none',
-                borderRadius: '0 0 12px 12px',
-                padding: '8px 16px 16px 16px',
-                minHeight: '250px',
-                maxHeight: '400px',
-                overflow: 'auto',
-                backgroundColor: 'white',
+
+            <EditorContent
+              editor={editor}
+              style={{
+                border: "1px solid #e0e0e0",
+                borderTop: "none",
+                borderRadius: "0 0 12px 12px",
+                padding: "8px 16px 16px 16px",
+                minHeight: "250px",
+                maxHeight: "400px",
+                overflow: "auto",
+                backgroundColor: "white",
               }}
-              
             />
           </Box>
         </DialogContent>
-        <DialogActions sx={{ p: 3, borderTop: '2px solid', borderColor: 'divider' }}>
-          <Button 
+
+        <DialogActions sx={{ p: 3, borderTop: "2px solid", borderColor: "divider" }}>
+          <Button
             onClick={handleCloseForm}
-            sx={{
-              borderRadius: 2,
-              px: 3,
-              textTransform: 'none',
-              fontWeight: 600,
-            }}
+            sx={{ borderRadius: 2, px: 3, textTransform: "none", fontWeight: 600 }}
           >
             Cancel
           </Button>
+
           <Button
             variant="contained"
             onClick={handleSaveNote}
             disabled={!noteSubject.trim() || !noteContent.trim()}
             sx={buttonStyles.action}
           >
-            {editingNote ? 'Update Note' : (replyingToNote ? 'Post Reply' : 'Save Note')}
+            {editingNote ? "Update Note" : replyingToNote ? "Post Reply" : "Save Note"}
           </Button>
         </DialogActions>
       </Dialog>
 
-      {/* Delete Confirmation Dialog */}
-       <ConfirmationDialog
-          open={deleteConfirm.open}
-          onClose={() => setDeleteConfirm({ open: false, item: null, type: '' })}
-          onConfirm={handleConfirmDelete}
-          title={`Delete ${deleteConfirm.type}?`}
-          contentText={
-            deleteConfirm.type === 'reply'
-              ? 'Are you sure you want to permanently delete this reply? This action cannot be undone.'
-              : `Are you sure you want to permanently delete the note with the subject "${deleteConfirm.item?.subject}"? This action cannot be undone.`
-          }
-          confirmText="Delete"
-          confirmColor="error"
-        />
-      </Box>
+      <ConfirmationDialog
+        open={deleteConfirm.open}
+        onClose={() => setDeleteConfirm({ open: false, item: null, type: "" })}
+        onConfirm={handleConfirmDelete}
+        title={`Delete ${deleteConfirm.type}?`}
+        contentText={
+          deleteConfirm.type === "reply"
+            ? "Are you sure you want to permanently delete this reply? This action cannot be undone."
+            : `Are you sure you want to permanently delete the note with the subject "${deleteConfirm.item?.subject}"? This action cannot be undone.`
+        }
+        confirmText="Delete"
+        confirmColor="error"
+      />
+    </Box>
   );
 });
 

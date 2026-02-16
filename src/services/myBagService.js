@@ -16,12 +16,13 @@ const getEffectiveUserId = async () => {
 };
 
 export const getMyBagData = async () => {
-  const targetUserId = await getEffectiveUserId();
+  // 1) Ask DB who the active user is (respects impersonation session var)
+  const { data: whoami, error: whoErr } = await supabase.rpc('get_current_user_id');
 
   const [clubsResponse, bagsResponse, shotTypesResponse] = await Promise.all([
-    supabase.from("clubs").select("*, shots(*)"),
-    supabase.from("bags").select("*, bag_clubs(club_id)"),
-    supabase.from("user_shot_types").select("*"),
+    supabase.from("clubs").select("*, shots(*)").order("name", { ascending: true }),
+    supabase.from("bags").select("*, bag_clubs(club_id)").order("created_at", { ascending: true }),
+    supabase.from("user_shot_types").select("*").order("name", { ascending: true }),
   ]);
 
   if (clubsResponse.error) throw clubsResponse.error;
@@ -37,10 +38,11 @@ export const getMyBagData = async () => {
     clubIds: bag.bag_clubs ? bag.bag_clubs.map((bc) => bc.club_id) : [],
   }));
 
-  const sortedClubs = clubs.sort((a, b) => a.name.localeCompare(b.name));
-
-  return { myClubs: sortedClubs, myBags: formattedBags, shotTypes };
+  return { myClubs: clubs, myBags: formattedBags, shotTypes };
 };
+
+
+
 
 
 // --- Club Functions ---

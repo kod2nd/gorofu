@@ -13,15 +13,16 @@ import {
 import NoteReply from './NoteReply';
 import { toProperCase } from './utils';
 
-const NoteThreadDetailView = ({ note, onBack, userProfile, ...handlers }) => {
+const NoteThreadDetailView = ({ note, onBack, user, ...handlers }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [showMobileActions, setShowMobileActions] = useState(false);
 
-  const canEdit = note.author_id === userProfile.user_id;
-  const canDelete = note.author_id === userProfile.user_id || userProfile.roles.includes('coach');
-  const canFavorite = !handlers.isViewingSelfAsCoach;
-  const canPin = userProfile.roles.includes('coach') && !handlers.isViewingSelfAsCoach;
+  const canEdit = note.author_id === user?.user_id;
+  const canDelete = note.author_id === user?.user_id || (user?.roles || []).includes('coach');
+  const isViewingSelfAsCoach = Boolean(handlers.isViewingSelfAsCoach);
+  const canPin = (user?.roles || []).includes('coach') && !isViewingSelfAsCoach;
+  const canFavorite = !isViewingSelfAsCoach;
   const isPersonalNote = note.author_id === note.student_id;
   
   if (!note) return null;
@@ -509,7 +510,7 @@ const NoteThreadDetailView = ({ note, onBack, userProfile, ...handlers }) => {
                     <CardContent sx={{ p: { xs: 2, sm: 3 } }}>
                       <NoteReply
                         note={reply}
-                        userProfile={userProfile}
+                        user={user}
                         onEdit={() => handlers.onEdit && handlers.onEdit(reply)}
                         onDelete={(replyToDelete) => {
                           handlers.onDelete && handlers.onDelete(replyToDelete);

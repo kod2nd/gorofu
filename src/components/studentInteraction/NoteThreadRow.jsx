@@ -10,13 +10,13 @@ import {
 } from '@mui/icons-material';
 import { toProperCase, stripHtmlAndTruncate } from './utils';
 
-const NoteThreadRow = ({ note, onClick, onFavorite, onPin, isViewingSelfAsCoach, userProfile }) => {
+const NoteThreadRow = ({ note, onClick, onFavorite, onPin, isViewingSelfAsCoach, user }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const [isHovered, setIsHovered] = useState(false);
   
   const canFavorite = !isViewingSelfAsCoach;
-  const canPin = userProfile.roles.includes('coach') && !isViewingSelfAsCoach;
+  const canPin = (user?.roles || []).includes('coach') && !isViewingSelfAsCoach;
   const isPersonalNote = note.author_id === note.student_id;
 
   return (
@@ -149,7 +149,7 @@ const NoteThreadRow = ({ note, onClick, onFavorite, onPin, isViewingSelfAsCoach,
                   }
                 }}
               >
-                <PushPin sx={{ fontSize: { xs: '1rem', sm: '1.125rem' } }} />
+                {note.is_pinned_to_dashboard ? <PushPin sx={{ fontSize: { xs: '1rem', sm: '1.125rem' } }}/> : <PushPinOutlined sx={{ fontSize: { xs: '1rem', sm: '1.125rem' } }}/>}
               </IconButton>
             </Tooltip>
           )}
@@ -170,7 +170,7 @@ const NoteThreadRow = ({ note, onClick, onFavorite, onPin, isViewingSelfAsCoach,
                   }
                 }}
               >
-                <Star sx={{ fontSize: { xs: '1rem', sm: '1.125rem' } }} />
+                {note.is_favorited ? <Star sx={{ fontSize: { xs: '1rem', sm: '1.125rem' } }} /> : <StarBorder sx={{ fontSize: { xs: '1rem', sm: '1.125rem' } }}/>}
               </IconButton>
             </Tooltip>
           )}

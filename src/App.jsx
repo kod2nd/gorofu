@@ -171,22 +171,27 @@ function App() {
 
   // Determine which user's data to show
   const activeUser = useMemo(() => {
-    if (impersonatedUser) {
-      return {
-        id: impersonatedUser.user_id,
-        email: impersonatedUser.email,
-      };
-    }
+  // Prefer profile-shaped object when available (has user_id, roles)
+  const base =
+    impersonatedUser ??
+    userProfile ??
+    (session?.user
+      ? { user_id: session.user.id, id: session.user.id, email: session.user.email }
+      : null);
 
-    if (session?.user) {
-      return {
-        id: session.user.id,
-        email: session.user.email,
-      };
-    }
+  if (!base) return null;
 
-    return null;
-  }, [impersonatedUser, session]);
+  // Normalize to support both legacy (id) + profile (user_id)
+  const user_id = base.user_id ?? base.id ?? null;
+  return {
+    ...base,
+    user_id,
+    id: user_id, // keep id in sync
+    email: base.email ?? session?.user?.email ?? null,
+    roles: base.roles ?? userProfile?.roles ?? [],
+  };
+}, [impersonatedUser, userProfile, session]);
+
 
   const handleEditRound = (roundId) => {
     setEditingRoundId(roundId);
@@ -523,7 +528,6 @@ function App() {
                 <PageContainer active={activePage === 'studentInteractions'}>
                   <StudentInteractionsPage
                     user={activeUser}
-                    userProfile={impersonatedUser || userProfile} 
                     isActive={activePage === 'studentInteractions'}
                     ref={interactionsPageRef}
                     onNoteUpdate={triggerNotesRefresh}

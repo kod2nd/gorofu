@@ -12,13 +12,23 @@ import {
 } from '@mui/material';
 import { Straighten as StraightenIcon } from '@mui/icons-material';
 import PageHeader from './PageHeader';
-import { getMyBagData, createClub, updateClub, deleteClub, createBag, updateBag, deleteBag, syncClubInBags, deleteShot, bulkCreateClubs } from '../services/myBagService';
+import {
+  getMyBagData,
+  createClub,
+  updateClub,
+  deleteClub,
+  createBag,
+  updateBag,
+  deleteBag,
+  syncClubInBags,
+  deleteShot,
+  bulkCreateClubs,
+} from '../services/myBagService';
 import AddClubModal from './myBag/AddClubModal';
 import ConfigureShotsModal from './myBag/ConfigureShotsModal';
 import ManageShotTypesModal from './myBag/ManageShotTypesModal';
 import DistanceLookup from './myBag/DistanceLookup';
 import BagPresetModal from './myBag/BagPresetModal';
-import BagGappingChart from './myBag/BagGappingChart';
 import MyBagsSection from './myBag/MyBagsSection';
 import ConfirmationDialog from './myBag/ConfirmationDialog';
 import MyClubsSection from './myBag/MyClubsSection';
@@ -30,18 +40,16 @@ const mockUserShotConfig = {
     { id: 'cat_approach', name: 'Approach' },
     { id: 'cat_short', name: 'Short Game' },
   ],
-  shotTypes: [
-    // This will be populated from the API
-  ],
+  shotTypes: [],
 };
- 
+
 const MyBagPage = ({ user, isActive }) => {
   const [myClubs, setMyClubs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [shotConfig, setShotConfig] = useState({ categories: [], shotTypes: [] });
   const [myBags, setMyBags] = useState([]);
-  const [gappingSelectedBagId, setGappingSelectedBagId] = useState('all'); // 'all' or a bag id for gapping
-  const [displayUnit, setDisplayUnit] = useState('meters'); // Default to meters
+  const [gappingSelectedBagId, setGappingSelectedBagId] = useState('all');
+  const [displayUnit, setDisplayUnit] = useState('meters');
   const [isAddClubModalOpen, setAddClubModalOpen] = useState(false);
   const [editingClub, setEditingClub] = useState(null);
   const [isShotsModalOpen, setShotsModalOpen] = useState(false);
@@ -50,19 +58,32 @@ const MyBagPage = ({ user, isActive }) => {
   const [isBagPresetModalOpen, setBagPresetModalOpen] = useState(false);
   const [editingBag, setEditingBag] = useState(null);
   const [deletingBagId, setDeletingBagId] = useState(null);
-  const [clubSortOrder, setClubSortOrder] = useState('loft'); // 'loft' or 'name'
-  const [clubFilterBagIds, setClubFilterBagIds] = useState([]); // Array of bag IDs
+  const [clubSortOrder, setClubSortOrder] = useState('loft');
+  const [clubFilterBagIds, setClubFilterBagIds] = useState([]);
   const [confirmDeleteDialog, setConfirmDeleteDialog] = useState({ open: false, id: null, name: '', type: '' });
   const [snackbar, setSnackbar] = useState({ open: false, message: '', severity: 'success' });
   const theme = useTheme();
 
+  // ✅ Normalize user id: supports profile shape (user_id) and auth shape (id)
+  const userId = user?.user_id ?? user?.id ?? null;
+
   const fetchData = async () => {
     if (!isActive) return;
-    if (!user?.id) return;
+
+    // If we don't have a target user yet, don't fetch (prevents fallback to wrong user)
+    if (!userId) {
+      setMyClubs([]);
+      setMyBags([]);
+      setShotConfig({ categories: mockUserShotConfig.categories, shotTypes: [] });
+      setLoading(false);
+      return;
+    }
 
     setLoading(true);
     try {
+      // ✅ getMyBagData expects an "impersonatedUser" object with user_id
       const { myClubs, myBags, shotTypes } = await getMyBagData();
+
       setMyClubs(myClubs);
       setMyBags(myBags);
       setShotConfig({
@@ -70,7 +91,8 @@ const MyBagPage = ({ user, isActive }) => {
         shotTypes: shotTypes || [],
       });
     } catch (error) {
-      console.error("Failed to load bag data", error);
+      console.error('Failed to load bag data', error);
+      setSnackbar({ open: true, message: `Failed to load bag data: ${error.message}`, severity: 'error' });
     } finally {
       setLoading(false);
     }
@@ -78,16 +100,15 @@ const MyBagPage = ({ user, isActive }) => {
 
   useEffect(() => {
     fetchData();
-  }, [user?.email, isActive]);
+    // Reload when impersonation changes (userId) or when page becomes active
+  }, [isActive, userId]);
 
   const handleSaveClub = async (clubData) => {
     if (editingClub) {
-      // Update existing club
       const updatedClub = await updateClub(editingClub.id, clubData);
-      setMyClubs(myClubs.map(c => c.id === editingClub.id ? updatedClub : c));
+      setMyClubs(myClubs.map(c => (c.id === editingClub.id ? updatedClub : c)));
       setSnackbar({ open: true, message: 'Club updated successfully!', severity: 'success' });
     } else {
-      // Create new club
       const newClub = await createClub(clubData);
       setMyClubs([...myClubs, newClub]);
       setSnackbar({ open: true, message: 'Club added successfully!', severity: 'success' });
@@ -116,15 +137,18 @@ const MyBagPage = ({ user, isActive }) => {
         await deleteClub(id);
         setMyClubs(prevClubs => prevClubs.filter(club => club.id !== id));
       } catch (error) {
-        console.error("Failed to delete club", error);
+        console.error('Failed to delete club', error);
+        setSnackbar({ open: true, message: `Failed to delete club: ${error.message}`, severity: 'error' });
+      } finally {
+        setConfirmDeleteDialog({ open: false, id: null, name: '', type: '' });
       }
     } else if (type === 'shot') {
       try {
         await deleteShot(id);
-        // Refetch data to update all club cards
         await fetchData();
       } catch (error) {
-        console.error("Failed to delete shot", error);
+        console.error('Failed to delete shot', error);
+        setSnackbar({ open: true, message: `Failed to delete shot: ${error.message}`, severity: 'error' });
       } finally {
         setConfirmDeleteDialog({ open: false, id: null, name: '', type: '' });
       }
@@ -133,9 +157,7 @@ const MyBagPage = ({ user, isActive }) => {
 
   const handleConfigureShots = (club, openInAddMode = false, shotToEdit = null) => {
     const clubData = { ...club, shotToEdit };
-    if (openInAddMode) {
-      clubData.openInAddMode = true;
-    }
+    if (openInAddMode) clubData.openInAddMode = true;
     setClubForShots(clubData);
     setShotsModalOpen(true);
   };
@@ -148,11 +170,10 @@ const MyBagPage = ({ user, isActive }) => {
   const handleClubBagAssignmentChange = async (clubId, newBagIds) => {
     try {
       await syncClubInBags(clubId, newBagIds);
-      // To reflect the change immediately, we can update the local state
-      // without a full refetch, which is more performant.
-      await fetchData(); // Or for simplicity, just refetch.
+      await fetchData();
     } catch (error) {
       console.error("Failed to update club's bag assignment:", error);
+      setSnackbar({ open: true, message: `Failed to update club assignment: ${error.message}`, severity: 'error' });
     }
   };
 
@@ -160,17 +181,15 @@ const MyBagPage = ({ user, isActive }) => {
     const { id, clubIds, name, tags, is_default } = bagData;
     try {
       if (id) {
-        // Update existing bag
-        await updateBag(id, { name, tags, is_default }, clubIds);        
+        await updateBag(id, { name, tags, is_default }, clubIds);
       } else {
-        // Create new bag
         await createBag({ name, tags, is_default }, clubIds);
       }
-      await fetchData(); // Refetch all data to update UI
+      await fetchData();
       setBagPresetModalOpen(false);
       setSnackbar({ open: true, message: `Bag ${id ? 'updated' : 'created'} successfully!`, severity: 'success' });
     } catch (error) {
-      console.error("Failed to save bag preset:", error);
+      console.error('Failed to save bag preset:', error);
       setSnackbar({ open: true, message: `Error: ${error.message}`, severity: 'error' });
     }
   };
@@ -186,14 +205,13 @@ const MyBagPage = ({ user, isActive }) => {
 
   const handleSetDefaultBag = async (bagToSetAsDefault) => {
     try {
-      // We only need to update the is_default flag. The service handles unsetting the old default.
       const updates = {
         name: bagToSetAsDefault.name,
         tags: bagToSetAsDefault.tags,
         is_default: true,
       };
       await updateBag(bagToSetAsDefault.id, updates, bagToSetAsDefault.clubIds);
-      await fetchData(); // Refresh data to show the change
+      await fetchData();
       setSnackbar({ open: true, message: `"${bagToSetAsDefault.name}" is now the default bag.`, severity: 'success' });
     } catch (error) {
       setSnackbar({ open: true, message: `Error setting default bag: ${error.message}`, severity: 'error' });
@@ -206,7 +224,8 @@ const MyBagPage = ({ user, isActive }) => {
       await deleteBag(deletingBagId);
       await fetchData();
     } catch (error) {
-      console.error("Failed to delete bag:", error);
+      console.error('Failed to delete bag:', error);
+      setSnackbar({ open: true, message: `Failed to delete bag: ${error.message}`, severity: 'error' });
     } finally {
       setDeletingBagId(null);
     }
@@ -220,9 +239,8 @@ const MyBagPage = ({ user, isActive }) => {
   const filteredAndSortedClubs = useMemo(() => {
     let clubsToDisplay = [...myClubs];
 
-    // Apply bag filter
     if (clubFilterBagIds.length > 0) {
-      clubsToDisplay = clubsToDisplay.filter(club => 
+      clubsToDisplay = clubsToDisplay.filter(club =>
         clubFilterBagIds.some(bagId => {
           const bag = myBags.find(b => b.id === bagId);
           return bag?.clubIds.includes(club.id);
@@ -230,16 +248,12 @@ const MyBagPage = ({ user, isActive }) => {
       );
     }
 
-    // Apply sorting
     clubsToDisplay.sort((a, b) => {
       if (clubSortOrder === 'loft') {
-        const loftA = parseInt(a.loft) || 999; // Put clubs without loft at the end
+        const loftA = parseInt(a.loft) || 999;
         const loftB = parseInt(b.loft) || 999;
-        if (loftA !== loftB) {
-          return loftA - loftB; // Ascending loft
-        }
+        if (loftA !== loftB) return loftA - loftB;
       }
-      // Default or fallback sort by name
       return a.name.localeCompare(b.name);
     });
 
@@ -249,27 +263,19 @@ const MyBagPage = ({ user, isActive }) => {
   const groupedClubsForDisplay = useMemo(() => {
     const clubTypesOrder = ['Driver', 'Woods', 'Hybrid', 'Iron', 'Wedge', 'Putter', 'Other'];
     const groups = {};
-
-    clubTypesOrder.forEach(type => {
-      groups[type] = [];
-    });
+    clubTypesOrder.forEach(type => { groups[type] = []; });
 
     filteredAndSortedClubs.forEach(club => {
       const type = club.type && clubTypesOrder.includes(club.type) ? club.type : 'Other';
       groups[type].push(club);
     });
 
-    // The filteredAndSortedClubs are already sorted, so we just need to group them.
-    // If sorting by name, the loft sort within groups might not be perfect, but the primary sort is respected.
-    // The loft sort is most effective when the primary sort is 'loft'.
-
     return groups;
-
   }, [filteredAndSortedClubs]);
 
   const clubTemplateHeaders = [
-    'name', 'type', 'make', 'model', 'loft', 'bounce', 'shaft_make', 'shaft_model', 
-    'shaft_flex', 'shaft_weight', 'shaft_length', 'grip_make', 'grip_model', 
+    'name', 'type', 'make', 'model', 'loft', 'bounce', 'shaft_make', 'shaft_model',
+    'shaft_flex', 'shaft_weight', 'shaft_length', 'grip_make', 'grip_model',
     'grip_size', 'grip_weight', 'swing_weight'
   ];
 
@@ -292,12 +298,11 @@ const MyBagPage = ({ user, isActive }) => {
     const reader = new FileReader();
     reader.onload = async (e) => {
       let text = e.target.result;
-      if (text.startsWith('\uFEFF')) { // Remove BOM
-        text = text.substring(1);
-      }
+      if (text.startsWith('\uFEFF')) text = text.substring(1);
+
       const lines = text.split('\n').filter(line => line.trim() !== '');
       const headers = lines[0].split(',').map(h => h.trim());
-      
+
       const clubsToCreate = [];
       for (let i = 1; i < lines.length; i++) {
         const values = lines[i].split(',').map(v => v.trim());
@@ -307,21 +312,19 @@ const MyBagPage = ({ user, isActive }) => {
           }
           return obj;
         }, {});
-        if (Object.keys(clubData).length > 0) {
-          clubsToCreate.push(clubData);
-        }
+        if (Object.keys(clubData).length > 0) clubsToCreate.push(clubData);
       }
 
       try {
         await bulkCreateClubs(clubsToCreate);
         setSnackbar({ open: true, message: `${clubsToCreate.length} clubs imported successfully!`, severity: 'success' });
-        fetchData(); // Refresh the list
+        fetchData();
       } catch (error) {
         setSnackbar({ open: true, message: `Error importing clubs: ${error.message}`, severity: 'error' });
       }
     };
     reader.readAsText(file);
-    event.target.value = null; // Reset file input
+    event.target.value = null;
   };
 
   return (
@@ -353,7 +356,6 @@ const MyBagPage = ({ user, isActive }) => {
 
       <DistanceLookup myBags={myBags} myClubs={myClubs} displayUnit={displayUnit} />
 
-      {/* My Bags Section */}
       <MyBagsSection
         myBags={myBags}
         myClubs={myClubs}
@@ -364,7 +366,6 @@ const MyBagPage = ({ user, isActive }) => {
         shotConfig={shotConfig}
       />
 
-      {/* Club List */}
       <MyClubsSection
         myBags={myBags}
         groupedClubs={groupedClubsForDisplay}

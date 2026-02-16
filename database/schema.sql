@@ -2,1073 +2,1358 @@
 -- Run this in your Supabase SQL Editor
 
 -- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+create extension if not exists "uuid-ossp";
+
+-- =========================================================
+-- CORE TABLES
+-- =========================================================
 
 -- User profiles table: Extended user information and roles
-CREATE TABLE user_profiles (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_id UUID NOT NULL UNIQUE, -- References auth.users.id
-  email TEXT NOT NULL UNIQUE,
-  full_name TEXT,
-  roles TEXT[] NOT NULL DEFAULT ARRAY['user']::TEXT[],
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'active', 'suspended', 'inactive')),
-  country TEXT DEFAULT 'Singapore',
-  handicap DECIMAL(3,1),
-  scoring_bias INTEGER DEFAULT 1, -- 0=Par, 1=Bogey, 2=Double Bogey
-  phone TEXT,
-  date_of_birth DATE,
-  created_by TEXT, -- email of admin who created/approved the user
-  approved_at TIMESTAMP WITH TIME ZONE,
-  last_login TIMESTAMP WITH TIME ZONE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+create table if not exists public.user_profiles (
+  id uuid primary key default uuid_generate_v4(),
+  user_id uuid not null unique, -- References auth.users.id
+  email text not null unique,
+  full_name text,
+  roles text[] not null default array['user']::text[],
+  status text default 'pending' check (status in ('pending', 'active', 'suspended', 'inactive')),
+  country text default 'Singapore',
+  handicap decimal(3,1),
+  scoring_bias integer default 1, -- 0=Par, 1=Bogey, 2=Double Bogey
+  phone text,
+  date_of_birth date,
+  created_by text, -- email of admin who created/approved the user
+  approved_at timestamptz,
+  last_login timestamptz,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
 );
 
 -- User invitations table: For onboarding new users
-CREATE TABLE user_invitations (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  email TEXT NOT NULL UNIQUE,
-  invited_by TEXT NOT NULL, -- email of admin who sent invitation
-  role TEXT DEFAULT 'user' CHECK (role IN ('user', 'admin')),
-  invitation_token TEXT NOT NULL UNIQUE,
-  expires_at TIMESTAMP WITH TIME ZONE NOT NULL,
-  accepted_at TIMESTAMP WITH TIME ZONE,
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'accepted', 'expired', 'cancelled')),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+create table if not exists public.user_invitations (
+  id uuid primary key default uuid_generate_v4(),
+  email text not null unique,
+  invited_by text not null, -- email of admin who sent invitation
+  role text default 'user' check (role in ('user', 'admin')),
+  invitation_token text not null unique,
+  expires_at timestamptz not null,
+  accepted_at timestamptz,
+  status text default 'pending' check (status in ('pending', 'accepted', 'expired', 'cancelled')),
+  created_at timestamptz default now()
 );
 
 -- Audit log for user management actions
-CREATE TABLE user_audit_log (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  target_user_email TEXT NOT NULL,
-  action TEXT NOT NULL, -- 'created', 'updated', 'suspended', 'activated', 'role_changed', etc.
-  performed_by TEXT NOT NULL, -- email of admin who performed the action
-  old_values JSONB,
-  new_values JSONB,
-  notes TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+create table if not exists public.user_audit_log (
+  id uuid primary key default uuid_generate_v4(),
+  target_user_email text not null,
+  action text not null, -- 'created', 'updated', 'suspended', 'activated', 'role_changed', etc.
+  performed_by text not null, -- email of admin who performed the action
+  old_values jsonb,
+  new_values jsonb,
+  notes text,
+  created_at timestamptz default now()
 );
 
 -- Courses table: Master course data shared among all users
-CREATE TABLE courses (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  name TEXT NOT NULL,
-  country TEXT DEFAULT 'Singapore',
-  city TEXT,
-  created_by TEXT NOT NULL, -- email of user who first added the course
-  is_verified BOOLEAN DEFAULT FALSE, -- admin verified course data
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  CONSTRAINT unique_course_per_country UNIQUE(name, country)
+create table if not exists public.courses (
+  id uuid primary key default uuid_generate_v4(),
+  name text not null,
+  country text default 'Singapore',
+  city text,
+  created_by text not null, -- email of user who first added the course
+  is_verified boolean default false, -- admin verified course data
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  constraint unique_course_per_country unique(name, country)
 );
 
 -- Course tee boxes: Hole distances and pars per tee box
-CREATE TABLE course_tee_boxes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-  tee_box TEXT NOT NULL,
-  hole_number INTEGER NOT NULL CHECK (hole_number >= 1 AND hole_number <= 18),
-  par INTEGER CHECK (par >= 2 AND par <= 7),
-  distance INTEGER CHECK (distance > 0),
-  yards_or_meters_unit TEXT DEFAULT 'yards' CHECK (yards_or_meters_unit IN ('yards', 'meters')),
-  last_updated_by TEXT NOT NULL, -- email of user who last updated this hole
-  last_updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  CONSTRAINT unique_hole_per_tee_box UNIQUE(course_id, tee_box, hole_number)
+create table if not exists public.course_tee_boxes (
+  id uuid primary key default uuid_generate_v4(),
+  course_id uuid not null references public.courses(id) on delete cascade,
+  tee_box text not null,
+  hole_number integer not null check (hole_number >= 1 and hole_number <= 18),
+  par integer check (par >= 2 and par <= 7),
+  distance integer check (distance > 0),
+  yards_or_meters_unit text default 'yards' check (yards_or_meters_unit in ('yards', 'meters')),
+  last_updated_by text not null, -- email of user who last updated this hole
+  last_updated_at timestamptz default now(),
+  created_at timestamptz default now(),
+  constraint unique_hole_per_tee_box unique(course_id, tee_box, hole_number)
 );
 
 -- Course change requests: Maker-checker workflow for course updates
-CREATE TABLE course_change_requests (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-  tee_box TEXT NOT NULL,
-  hole_number INTEGER NOT NULL CHECK (hole_number >= 1 AND hole_number <= 18),
-  current_par INTEGER,
-  current_distance INTEGER,
-  proposed_par INTEGER,
-  proposed_distance INTEGER,
-  current_yards_or_meters_unit TEXT,
-  proposed_yards_or_meters_unit TEXT,
-  requested_by TEXT NOT NULL, -- email of requesting user
-  reason TEXT,
-  status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
-  reviewed_by TEXT, -- email of admin who reviewed
-  reviewed_at TIMESTAMP WITH TIME ZONE,
-  admin_notes TEXT,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+create table if not exists public.course_change_requests (
+  id uuid primary key default uuid_generate_v4(),
+  course_id uuid not null references public.courses(id) on delete cascade,
+  tee_box text not null,
+  hole_number integer not null check (hole_number >= 1 and hole_number <= 18),
+  current_par integer,
+  current_distance integer,
+  proposed_par integer,
+  proposed_distance integer,
+  current_yards_or_meters_unit text,
+  proposed_yards_or_meters_unit text,
+  requested_by text not null, -- email of requesting user
+  reason text,
+  status text default 'pending' check (status in ('pending', 'approved', 'rejected')),
+  reviewed_by text, -- email of admin who reviewed
+  reviewed_at timestamptz,
+  admin_notes text,
+  created_at timestamptz default now()
 );
 
 -- Rounds table: Round-level data
-CREATE TABLE rounds (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  user_email TEXT NOT NULL,
-  course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-  tee_box TEXT NOT NULL,
-  round_date DATE NOT NULL,
-  round_type TEXT DEFAULT '18_holes' CHECK (round_type IN ('front_9', 'back_9', '18_holes')),
-  scoring_zone_level TEXT NOT NULL,
-  total_holes_played INTEGER DEFAULT 0,
-  total_score INTEGER DEFAULT 0,
-  total_putts INTEGER DEFAULT 0,
-  total_penalties INTEGER DEFAULT 0,
-  is_eligible_round BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+create table if not exists public.rounds (
+  id uuid primary key default uuid_generate_v4(),
+  user_email text not null,
+  course_id uuid not null references public.courses(id) on delete cascade,
+  tee_box text not null,
+  round_date date not null,
+  round_type text default '18_holes' check (round_type in ('front_9', 'back_9', '18_holes')),
+  scoring_zone_level text not null,
+  total_holes_played integer default 0,
+  total_score integer default 0,
+  total_putts integer default 0,
+  total_penalties integer default 0,
+  is_eligible_round boolean default false,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now()
 );
 
 -- Round holes table: Actual performance data per hole
-CREATE TABLE round_holes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  round_id UUID NOT NULL REFERENCES rounds(id) ON DELETE CASCADE,
-  hole_number INTEGER NOT NULL CHECK (hole_number >= 1 AND hole_number <= 18),
-  hole_score INTEGER CHECK (hole_score > 0),
-  putts INTEGER CHECK (putts >= 0),
-  putts_within4ft INTEGER DEFAULT 0 CHECK (putts_within4ft >= 0),
-  penalty_shots INTEGER DEFAULT 0 CHECK (penalty_shots >= 0),
-  scoring_zone_in_regulation BOOLEAN DEFAULT FALSE,
-  holeout_from_outside_4ft BOOLEAN DEFAULT FALSE,
-  holeout_within_3_shots_scoring_zone BOOLEAN DEFAULT FALSE,
-  bad_habits TEXT[] DEFAULT '{}',
-  par INTEGER CHECK (par >= 2 AND par <= 7),
-  distance INTEGER CHECK (distance > 0),
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  CONSTRAINT unique_hole_per_round UNIQUE(round_id, hole_number)
+create table if not exists public.round_holes (
+  id uuid primary key default uuid_generate_v4(),
+  round_id uuid not null references public.rounds(id) on delete cascade,
+  hole_number integer not null check (hole_number >= 1 and hole_number <= 18),
+  hole_score integer check (hole_score > 0),
+  putts integer check (putts >= 0),
+  putts_within4ft integer default 0 check (putts_within4ft >= 0),
+  penalty_shots integer default 0 check (penalty_shots >= 0),
+  scoring_zone_in_regulation boolean default false,
+  holeout_from_outside_4ft boolean default false,
+  holeout_within_3_shots_scoring_zone boolean default false,
+  bad_habits text[] default '{}',
+  par integer check (par >= 2 and par <= 7),
+  distance integer check (distance > 0),
+  created_at timestamptz default now(),
+  constraint unique_hole_per_round unique(round_id, hole_number)
 );
 
--- Table to link coaches to their students
-CREATE TABLE IF NOT EXISTS public.coach_student_mappings (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  coach_user_id UUID NOT NULL,
-  student_user_id UUID NOT NULL,
-  CONSTRAINT fk_coach FOREIGN KEY (coach_user_id) REFERENCES public.user_profiles(user_id) ON DELETE CASCADE,
-  CONSTRAINT fk_student FOREIGN KEY (student_user_id) REFERENCES public.user_profiles(user_id) ON DELETE CASCADE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  CONSTRAINT unique_coach_student UNIQUE (coach_user_id, student_user_id)
+-- Coach/student mapping
+create table if not exists public.coach_student_mappings (
+  id uuid primary key default uuid_generate_v4(),
+  coach_user_id uuid not null,
+  student_user_id uuid not null,
+  constraint fk_coach foreign key (coach_user_id) references public.user_profiles(user_id) on delete cascade,
+  constraint fk_student foreign key (student_user_id) references public.user_profiles(user_id) on delete cascade,
+  created_at timestamptz default now(),
+  constraint unique_coach_student unique (coach_user_id, student_user_id)
 );
 
--- Table for coaches to leave notes for students
-CREATE TABLE IF NOT EXISTS public.coach_notes (
-  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-  author_id UUID NOT NULL,
-  student_id UUID NOT NULL,
-  parent_note_id UUID REFERENCES public.coach_notes(id) ON DELETE CASCADE,
-  note TEXT NOT NULL,
-  subject TEXT,
-  lesson_date TIMESTAMP WITH TIME ZONE,
-  is_favorited BOOLEAN DEFAULT FALSE,
-  is_pinned_to_dashboard BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
-  CONSTRAINT fk_author_note FOREIGN KEY (author_id) REFERENCES public.user_profiles(user_id) ON DELETE CASCADE,
-  CONSTRAINT fk_student_note FOREIGN KEY (student_id) REFERENCES public.user_profiles(user_id) ON DELETE CASCADE
+-- Coach notes (threads + replies)
+create table if not exists public.coach_notes (
+  id uuid primary key default uuid_generate_v4(),
+  author_id uuid not null,
+  student_id uuid not null,
+  parent_note_id uuid references public.coach_notes(id) on delete cascade,
+  note text not null,
+  subject text,
+  lesson_date timestamptz,
+  is_favorited boolean default false,
+  is_pinned_to_dashboard boolean default false,
+  created_at timestamptz default now(),
+  updated_at timestamptz default now(),
+  constraint fk_author_note foreign key (author_id) references public.user_profiles(user_id) on delete cascade,
+  constraint fk_student_note foreign key (student_id) references public.user_profiles(user_id) on delete cascade
 );
 
--- Enable RLS for the coach_notes table
-ALTER TABLE public.coach_notes ENABLE ROW LEVEL SECURITY;
+-- =========================================================
+-- INTERNAL SCHEMA + UNRESTRICTED VIEW
+-- =========================================================
 
--- Enable RLS for the new table
-ALTER TABLE public.coach_student_mappings ENABLE ROW LEVEL SECURITY;
+create schema if not exists internal;
 
--- Create the 'internal' schema if it doesn't already exist.
--- This schema will hold objects that should not be directly exposed to the API.
-CREATE SCHEMA IF NOT EXISTS internal;
+create or replace view internal.user_profiles_unrestricted as
+select * from public.user_profiles;
 
--- Create a view on user_profiles that bypasses RLS for internal checks.
--- We grant SELECT access only to the 'postgres' role, which is the role that SECURITY DEFINER functions run as.
-CREATE OR REPLACE VIEW internal.user_profiles_unrestricted AS
-SELECT * FROM public.user_profiles;
+grant select on internal.user_profiles_unrestricted to postgres;
 
-GRANT SELECT ON internal.user_profiles_unrestricted TO postgres;
+-- =========================================================
+-- INDEXES
+-- =========================================================
 
--- Create indexes for better performance
-CREATE INDEX idx_courses_country ON courses(country);
-CREATE INDEX idx_courses_name ON courses(name);
-CREATE INDEX idx_course_tee_boxes_course_tee ON course_tee_boxes(course_id, tee_box);
-CREATE INDEX idx_rounds_user_email ON rounds(user_email);
-CREATE INDEX idx_rounds_course_date ON rounds(course_id, round_date);
-CREATE INDEX idx_round_holes_round_id ON round_holes(round_id);
-CREATE INDEX IF NOT EXISTS idx_course_change_requests_course_id ON course_change_requests(course_id);
+create index if not exists idx_courses_country on public.courses(country);
+create index if not exists idx_courses_name on public.courses(name);
+create index if not exists idx_course_tee_boxes_course_tee on public.course_tee_boxes(course_id, tee_box);
+create index if not exists idx_rounds_user_email on public.rounds(user_email);
+create index if not exists idx_rounds_course_date on public.rounds(course_id, round_date);
+create index if not exists idx_round_holes_round_id on public.round_holes(round_id);
+create index if not exists idx_course_change_requests_course_id on public.course_change_requests(course_id);
 
--- Helper function to get the role of the current user
--- This function checks if the current user has AT LEAST ONE of the specified roles, using the unrestricted view.
-CREATE OR REPLACE FUNCTION has_roles(roles_to_check TEXT[])
-RETURNS BOOLEAN
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = internal, public -- Prioritize the internal schema
-AS $$
-DECLARE
-  user_roles_array TEXT[];
-BEGIN
-  -- Check for impersonation variable
-  -- Use 'true' as the second argument to prevent an error if the setting is missing.
-  IF current_setting('app.impersonated_user_email', true) IS NOT NULL AND current_setting('app.impersonated_user_email', true) <> '' THEN
-    -- If impersonating, return the role of the impersonated user from the unrestricted view
-    SELECT roles INTO user_roles_array FROM internal.user_profiles_unrestricted WHERE email = current_setting('app.impersonated_user_email', true);
-  ELSE
-    -- Otherwise, get roles for the currently authenticated user
-    SELECT roles INTO user_roles_array FROM internal.user_profiles_unrestricted WHERE user_id = auth.uid();
-  END IF;
+-- =========================================================
+-- IMPERSONATION-AWARE HELPERS
+-- (Supports BOTH session GUC and JWT user_metadata.impersonatedUser)
+-- =========================================================
 
-  -- Check for intersection between user's roles and the roles to check
-  RETURN user_roles_array && roles_to_check;
-END;
+create or replace function public.has_roles(roles_to_check text[])
+returns boolean
+language plpgsql
+security definer
+set search_path = internal, public
+as $$
+declare
+  user_roles_array text[];
+  impersonated_email text;
+begin
+  impersonated_email :=
+    coalesce(
+      nullif(current_setting('app.impersonated_user_email', true), ''),
+      nullif((auth.jwt() -> 'user_metadata' ->> 'impersonatedUser'), ''),
+      nullif((auth.jwt() ->> 'impersonatedUser'), '')
+    );
+
+  if impersonated_email is not null then
+    select roles
+      into user_roles_array
+      from internal.user_profiles_unrestricted
+     where email = impersonated_email;
+  else
+    select roles
+      into user_roles_array
+      from internal.user_profiles_unrestricted
+     where user_id = auth.uid();
+  end if;
+
+  return user_roles_array && roles_to_check;
+end;
 $$;
 
--- Helper function to get the roles of the current user
-CREATE OR REPLACE FUNCTION get_my_roles()
-RETURNS TEXT[]
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = internal, public
-AS $$
-BEGIN
-  -- Check for impersonation variable
-  -- Use 'true' as the second argument to prevent an error if the setting is missing.
-  IF current_setting('app.impersonated_user_email', true) IS NOT NULL AND current_setting('app.impersonated_user_email', true) <> '' THEN
-    -- If impersonating, return the roles of the impersonated user from the unrestricted view
-    RETURN (SELECT roles FROM internal.user_profiles_unrestricted WHERE email = current_setting('app.impersonated_user_email', true));
-  ELSE
-    -- Otherwise, return the role of the currently authenticated user
-    RETURN (SELECT roles FROM internal.user_profiles_unrestricted WHERE user_id = auth.uid());
-  END IF;
-END;
-$$;
+create or replace function public.get_my_roles()
+returns text[]
+language plpgsql
+security definer
+set search_path = internal, public
+as $$
+declare
+  impersonated_email text;
+begin
+  impersonated_email :=
+    coalesce(
+      nullif(current_setting('app.impersonated_user_email', true), ''),
+      nullif((auth.jwt() -> 'user_metadata' ->> 'impersonatedUser'), ''),
+      nullif((auth.jwt() ->> 'impersonatedUser'), '')
+    );
 
--- Helper function to check if a user is a student of the current user (who must be a coach)
-CREATE OR REPLACE FUNCTION is_my_student(student_email_to_check TEXT)
-RETURNS BOOLEAN
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-AS $$
-DECLARE
-  active_user_id UUID;
-  is_student BOOLEAN;
-BEGIN
-  -- Get the user_id of the currently active user (impersonated or logged-in)
-  SELECT user_id INTO active_user_id FROM public.user_profiles 
-  WHERE email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email')
-  LIMIT 1;
+  if impersonated_email is not null then
+    return (
+      select roles
+        from internal.user_profiles_unrestricted
+       where email = impersonated_email
+    );
+  end if;
 
-  -- Only check if the current user is a coach
-  IF NOT (SELECT 'coach' = ANY(roles) FROM public.user_profiles WHERE user_id = active_user_id) THEN
-    RETURN FALSE;
-  END IF;
-
-  SELECT EXISTS (
-    SELECT 1
-    FROM public.coach_student_mappings csm
-    JOIN public.user_profiles sp ON csm.student_user_id = sp.user_id
-    WHERE csm.coach_user_id = active_user_id
-    AND sp.email = student_email_to_check
-  ) INTO is_student;
-
-  RETURN is_student;
-END;
-$$;
-
-CREATE OR REPLACE FUNCTION is_coach_viewing_authorized()
-RETURNS BOOLEAN
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
-  current_user_email TEXT;
-  user_roles_array TEXT[];
-BEGIN
-  current_user_email := COALESCE(
-    current_setting('app.impersonated_user_email', true),
-    auth.jwt() ->> 'email'
+  return (
+    select roles
+      from internal.user_profiles_unrestricted
+     where user_id = auth.uid()
   );
-
-  IF current_user_email IS NULL THEN
-    RETURN FALSE;
-  END IF;
-
-  -- Get current user's roles
-  SELECT roles INTO user_roles_array 
-  FROM user_profiles 
-  WHERE email = current_user_email;
-
-  -- Return true if user is a coach
-  RETURN 'coach' = ANY(user_roles_array);
-END;
+end;
 $$;
 
--- Helper function to get the user_id of the current user, respecting impersonation
-CREATE OR REPLACE FUNCTION get_current_user_id()
-RETURNS UUID
-LANGUAGE plpgsql
-STABLE
-SECURITY DEFINER
-SET search_path = internal, public
-AS $$
-DECLARE
-  impersonated_email TEXT;
-  user_id_to_return UUID;
-BEGIN
-  -- Read the session-local variable.
-  impersonated_email := current_setting('app.impersonated_user_email', true);
-  IF impersonated_email IS NOT NULL AND impersonated_email <> '' THEN
-    SELECT user_id INTO user_id_to_return FROM internal.user_profiles_unrestricted WHERE email = impersonated_email;
-    RETURN user_id_to_return;
-  ELSE
-    RETURN auth.uid();
-  END IF;
-END;
+create or replace function public.get_current_user_id()
+returns uuid
+language plpgsql
+stable
+security definer
+set search_path = internal, public
+as $$
+declare
+  impersonated_email text;
+  user_id_to_return uuid;
+begin
+  impersonated_email :=
+    coalesce(
+      nullif(current_setting('app.impersonated_user_email', true), ''),
+      nullif((auth.jwt() -> 'user_metadata' ->> 'impersonatedUser'), ''),
+      nullif((auth.jwt() ->> 'impersonatedUser'), '')
+    );
+
+  if impersonated_email is not null then
+    select user_id
+      into user_id_to_return
+      from internal.user_profiles_unrestricted
+     where email = impersonated_email;
+
+    return user_id_to_return;
+  end if;
+
+  return auth.uid();
+end;
 $$;
 
--- Function to calculate the current SZIR streak for a user
-CREATE OR REPLACE FUNCTION calculate_user_szir_streak(user_email_param TEXT)
-RETURNS INTEGER
-LANGUAGE plpgsql STABLE SET search_path = 'public'
-AS $$
-DECLARE
-    streak_count INTEGER := 0;
-    hole_record RECORD;
-BEGIN
-    FOR hole_record IN
-        SELECT rh.scoring_zone_in_regulation
-        FROM round_holes rh
-        JOIN rounds r ON rh.round_id = r.id
-        WHERE r.user_email = user_email_param
-        ORDER BY r.round_date DESC, rh.hole_number DESC
-    LOOP
-        IF hole_record.scoring_zone_in_regulation THEN
-            streak_count := streak_count + 1;
-        ELSE
-            -- The streak is broken, so we can stop counting.
-            EXIT;
-        END IF;
-    END LOOP;
+create or replace function public.is_coach_viewing_authorized()
+returns boolean
+language plpgsql
+stable
+security definer
+set search_path = internal, public
+as $$
+declare
+  current_user_email text;
+  user_roles_array text[];
+begin
+  current_user_email :=
+    coalesce(
+      nullif(current_setting('app.impersonated_user_email', true), ''),
+      nullif((auth.jwt() -> 'user_metadata' ->> 'impersonatedUser'), ''),
+      nullif((auth.jwt() ->> 'impersonatedUser'), ''),
+      auth.jwt() ->> 'email'
+    );
 
-    RETURN streak_count;
-END;
+  if current_user_email is null then
+    return false;
+  end if;
+
+  select roles
+    into user_roles_array
+    from internal.user_profiles_unrestricted
+   where email = current_user_email;
+
+  return 'coach' = any(user_roles_array);
+end;
 $$;
 
--- Function to calculate the current SZ Par streak for a user
-CREATE OR REPLACE FUNCTION calculate_user_szpar_streak(user_email_param TEXT)
-RETURNS INTEGER
-LANGUAGE plpgsql STABLE SET search_path = 'public'
-AS $$
-DECLARE
-    streak_count INTEGER := 0;
-    hole_record RECORD;
-BEGIN
-    FOR hole_record IN
-        SELECT rh.holeout_within_3_shots_scoring_zone
-        FROM round_holes rh
-        JOIN rounds r ON rh.round_id = r.id
-        WHERE r.user_email = user_email_param AND rh.scoring_zone_in_regulation = TRUE
-        ORDER BY r.round_date DESC, rh.hole_number DESC
-    LOOP
-        IF hole_record.holeout_within_3_shots_scoring_zone THEN
-            streak_count := streak_count + 1;
-        ELSE
-            EXIT; -- The streak is broken
-        END IF;
-    END LOOP;
-    RETURN streak_count;
-END;
+create or replace function public.is_my_student(student_email_to_check text)
+returns boolean
+language plpgsql
+stable
+security definer
+set search_path = internal, public
+as $$
+declare
+  active_user_id uuid;
+  is_student boolean;
+  effective_email text;
+begin
+  effective_email :=
+    coalesce(
+      nullif(current_setting('app.impersonated_user_email', true), ''),
+      nullif((auth.jwt() -> 'user_metadata' ->> 'impersonatedUser'), ''),
+      nullif((auth.jwt() ->> 'impersonatedUser'), ''),
+      auth.jwt() ->> 'email'
+    );
+
+  select user_id
+    into active_user_id
+    from internal.user_profiles_unrestricted
+   where email = effective_email
+   limit 1;
+
+  if active_user_id is null then
+    return false;
+  end if;
+
+  if not (select 'coach' = any(roles) from internal.user_profiles_unrestricted where user_id = active_user_id) then
+    return false;
+  end if;
+
+  select exists (
+    select 1
+      from public.coach_student_mappings csm
+      join internal.user_profiles_unrestricted sp on csm.student_user_id = sp.user_id
+     where csm.coach_user_id = active_user_id
+       and sp.email = student_email_to_check
+  ) into is_student;
+
+  return is_student;
+end;
 $$;
 
--- Function to search for courses and include aggregated tee box stats
-CREATE OR REPLACE FUNCTION search_courses_with_stats(
-  search_term TEXT DEFAULT '',
-  country_filter TEXT DEFAULT NULL
+-- =========================================================
+-- STATS / SEARCH FUNCTIONS (unchanged from your version)
+-- =========================================================
+
+create or replace function public.calculate_user_szir_streak(user_email_param text)
+returns integer
+language plpgsql
+stable
+set search_path = public
+as $$
+declare
+  streak_count integer := 0;
+  hole_record record;
+begin
+  for hole_record in
+    select rh.scoring_zone_in_regulation
+      from public.round_holes rh
+      join public.rounds r on rh.round_id = r.id
+     where r.user_email = user_email_param
+     order by r.round_date desc, rh.hole_number desc
+  loop
+    if hole_record.scoring_zone_in_regulation then
+      streak_count := streak_count + 1;
+    else
+      exit;
+    end if;
+  end loop;
+
+  return streak_count;
+end;
+$$;
+
+create or replace function public.calculate_user_szpar_streak(user_email_param text)
+returns integer
+language plpgsql
+stable
+set search_path = public
+as $$
+declare
+  streak_count integer := 0;
+  hole_record record;
+begin
+  for hole_record in
+    select rh.holeout_within_3_shots_scoring_zone
+      from public.round_holes rh
+      join public.rounds r on rh.round_id = r.id
+     where r.user_email = user_email_param
+       and rh.scoring_zone_in_regulation = true
+     order by r.round_date desc, rh.hole_number desc
+  loop
+    if hole_record.holeout_within_3_shots_scoring_zone then
+      streak_count := streak_count + 1;
+    else
+      exit;
+    end if;
+  end loop;
+
+  return streak_count;
+end;
+$$;
+
+create or replace function public.search_courses_with_stats(
+  search_term text default '',
+  country_filter text default null
 )
-RETURNS TABLE(
-  id UUID,
-  name TEXT,
-  country TEXT,
-  city TEXT,
-  tee_box_stats JSONB
+returns table(
+  id uuid,
+  name text,
+  country text,
+  city text,
+  tee_box_stats jsonb
 )
-LANGUAGE plpgsql STABLE
-AS $$
-BEGIN
-  RETURN QUERY
-  SELECT
+language plpgsql
+stable
+as $$
+begin
+  return query
+  select
     c.id,
     c.name,
     c.country,
     c.city,
     (
-      SELECT jsonb_agg(tbs)
-      FROM (
-        SELECT tee_box, COUNT(hole_number) as hole_count, SUM(par) as total_par, SUM(distance) as total_distance, MAX(yards_or_meters_unit) as yards_or_meters_unit
-        FROM course_tee_boxes ctb
-        WHERE ctb.course_id = c.id
-        GROUP BY ctb.tee_box
+      select jsonb_agg(tbs)
+      from (
+        select tee_box,
+               count(hole_number) as hole_count,
+               sum(par) as total_par,
+               sum(distance) as total_distance,
+               max(yards_or_meters_unit) as yards_or_meters_unit
+          from public.course_tee_boxes ctb
+         where ctb.course_id = c.id
+         group by tee_box
       ) tbs
     ) as tee_box_stats
-  FROM courses c
-  WHERE (country_filter IS NULL OR c.country = country_filter)
-    AND (search_term = '' OR c.name ILIKE '%' || search_term || '%')
-  ORDER BY c.name;
-END;
+  from public.courses c
+  where (country_filter is null or c.country = country_filter)
+    and (search_term = '' or c.name ilike '%' || search_term || '%')
+  order by c.name;
+end;
 $$;
 
--- Drop the function first to allow changing the return signature
-DROP FUNCTION IF EXISTS public.get_user_cumulative_stats(TEXT); -- Keep this to ensure idempotency
+drop function if exists public.get_user_cumulative_stats(text);
 
--- Function to get cumulative (all-time) stats for a user
-CREATE OR REPLACE FUNCTION get_user_cumulative_stats(user_email_param TEXT)
-RETURNS TABLE(total_rounds_played BIGINT, eligible_rounds_count BIGINT, total_holes_played BIGINT, avg_score NUMERIC, avg_putts NUMERIC, total_szir BIGINT)
-LANGUAGE plpgsql STABLE SET search_path = 'public'
-AS $$
-BEGIN
-    RETURN QUERY
-    SELECT
-        COUNT(DISTINCT r.id)::BIGINT AS total_rounds_played,
-        COALESCE(
-            COUNT(DISTINCT r.id) FILTER (WHERE r.is_eligible_round = TRUE),
-            0
-        )::BIGINT AS eligible_rounds_count,
-        COALESCE(
-            SUM(CASE WHEN rh.hole_score IS NOT NULL AND rh.putts IS NOT NULL THEN 1 ELSE 0 END),
-            0
-        )::BIGINT AS total_holes_played,
-        COALESCE(AVG(rh.hole_score), 0)::NUMERIC as avg_score,
-        COALESCE(AVG(rh.putts), 0)::NUMERIC as avg_putts,
-        COALESCE(SUM(CASE WHEN rh.scoring_zone_in_regulation THEN 1 ELSE 0 END), 0)::BIGINT as total_szir
-    FROM
-        rounds r
-    LEFT JOIN
-        round_holes rh ON r.id = rh.round_id
-    WHERE
-        r.user_email = user_email_param;
-END;
-$$;
-
--- Drop the function first to allow changing the return signature
-DROP FUNCTION IF EXISTS public.get_recent_rounds_stats(TEXT, INT, BOOLEAN, NUMERIC);
-
-DROP FUNCTION get_recent_rounds_base_stats(text,integer,boolean);
-
--- NEW: Function for base stats
-CREATE OR REPLACE FUNCTION get_recent_rounds_base_stats(user_email_param TEXT, round_limit INT, eligible_rounds_only BOOLEAN)
-RETURNS TABLE (
-    total_holes_played BIGINT,
-    avg_putts_per_hole NUMERIC,
-    szir_percentage NUMERIC,
-    szir_count BIGINT,
-    multi_putt_4ft_holes BIGINT,
-    holeout_within_3_shots_count BIGINT,
-    holeout_from_outside_4ft_count BIGINT,
-    total_penalties BIGINT,
-    avg_penalties_per_round NUMERIC,
-    one_putt_count BIGINT,
-    two_putt_count BIGINT,
-    three_putt_plus_count BIGINT,
-    birdie_or_better_count BIGINT,
-    par_count BIGINT,
-    bogey_count BIGINT,
-    double_bogey_count BIGINT,
-    triple_bogey_plus_count BIGINT
+create or replace function public.get_user_cumulative_stats(user_email_param text)
+returns table(
+  total_rounds_played bigint,
+  eligible_rounds_count bigint,
+  total_holes_played bigint,
+  avg_score numeric,
+  avg_putts numeric,
+  total_szir bigint
 )
-LANGUAGE plpgsql STABLE SET search_path = 'public' AS $$
-BEGIN
-    RETURN QUERY
-    WITH recent_rounds AS (
-        SELECT id FROM rounds
-        WHERE user_email = user_email_param AND (NOT eligible_rounds_only OR is_eligible_round = TRUE)
-        ORDER BY round_date DESC, created_at DESC
-        LIMIT CASE WHEN round_limit > 0 THEN round_limit ELSE NULL END
-    )
-    SELECT
-        COUNT(rh.id)::BIGINT,
-        COALESCE(AVG(rh.putts), 0)::NUMERIC,
-        (CASE WHEN COUNT(rh.id) > 0 THEN (SUM(CASE WHEN rh.scoring_zone_in_regulation THEN 1 ELSE 0 END)::NUMERIC / NULLIF(COUNT(rh.id), 0) * 100) ELSE 0 END)::NUMERIC,
-        COALESCE(SUM(CASE WHEN rh.scoring_zone_in_regulation THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.putts_within4ft > 1 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.holeout_within_3_shots_scoring_zone THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.holeout_from_outside_4ft THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(rh.penalty_shots), 0)::BIGINT,
-        (CASE WHEN COUNT(DISTINCT r.id) > 0 THEN SUM(rh.penalty_shots)::NUMERIC / NULLIF(COUNT(DISTINCT r.id), 0) ELSE 0 END)::NUMERIC,
-        COALESCE(SUM(CASE WHEN rh.putts = 1 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.putts = 2 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.putts >= 3 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.hole_score < ctb.par THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.hole_score = ctb.par THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.hole_score = ctb.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.hole_score = ctb.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN rh.hole_score >= ctb.par + 3 THEN 1 ELSE 0 END), 0)::BIGINT
-    FROM rounds r
-    JOIN round_holes rh ON r.id = rh.round_id
-    JOIN course_tee_boxes ctb ON r.course_id = ctb.course_id AND r.tee_box = ctb.tee_box AND rh.hole_number = ctb.hole_number
-    WHERE r.id IN (SELECT id FROM recent_rounds);
-END;
+language plpgsql
+stable
+set search_path = public
+as $$
+begin
+  return query
+  select
+    count(distinct r.id)::bigint as total_rounds_played,
+    coalesce(count(distinct r.id) filter (where r.is_eligible_round = true), 0)::bigint as eligible_rounds_count,
+    coalesce(sum(case when rh.hole_score is not null and rh.putts is not null then 1 else 0 end), 0)::bigint as total_holes_played,
+    coalesce(avg(rh.hole_score), 0)::numeric as avg_score,
+    coalesce(avg(rh.putts), 0)::numeric as avg_putts,
+    coalesce(sum(case when rh.scoring_zone_in_regulation then 1 else 0 end), 0)::bigint as total_szir
+  from public.rounds r
+  left join public.round_holes rh on r.id = rh.round_id
+  where r.user_email = user_email_param;
+end;
 $$;
 
--- NEW: Function for par type stats
-CREATE OR REPLACE FUNCTION get_recent_rounds_par_type_stats(user_email_param TEXT, round_limit INT, eligible_rounds_only BOOLEAN)
-RETURNS TABLE (
-    avg_par3_score NUMERIC, 
-    avg_par4_score NUMERIC, 
-    avg_par5_score NUMERIC,
-    avg_putts_par3 NUMERIC, avg_putts_par4 NUMERIC, avg_putts_par5 NUMERIC,
-    par3_birdie_or_better_count BIGINT, par3_par_count BIGINT, par3_bogey_count BIGINT, par3_double_bogey_count BIGINT, par3_triple_bogey_plus_count BIGINT,
-    par4_birdie_or_better_count BIGINT, par4_par_count BIGINT, par4_bogey_count BIGINT, par4_double_bogey_count BIGINT, par4_triple_bogey_plus_count BIGINT,
-    par5_birdie_or_better_count BIGINT, par5_par_count BIGINT, par5_bogey_count BIGINT, par5_double_bogey_count BIGINT, par5_triple_bogey_plus_count BIGINT
+drop function if exists public.get_recent_rounds_base_stats(text, integer, boolean);
+
+create or replace function public.get_recent_rounds_base_stats(user_email_param text, round_limit int, eligible_rounds_only boolean)
+returns table (
+  total_holes_played bigint,
+  avg_putts_per_hole numeric,
+  szir_percentage numeric,
+  szir_count bigint,
+  multi_putt_4ft_holes bigint,
+  holeout_within_3_shots_count bigint,
+  holeout_from_outside_4ft_count bigint,
+  total_penalties bigint,
+  avg_penalties_per_round numeric,
+  one_putt_count bigint,
+  two_putt_count bigint,
+  three_putt_plus_count bigint,
+  birdie_or_better_count bigint,
+  par_count bigint,
+  bogey_count bigint,
+  double_bogey_count bigint,
+  triple_bogey_plus_count bigint
 )
-LANGUAGE plpgsql STABLE SET search_path = 'public' AS $$
-BEGIN
-    RETURN QUERY
-    WITH recent_rounds AS (
-        SELECT id FROM rounds
-        WHERE user_email = user_email_param AND (NOT eligible_rounds_only OR is_eligible_round = TRUE)
-        ORDER BY round_date DESC, created_at DESC
-        LIMIT CASE WHEN round_limit > 0 THEN round_limit ELSE NULL END
-    )
-    SELECT
-        (AVG(rh.hole_score) FILTER (WHERE ctb.par = 3))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE ctb.par = 4))::NUMERIC,
-        (AVG(rh.hole_score) FILTER (WHERE ctb.par = 5))::NUMERIC,
-        (AVG(rh.putts) FILTER (WHERE ctb.par = 3))::NUMERIC,
-        (AVG(rh.putts) FILTER (WHERE ctb.par = 4))::NUMERIC,
-        (AVG(rh.putts) FILTER (WHERE ctb.par = 5))::NUMERIC,
-        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score < ctb.par THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score = ctb.par THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score = ctb.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score = ctb.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 3 AND rh.hole_score >= ctb.par + 3 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score < ctb.par THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score = ctb.par THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score = ctb.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score = ctb.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 4 AND rh.hole_score >= ctb.par + 3 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score < ctb.par THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score = ctb.par THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score = ctb.par + 1 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score = ctb.par + 2 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ctb.par = 5 AND rh.hole_score >= ctb.par + 3 THEN 1 ELSE 0 END), 0)::BIGINT
-    FROM rounds r
-    JOIN round_holes rh ON r.id = rh.round_id
-    JOIN course_tee_boxes ctb ON r.course_id = ctb.course_id AND r.tee_box = ctb.tee_box AND rh.hole_number = ctb.hole_number
-    WHERE r.id IN (SELECT id FROM recent_rounds);
-END;
+language plpgsql
+stable
+set search_path = public
+as $$
+begin
+  return query
+  with recent_rounds as (
+    select id
+      from public.rounds
+     where user_email = user_email_param
+       and (not eligible_rounds_only or is_eligible_round = true)
+     order by round_date desc, created_at desc
+     limit case when round_limit > 0 then round_limit else null end
+  )
+  select
+    count(rh.id)::bigint,
+    coalesce(avg(rh.putts), 0)::numeric,
+    (case when count(rh.id) > 0 then (sum(case when rh.scoring_zone_in_regulation then 1 else 0 end)::numeric / nullif(count(rh.id), 0) * 100) else 0 end)::numeric,
+    coalesce(sum(case when rh.scoring_zone_in_regulation then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when rh.putts_within4ft > 1 then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when rh.holeout_within_3_shots_scoring_zone then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when rh.holeout_from_outside_4ft then 1 else 0 end), 0)::bigint,
+    coalesce(sum(rh.penalty_shots), 0)::bigint,
+    (case when count(distinct r.id) > 0 then sum(rh.penalty_shots)::numeric / nullif(count(distinct r.id), 0) else 0 end)::numeric,
+    coalesce(sum(case when rh.putts = 1 then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when rh.putts = 2 then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when rh.putts >= 3 then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when rh.hole_score < ctb.par then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when rh.hole_score = ctb.par then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when rh.hole_score = ctb.par + 1 then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when rh.hole_score = ctb.par + 2 then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when rh.hole_score >= ctb.par + 3 then 1 else 0 end), 0)::bigint
+  from public.rounds r
+  join public.round_holes rh on r.id = rh.round_id
+  join public.course_tee_boxes ctb on r.course_id = ctb.course_id and r.tee_box = ctb.tee_box and rh.hole_number = ctb.hole_number
+  where r.id in (select id from recent_rounds);
+end;
 $$;
 
--- Drop the function first
-DROP FUNCTION IF EXISTS get_recent_rounds_advanced_stats(text,integer,boolean,numeric);
--- NEW: Function for advanced stats
-CREATE OR REPLACE FUNCTION get_recent_rounds_advanced_stats(user_email_param TEXT, round_limit INT, eligible_rounds_only BOOLEAN, relative_distance_threshold NUMERIC DEFAULT 0.15)
-RETURNS TABLE (
-    -- SZIR/SZ Par stats
-    avg_score_with_szir NUMERIC,
-    avg_score_without_szir NUMERIC,
-    avg_score_with_szpar NUMERIC,
-    avg_score_without_szpar NUMERIC,
-    avg_score_with_szir_par3 NUMERIC, avg_score_with_szir_par4 NUMERIC, avg_score_with_szir_par5 NUMERIC,
-    avg_score_without_szir_par3 NUMERIC, avg_score_without_szir_par4 NUMERIC, avg_score_without_szir_par5 NUMERIC,
-    avg_score_with_szpar_par3 NUMERIC, avg_score_without_szpar_par3 NUMERIC, avg_score_with_szpar_par4 NUMERIC,
-    avg_score_without_szpar_par4 NUMERIC, avg_score_with_szpar_par5 NUMERIC, avg_score_without_szpar_par5 NUMERIC,
-    -- Penalty stats
-    avg_score_with_penalty_par3 NUMERIC, avg_score_without_penalty_par3 NUMERIC, avg_score_with_penalty_par4 NUMERIC,
-    avg_score_without_penalty_par4 NUMERIC, avg_score_with_penalty_par5 NUMERIC, avg_score_without_penalty_par5 NUMERIC,
-    penalty_on_par3_count BIGINT, penalty_on_par4_count BIGINT, penalty_on_par5_count BIGINT,
-    -- Luck stats
-    luck_on_par3_count BIGINT, luck_on_par4_count BIGINT, luck_on_par5_count BIGINT,
-    total_par3_holes BIGINT, total_par4_holes BIGINT, total_par5_holes BIGINT,
-    luck_with_szir_count BIGINT, luck_without_szir_count BIGINT,
-    total_szir_holes BIGINT, total_non_szir_holes BIGINT,
-    -- Relative distance stats
-    avg_dist_par3 NUMERIC, avg_dist_par4 NUMERIC, avg_dist_par5 NUMERIC,
-    avg_score_short_par3 NUMERIC, avg_score_medium_par3 NUMERIC, avg_score_long_par3 NUMERIC,
-    avg_score_short_par4 NUMERIC, avg_score_medium_par4 NUMERIC, avg_score_long_par4 NUMERIC,
-    avg_score_short_par5 NUMERIC, avg_score_medium_par5 NUMERIC, avg_score_long_par5 NUMERIC
+create or replace function public.get_recent_rounds_par_type_stats(user_email_param text, round_limit int, eligible_rounds_only boolean)
+returns table (
+  avg_par3_score numeric,
+  avg_par4_score numeric,
+  avg_par5_score numeric,
+  avg_putts_par3 numeric,
+  avg_putts_par4 numeric,
+  avg_putts_par5 numeric,
+  par3_birdie_or_better_count bigint, par3_par_count bigint, par3_bogey_count bigint, par3_double_bogey_count bigint, par3_triple_bogey_plus_count bigint,
+  par4_birdie_or_better_count bigint, par4_par_count bigint, par4_bogey_count bigint, par4_double_bogey_count bigint, par4_triple_bogey_plus_count bigint,
+  par5_birdie_or_better_count bigint, par5_par_count bigint, par5_bogey_count bigint, par5_double_bogey_count bigint, par5_triple_bogey_plus_count bigint
 )
-LANGUAGE plpgsql STABLE SET search_path = 'public' AS $$
-BEGIN
-    RETURN QUERY
-    WITH recent_rounds AS (
-        SELECT id FROM rounds
-        WHERE user_email = user_email_param AND (NOT eligible_rounds_only OR is_eligible_round = TRUE)
-        ORDER BY round_date DESC, created_at DESC
-        LIMIT CASE WHEN round_limit > 0 THEN round_limit ELSE NULL END
-    ),
-    all_holes AS (
-        SELECT rh.hole_score, rh.scoring_zone_in_regulation, rh.holeout_within_3_shots_scoring_zone, rh.penalty_shots, rh.holeout_from_outside_4ft, ctb.par as course_par, ctb.distance as course_distance
-        FROM round_holes rh
-        JOIN rounds r ON rh.round_id = r.id
-        JOIN course_tee_boxes ctb ON r.course_id = ctb.course_id AND r.tee_box = ctb.tee_box AND rh.hole_number = ctb.hole_number
-        WHERE r.id IN (SELECT id FROM recent_rounds)
-    ),
-    avg_distances AS (
-        SELECT
-            COALESCE(AVG(course_distance) FILTER (WHERE course_par = 3), 0) AS avg_d_p3,
-            COALESCE(AVG(course_distance) FILTER (WHERE course_par = 4), 0) AS avg_d_p4,
-            COALESCE(AVG(course_distance) FILTER (WHERE course_par = 5), 0) AS avg_d_p5
-        FROM all_holes
-    )
-    SELECT
-        -- SZIR/SZ Par stats
-        (AVG(ah.hole_score) FILTER (WHERE ah.scoring_zone_in_regulation IS TRUE))::NUMERIC,
-        (AVG(ah.hole_score) FILTER (WHERE ah.scoring_zone_in_regulation IS FALSE))::NUMERIC,
-        (AVG(ah.hole_score) FILTER (WHERE ah.holeout_within_3_shots_scoring_zone IS TRUE))::NUMERIC,
-        (AVG(ah.hole_score) FILTER (WHERE ah.holeout_within_3_shots_scoring_zone IS FALSE AND ah.scoring_zone_in_regulation IS TRUE))::NUMERIC,
-        (AVG(ah.hole_score) FILTER (WHERE ah.scoring_zone_in_regulation IS TRUE AND ah.course_par = 3))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.scoring_zone_in_regulation IS TRUE AND ah.course_par = 4))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.scoring_zone_in_regulation IS TRUE AND ah.course_par = 5))::NUMERIC,
-        (AVG(ah.hole_score) FILTER (WHERE ah.scoring_zone_in_regulation IS FALSE AND ah.course_par = 3))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.scoring_zone_in_regulation IS FALSE AND ah.course_par = 4))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.scoring_zone_in_regulation IS FALSE AND ah.course_par = 5))::NUMERIC,
-        (AVG(ah.hole_score) FILTER (WHERE ah.holeout_within_3_shots_scoring_zone IS TRUE AND ah.course_par = 3))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.holeout_within_3_shots_scoring_zone IS FALSE AND ah.scoring_zone_in_regulation IS TRUE AND ah.course_par = 3))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.holeout_within_3_shots_scoring_zone IS TRUE AND ah.course_par = 4))::NUMERIC,
-        (AVG(ah.hole_score) FILTER (WHERE ah.holeout_within_3_shots_scoring_zone IS FALSE AND ah.scoring_zone_in_regulation IS TRUE AND ah.course_par = 4))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.holeout_within_3_shots_scoring_zone IS TRUE AND ah.course_par = 5))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.holeout_within_3_shots_scoring_zone IS FALSE AND ah.scoring_zone_in_regulation IS TRUE AND ah.course_par = 5))::NUMERIC,
-        -- Penalty stats
-        (AVG(ah.hole_score) FILTER (WHERE ah.penalty_shots > 0 AND ah.course_par = 3))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.penalty_shots = 0 AND ah.course_par = 3))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.penalty_shots > 0 AND ah.course_par = 4))::NUMERIC,
-        (AVG(ah.hole_score) FILTER (WHERE ah.penalty_shots = 0 AND ah.course_par = 4))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.penalty_shots > 0 AND ah.course_par = 5))::NUMERIC, (AVG(ah.hole_score) FILTER (WHERE ah.penalty_shots = 0 AND ah.course_par = 5))::NUMERIC,
-        COALESCE(SUM(CASE WHEN ah.course_par = 3 AND ah.penalty_shots > 0 THEN 1 ELSE 0 END), 0)::BIGINT, COALESCE(SUM(CASE WHEN ah.course_par = 4 AND ah.penalty_shots > 0 THEN 1 ELSE 0 END), 0)::BIGINT, COALESCE(SUM(CASE WHEN ah.course_par = 5 AND ah.penalty_shots > 0 THEN 1 ELSE 0 END), 0)::BIGINT,
-        -- Luck stats
-        COALESCE(SUM(CASE WHEN ah.course_par = 3 AND ah.holeout_from_outside_4ft THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ah.course_par = 4 AND ah.holeout_from_outside_4ft THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ah.course_par = 5 AND ah.holeout_from_outside_4ft THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ah.course_par = 3 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ah.course_par = 4 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ah.course_par = 5 THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ah.scoring_zone_in_regulation IS TRUE AND ah.holeout_from_outside_4ft THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ah.scoring_zone_in_regulation IS FALSE AND ah.holeout_from_outside_4ft THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ah.scoring_zone_in_regulation IS TRUE THEN 1 ELSE 0 END), 0)::BIGINT,
-        COALESCE(SUM(CASE WHEN ah.scoring_zone_in_regulation IS FALSE THEN 1 ELSE 0 END), 0)::BIGINT,
-        -- Relative distance stats
-        MAX(ad.avg_d_p3), MAX(ad.avg_d_p4), MAX(ad.avg_d_p5),
-        (AVG(ah.hole_score) FILTER (WHERE ah.course_par = 3 AND ah.course_distance < ad.avg_d_p3 * (1 - relative_distance_threshold)))::NUMERIC,
-        (AVG(ah.hole_score) FILTER (WHERE ah.course_par = 3 AND ah.course_distance >= ad.avg_d_p3 * (1 - relative_distance_threshold) AND ah.course_distance <= ad.avg_d_p3 * (1 + relative_distance_threshold)))::NUMERIC,
-        (AVG(ah.hole_score) FILTER (WHERE ah.course_par = 3 AND ah.course_distance > ad.avg_d_p3 * (1 + relative_distance_threshold)))::NUMERIC,
-        (AVG(ah.hole_score) FILTER (WHERE ah.course_par = 4 AND ah.course_distance < ad.avg_d_p4 * (1 - relative_distance_threshold)))::NUMERIC,
-        (AVG(ah.hole_score) FILTER (WHERE ah.course_par = 4 AND ah.course_distance >= ad.avg_d_p4 * (1 - relative_distance_threshold) AND ah.course_distance <= ad.avg_d_p4 * (1 + relative_distance_threshold)))::NUMERIC,
-        (AVG(ah.hole_score) FILTER (WHERE ah.course_par = 4 AND ah.course_distance > ad.avg_d_p4 * (1 + relative_distance_threshold)))::NUMERIC,
-        (AVG(ah.hole_score) FILTER (WHERE ah.course_par = 5 AND ah.course_distance < ad.avg_d_p5 * (1 - relative_distance_threshold)))::NUMERIC,
-        (AVG(ah.hole_score) FILTER (WHERE ah.course_par = 5 AND ah.course_distance >= ad.avg_d_p5 * (1 - relative_distance_threshold) AND ah.course_distance <= ad.avg_d_p5 * (1 + relative_distance_threshold)))::NUMERIC,
-        (AVG(ah.hole_score) FILTER (WHERE ah.course_par = 5 AND ah.course_distance > ad.avg_d_p5 * (1 + relative_distance_threshold)))::NUMERIC
-    FROM all_holes ah, avg_distances ad;
-END;
+language plpgsql
+stable
+set search_path = public
+as $$
+begin
+  return query
+  with recent_rounds as (
+    select id
+      from public.rounds
+     where user_email = user_email_param
+       and (not eligible_rounds_only or is_eligible_round = true)
+     order by round_date desc, created_at desc
+     limit case when round_limit > 0 then round_limit else null end
+  )
+  select
+    (avg(rh.hole_score) filter (where ctb.par = 3))::numeric,
+    (avg(rh.hole_score) filter (where ctb.par = 4))::numeric,
+    (avg(rh.hole_score) filter (where ctb.par = 5))::numeric,
+    (avg(rh.putts) filter (where ctb.par = 3))::numeric,
+    (avg(rh.putts) filter (where ctb.par = 4))::numeric,
+    (avg(rh.putts) filter (where ctb.par = 5))::numeric,
+
+    coalesce(sum(case when ctb.par = 3 and rh.hole_score < ctb.par then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ctb.par = 3 and rh.hole_score = ctb.par then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ctb.par = 3 and rh.hole_score = ctb.par + 1 then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ctb.par = 3 and rh.hole_score = ctb.par + 2 then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ctb.par = 3 and rh.hole_score >= ctb.par + 3 then 1 else 0 end), 0)::bigint,
+
+    coalesce(sum(case when ctb.par = 4 and rh.hole_score < ctb.par then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ctb.par = 4 and rh.hole_score = ctb.par then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ctb.par = 4 and rh.hole_score = ctb.par + 1 then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ctb.par = 4 and rh.hole_score = ctb.par + 2 then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ctb.par = 4 and rh.hole_score >= ctb.par + 3 then 1 else 0 end), 0)::bigint,
+
+    coalesce(sum(case when ctb.par = 5 and rh.hole_score < ctb.par then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ctb.par = 5 and rh.hole_score = ctb.par then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ctb.par = 5 and rh.hole_score = ctb.par + 1 then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ctb.par = 5 and rh.hole_score = ctb.par + 2 then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ctb.par = 5 and rh.hole_score >= ctb.par + 3 then 1 else 0 end), 0)::bigint
+  from public.rounds r
+  join public.round_holes rh on r.id = rh.round_id
+  join public.course_tee_boxes ctb on r.course_id = ctb.course_id and r.tee_box = ctb.tee_box and rh.hole_number = ctb.hole_number
+  where r.id in (select id from recent_rounds);
+end;
 $$;
 
--- Grant execute permissions to the authenticated role for the new functions
--- This allows the functions to be called from the client-side library
-GRANT EXECUTE ON FUNCTION public.calculate_user_szir_streak(TEXT) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.calculate_user_szpar_streak(TEXT) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.get_user_cumulative_stats(TEXT) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.get_recent_rounds_base_stats(TEXT, INT, BOOLEAN) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.get_recent_rounds_par_type_stats(TEXT, INT, BOOLEAN) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.get_recent_rounds_advanced_stats(TEXT, INT, BOOLEAN, NUMERIC) TO authenticated, service_role;
+drop function if exists public.get_recent_rounds_advanced_stats(text, integer, boolean, numeric);
 
-GRANT EXECUTE ON FUNCTION public.search_courses_with_stats(TEXT, TEXT) TO authenticated, service_role;
--- Grant execute permissions for uuid_generate_v4 to allow creating invitation tokens
--- This function is part of the uuid-ossp extension
-GRANT EXECUTE ON FUNCTION extensions.uuid_generate_v4() TO authenticated, service_role;
+create or replace function public.get_recent_rounds_advanced_stats(
+  user_email_param text,
+  round_limit int,
+  eligible_rounds_only boolean,
+  relative_distance_threshold numeric default 0.15
+)
+returns table (
+  avg_score_with_szir numeric,
+  avg_score_without_szir numeric,
+  avg_score_with_szpar numeric,
+  avg_score_without_szpar numeric,
+  avg_score_with_szir_par3 numeric, avg_score_with_szir_par4 numeric, avg_score_with_szir_par5 numeric,
+  avg_score_without_szir_par3 numeric, avg_score_without_szir_par4 numeric, avg_score_without_szir_par5 numeric,
+  avg_score_with_szpar_par3 numeric, avg_score_without_szpar_par3 numeric, avg_score_with_szpar_par4 numeric,
+  avg_score_without_szpar_par4 numeric, avg_score_with_szpar_par5 numeric, avg_score_without_szpar_par5 numeric,
+  avg_score_with_penalty_par3 numeric, avg_score_without_penalty_par3 numeric, avg_score_with_penalty_par4 numeric,
+  avg_score_without_penalty_par4 numeric, avg_score_with_penalty_par5 numeric, avg_score_without_penalty_par5 numeric,
+  penalty_on_par3_count bigint, penalty_on_par4_count bigint, penalty_on_par5_count bigint,
+  luck_on_par3_count bigint, luck_on_par4_count bigint, luck_on_par5_count bigint,
+  total_par3_holes bigint, total_par4_holes bigint, total_par5_holes bigint,
+  luck_with_szir_count bigint, luck_without_szir_count bigint,
+  total_szir_holes bigint, total_non_szir_holes bigint,
+  avg_dist_par3 numeric, avg_dist_par4 numeric, avg_dist_par5 numeric,
+  avg_score_short_par3 numeric, avg_score_medium_par3 numeric, avg_score_long_par3 numeric,
+  avg_score_short_par4 numeric, avg_score_medium_par4 numeric, avg_score_long_par4 numeric,
+  avg_score_short_par5 numeric, avg_score_medium_par5 numeric, avg_score_long_par5 numeric
+)
+language plpgsql
+stable
+set search_path = public
+as $$
+begin
+  return query
+  with recent_rounds as (
+    select id
+      from public.rounds
+     where user_email = user_email_param
+       and (not eligible_rounds_only or is_eligible_round = true)
+     order by round_date desc, created_at desc
+     limit case when round_limit > 0 then round_limit else null end
+  ),
+  all_holes as (
+    select
+      rh.hole_score,
+      rh.scoring_zone_in_regulation,
+      rh.holeout_within_3_shots_scoring_zone,
+      rh.penalty_shots,
+      rh.holeout_from_outside_4ft,
+      ctb.par as course_par,
+      ctb.distance as course_distance
+    from public.round_holes rh
+    join public.rounds r on rh.round_id = r.id
+    join public.course_tee_boxes ctb
+      on r.course_id = ctb.course_id
+     and r.tee_box = ctb.tee_box
+     and rh.hole_number = ctb.hole_number
+    where r.id in (select id from recent_rounds)
+  ),
+  avg_distances as (
+    select
+      coalesce(avg(course_distance) filter (where course_par = 3), 0) as avg_d_p3,
+      coalesce(avg(course_distance) filter (where course_par = 4), 0) as avg_d_p4,
+      coalesce(avg(course_distance) filter (where course_par = 5), 0) as avg_d_p5
+    from all_holes
+  )
+  select
+    (avg(ah.hole_score) filter (where ah.scoring_zone_in_regulation is true))::numeric,
+    (avg(ah.hole_score) filter (where ah.scoring_zone_in_regulation is false))::numeric,
+    (avg(ah.hole_score) filter (where ah.holeout_within_3_shots_scoring_zone is true))::numeric,
+    (avg(ah.hole_score) filter (where ah.holeout_within_3_shots_scoring_zone is false and ah.scoring_zone_in_regulation is true))::numeric,
 
--- Function for super_admins to set an impersonation session variable
-CREATE OR REPLACE FUNCTION set_impersonation(user_email_to_impersonate TEXT)
-RETURNS TEXT
-LANGUAGE plpgsql
-SECURITY DEFINER SET search_path = 'public'
-AS $$
-BEGIN
-  -- Only allow super_admins to call this function
-  IF NOT (SELECT 'super_admin' = ANY(roles) FROM user_profiles WHERE user_id = auth.uid()) THEN
-    RAISE EXCEPTION 'Only super_admins can impersonate users.';
-  END IF;
+    (avg(ah.hole_score) filter (where ah.scoring_zone_in_regulation is true and ah.course_par = 3))::numeric,
+    (avg(ah.hole_score) filter (where ah.scoring_zone_in_regulation is true and ah.course_par = 4))::numeric,
+    (avg(ah.hole_score) filter (where ah.scoring_zone_in_regulation is true and ah.course_par = 5))::numeric,
 
-  -- Set the session variable. 'false' makes it local to the entire session, not just the transaction.
-  PERFORM set_config('app.impersonated_user_email', user_email_to_impersonate, false);
-  
-  RETURN 'Impersonating ' || user_email_to_impersonate;
-END;
+    (avg(ah.hole_score) filter (where ah.scoring_zone_in_regulation is false and ah.course_par = 3))::numeric,
+    (avg(ah.hole_score) filter (where ah.scoring_zone_in_regulation is false and ah.course_par = 4))::numeric,
+    (avg(ah.hole_score) filter (where ah.scoring_zone_in_regulation is false and ah.course_par = 5))::numeric,
+
+    (avg(ah.hole_score) filter (where ah.holeout_within_3_shots_scoring_zone is true and ah.course_par = 3))::numeric,
+    (avg(ah.hole_score) filter (where ah.holeout_within_3_shots_scoring_zone is false and ah.scoring_zone_in_regulation is true and ah.course_par = 3))::numeric,
+    (avg(ah.hole_score) filter (where ah.holeout_within_3_shots_scoring_zone is true and ah.course_par = 4))::numeric,
+    (avg(ah.hole_score) filter (where ah.holeout_within_3_shots_scoring_zone is false and ah.scoring_zone_in_regulation is true and ah.course_par = 4))::numeric,
+    (avg(ah.hole_score) filter (where ah.holeout_within_3_shots_scoring_zone is true and ah.course_par = 5))::numeric,
+    (avg(ah.hole_score) filter (where ah.holeout_within_3_shots_scoring_zone is false and ah.scoring_zone_in_regulation is true and ah.course_par = 5))::numeric,
+
+    (avg(ah.hole_score) filter (where ah.penalty_shots > 0 and ah.course_par = 3))::numeric,
+    (avg(ah.hole_score) filter (where ah.penalty_shots = 0 and ah.course_par = 3))::numeric,
+    (avg(ah.hole_score) filter (where ah.penalty_shots > 0 and ah.course_par = 4))::numeric,
+    (avg(ah.hole_score) filter (where ah.penalty_shots = 0 and ah.course_par = 4))::numeric,
+    (avg(ah.hole_score) filter (where ah.penalty_shots > 0 and ah.course_par = 5))::numeric,
+    (avg(ah.hole_score) filter (where ah.penalty_shots = 0 and ah.course_par = 5))::numeric,
+
+    coalesce(sum(case when ah.course_par = 3 and ah.penalty_shots > 0 then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ah.course_par = 4 and ah.penalty_shots > 0 then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ah.course_par = 5 and ah.penalty_shots > 0 then 1 else 0 end), 0)::bigint,
+
+    coalesce(sum(case when ah.course_par = 3 and ah.holeout_from_outside_4ft then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ah.course_par = 4 and ah.holeout_from_outside_4ft then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ah.course_par = 5 and ah.holeout_from_outside_4ft then 1 else 0 end), 0)::bigint,
+
+    coalesce(sum(case when ah.course_par = 3 then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ah.course_par = 4 then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ah.course_par = 5 then 1 else 0 end), 0)::bigint,
+
+    coalesce(sum(case when ah.scoring_zone_in_regulation is true and ah.holeout_from_outside_4ft then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ah.scoring_zone_in_regulation is false and ah.holeout_from_outside_4ft then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ah.scoring_zone_in_regulation is true then 1 else 0 end), 0)::bigint,
+    coalesce(sum(case when ah.scoring_zone_in_regulation is false then 1 else 0 end), 0)::bigint,
+
+    max(ad.avg_d_p3), max(ad.avg_d_p4), max(ad.avg_d_p5),
+
+    (avg(ah.hole_score) filter (where ah.course_par = 3 and ah.course_distance < ad.avg_d_p3 * (1 - relative_distance_threshold)))::numeric,
+    (avg(ah.hole_score) filter (where ah.course_par = 3 and ah.course_distance >= ad.avg_d_p3 * (1 - relative_distance_threshold) and ah.course_distance <= ad.avg_d_p3 * (1 + relative_distance_threshold)))::numeric,
+    (avg(ah.hole_score) filter (where ah.course_par = 3 and ah.course_distance > ad.avg_d_p3 * (1 + relative_distance_threshold)))::numeric,
+
+    (avg(ah.hole_score) filter (where ah.course_par = 4 and ah.course_distance < ad.avg_d_p4 * (1 - relative_distance_threshold)))::numeric,
+    (avg(ah.hole_score) filter (where ah.course_par = 4 and ah.course_distance >= ad.avg_d_p4 * (1 - relative_distance_threshold) and ah.course_distance <= ad.avg_d_p4 * (1 + relative_distance_threshold)))::numeric,
+    (avg(ah.hole_score) filter (where ah.course_par = 4 and ah.course_distance > ad.avg_d_p4 * (1 + relative_distance_threshold)))::numeric,
+
+    (avg(ah.hole_score) filter (where ah.course_par = 5 and ah.course_distance < ad.avg_d_p5 * (1 - relative_distance_threshold)))::numeric,
+    (avg(ah.hole_score) filter (where ah.course_par = 5 and ah.course_distance >= ad.avg_d_p5 * (1 - relative_distance_threshold) and ah.course_distance <= ad.avg_d_p5 * (1 + relative_distance_threshold)))::numeric,
+    (avg(ah.hole_score) filter (where ah.course_par = 5 and ah.course_distance > ad.avg_d_p5 * (1 + relative_distance_threshold)))::numeric
+  from all_holes ah, avg_distances ad;
+end;
 $$;
 
--- Function for super_admins to clear an impersonation session variable
-CREATE OR REPLACE FUNCTION clear_impersonation()
-RETURNS TEXT
-LANGUAGE plpgsql
-SECURITY DEFINER SET search_path = 'public'
-AS $$
-BEGIN
-  -- Set the session variable to an empty string to clear it.
-  PERFORM set_config('app.impersonated_user_email', '', false);
-  RETURN 'Impersonation stopped.';
-END;
+-- Grants
+grant execute on function public.calculate_user_szir_streak(text) to authenticated, service_role;
+grant execute on function public.calculate_user_szpar_streak(text) to authenticated, service_role;
+grant execute on function public.get_user_cumulative_stats(text) to authenticated, service_role;
+grant execute on function public.get_recent_rounds_base_stats(text, int, boolean) to authenticated, service_role;
+grant execute on function public.get_recent_rounds_par_type_stats(text, int, boolean) to authenticated, service_role;
+grant execute on function public.get_recent_rounds_advanced_stats(text, int, boolean, numeric) to authenticated, service_role;
+grant execute on function public.search_courses_with_stats(text, text) to authenticated, service_role;
+grant execute on function extensions.uuid_generate_v4() to authenticated, service_role;
+
+-- =========================================================
+-- IMPERSONATION SET/CLEAR FUNCTIONS (kept)
+-- =========================================================
+
+create or replace function public.set_impersonation(user_email_to_impersonate text)
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  if not (select 'super_admin' = any(roles) from public.user_profiles where user_id = auth.uid()) then
+    raise exception 'Only super_admins can impersonate users.';
+  end if;
+
+  perform set_config('app.impersonated_user_email', user_email_to_impersonate, false);
+
+  return 'Impersonating ' || user_email_to_impersonate;
+end;
 $$;
 
--- Grant execute permissions for the impersonation function
-GRANT EXECUTE ON FUNCTION public.set_impersonation(TEXT) TO authenticated, service_role;
-GRANT EXECUTE ON FUNCTION public.clear_impersonation() TO authenticated, service_role;
+create or replace function public.clear_impersonation()
+returns text
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  perform set_config('app.impersonated_user_email', '', false);
+  return 'Impersonation stopped.';
+end;
+$$;
 
--- Row Level Security (RLS) Policies
-ALTER TABLE user_profiles ENABLE ROW LEVEL SECURITY;
-ALTER TABLE user_invitations ENABLE ROW LEVEL SECURITY;
-ALTER TABLE user_audit_log ENABLE ROW LEVEL SECURITY;
-ALTER TABLE courses ENABLE ROW LEVEL SECURITY;
-ALTER TABLE course_tee_boxes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE course_change_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE rounds ENABLE ROW LEVEL SECURITY;
-ALTER TABLE round_holes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE coach_notes ENABLE ROW LEVEL SECURITY;
-ALTER TABLE round_holes ENABLE ROW LEVEL SECURITY;
+grant execute on function public.set_impersonation(text) to authenticated, service_role;
+grant execute on function public.clear_impersonation() to authenticated, service_role;
 
--- User profiles: Users can view their own profile, admins can view all
-DROP POLICY IF EXISTS "Users can view their own profile" ON public.user_profiles;
-CREATE POLICY "Users can view their own profile" ON user_profiles FOR SELECT USING (user_id = auth.uid());
-DROP POLICY IF EXISTS "Admins can view all profiles" ON public.user_profiles;
-CREATE POLICY "Admins can view all profiles" ON user_profiles FOR SELECT USING (has_roles(ARRAY['admin', 'super_admin']));
-DROP POLICY IF EXISTS "Users can update their own profile" ON user_profiles FOR UPDATE;
-CREATE POLICY "Users can update their own profile" ON user_profiles FOR UPDATE USING (user_id = auth.uid());
--- Coaches can view profiles of other coaches and students for note display and mapping
-DROP POLICY IF EXISTS "Coaches can view relevant user profiles" ON public.user_profiles;
-CREATE POLICY "Coaches can view relevant user profiles" ON public.user_profiles FOR SELECT USING (
-  has_roles(ARRAY['coach']) AND (
-    user_id = auth.uid() OR -- Their own profile
-    'coach' = ANY(roles) OR -- Allow viewing any coach profile
-    EXISTS (SELECT 1 FROM public.coach_student_mappings WHERE student_user_id = user_profiles.user_id) -- Allow viewing any student profile (if they are a student in any mapping)
+-- =========================================================
+-- UPDATED_AT TRIGGERS
+-- =========================================================
+
+create or replace function public.update_updated_at_column()
+returns trigger
+language plpgsql
+stable
+set search_path = public
+as $$
+begin
+  new.updated_at = now();
+  return new;
+end;
+$$;
+
+drop trigger if exists update_courses_updated_at on public.courses;
+create trigger update_courses_updated_at
+before update on public.courses
+for each row execute function public.update_updated_at_column();
+
+drop trigger if exists update_rounds_updated_at on public.rounds;
+create trigger update_rounds_updated_at
+before update on public.rounds
+for each row execute function public.update_updated_at_column();
+
+-- =========================================================
+-- MY BAG TABLES
+-- =========================================================
+
+create table if not exists public.user_shot_types (
+  id bigint generated by default as identity primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  name text not null,
+  category_ids text[] not null,
+  is_default boolean default false,
+  created_at timestamptz default now(),
+  constraint unique_shot_type_name_for_user unique (user_id, name)
+);
+
+create table if not exists public.clubs (
+  id bigint generated by default as identity primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  name text not null,
+  type text,
+  make text,
+  model text,
+  loft text,
+  bounce text,
+  shaft_make text,
+  shaft_model text,
+  shaft_flex text,
+  shaft_weight text,
+  shaft_length text,
+  grip_make text,
+  grip_model text,
+  grip_size text,
+  grip_weight text,
+  swing_weight text,
+  created_at timestamptz default now()
+);
+
+create table if not exists public.shots (
+  id bigint generated by default as identity primary key,
+  club_id bigint references public.clubs(id) on delete cascade not null,
+  shot_type text not null,
+  carry_distance numeric,
+  carry_variance numeric,
+  total_distance numeric,
+  total_variance numeric,
+  launch text,
+  roll text,
+  unit text not null default 'yards',
+  tendency text,
+  swing_key text,
+  created_at timestamptz default now()
+);
+
+create table if not exists public.bags (
+  id bigint generated by default as identity primary key,
+  user_id uuid references auth.users(id) on delete cascade not null,
+  name text not null,
+  is_default boolean default false,
+  tags text[],
+  created_at timestamptz default now()
+);
+
+create table if not exists public.bag_clubs (
+  bag_id bigint references public.bags(id) on delete cascade not null,
+  club_id bigint references public.clubs(id) on delete cascade not null,
+  primary key (bag_id, club_id)
+);
+
+-- =========================================================
+-- AUTH SIGNUP TRIGGER (ONLY ONCE)
+-- =========================================================
+
+create or replace function public.handle_new_user()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.user_profiles (user_id, email, full_name, roles, status)
+  values (new.id, new.email, new.raw_user_meta_data ->> 'full_name', array['user']::text[], 'active');
+
+  -- Seed default shot types
+  insert into public.user_shot_types (user_id, name, category_ids, is_default)
+  values
+    (new.id, 'Full', array['cat_long'], true),
+    (new.id, '3/4 Swing', array['cat_long', 'cat_approach'], true),
+    (new.id, '1/2 Swing', array['cat_approach', 'cat_short'], true),
+    (new.id, 'Pitch', array['cat_short'], true),
+    (new.id, 'Chip', array['cat_short'], true);
+
+  return new;
+end;
+$$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created
+after insert on auth.users
+for each row execute procedure public.handle_new_user();
+
+-- =========================================================
+-- RLS ENABLE
+-- =========================================================
+
+alter table public.user_profiles enable row level security;
+alter table public.user_invitations enable row level security;
+alter table public.user_audit_log enable row level security;
+alter table public.courses enable row level security;
+alter table public.course_tee_boxes enable row level security;
+alter table public.course_change_requests enable row level security;
+alter table public.rounds enable row level security;
+alter table public.round_holes enable row level security;
+alter table public.coach_student_mappings enable row level security;
+alter table public.coach_notes enable row level security;
+
+alter table public.user_shot_types enable row level security;
+alter table public.clubs enable row level security;
+alter table public.shots enable row level security;
+alter table public.bags enable row level security;
+alter table public.bag_clubs enable row level security;
+
+-- =========================================================
+-- RLS POLICIES
+-- =========================================================
+
+-- User profiles
+drop policy if exists "Users can view their own profile" on public.user_profiles;
+create policy "Users can view their own profile"
+on public.user_profiles
+for select
+using (user_id = auth.uid());
+
+drop policy if exists "Admins can view all profiles" on public.user_profiles;
+create policy "Admins can view all profiles"
+on public.user_profiles
+for select
+using (public.has_roles(array['admin','super_admin']));
+
+drop policy if exists "Users can update their own profile" on public.user_profiles;
+create policy "Users can update their own profile"
+on public.user_profiles
+for update
+using (user_id = auth.uid());
+
+drop policy if exists "Coaches can view relevant user profiles" on public.user_profiles;
+create policy "Coaches can view relevant user profiles"
+on public.user_profiles
+for select
+using (
+  public.has_roles(array['coach']) and (
+    user_id = auth.uid()
+    or 'coach' = any(roles)
+    or exists (select 1 from public.coach_student_mappings where student_user_id = public.user_profiles.user_id)
   )
 );
-DROP POLICY IF EXISTS "Admins can update any profile" ON public.user_profiles;
-CREATE POLICY "Admins can update any profile" ON user_profiles FOR UPDATE USING (has_roles(ARRAY['admin', 'super_admin']));
-DROP POLICY IF EXISTS "Admins can create profiles" ON public.user_profiles;
-CREATE POLICY "Admins can create profiles" ON user_profiles FOR INSERT WITH CHECK (has_roles(ARRAY['admin', 'super_admin']));
 
--- User invitations: Only admins can manage invitations
-DROP POLICY IF EXISTS "Admins can view invitations" ON public.user_invitations;
-CREATE POLICY "Admins can view invitations" ON user_invitations FOR SELECT USING (has_roles(ARRAY['admin', 'super_admin']));
-DROP POLICY IF EXISTS "Admins can create invitations" ON public.user_invitations;
-CREATE POLICY "Admins can create invitations" ON user_invitations FOR INSERT WITH CHECK (has_roles(ARRAY['admin', 'super_admin']));
-DROP POLICY IF EXISTS "Admins can update invitations" ON public.user_invitations;
-CREATE POLICY "Admins can update invitations" ON user_invitations FOR UPDATE USING (has_roles(ARRAY['admin', 'super_admin']));
+drop policy if exists "Admins can update any profile" on public.user_profiles;
+create policy "Admins can update any profile"
+on public.user_profiles
+for update
+using (public.has_roles(array['admin','super_admin']));
 
--- Audit log: Only admins can view audit logs
-CREATE POLICY "Admins can view audit logs" ON user_audit_log FOR SELECT USING (has_roles(ARRAY['admin', 'super_admin']));
-CREATE POLICY "System can create audit logs" ON user_audit_log FOR INSERT WITH CHECK (true);
+drop policy if exists "Admins can create profiles" on public.user_profiles;
+create policy "Admins can create profiles"
+on public.user_profiles
+for insert
+with check (public.has_roles(array['admin','super_admin']));
 
--- Courses: Everyone can read, authenticated users can create
-DROP POLICY IF EXISTS "Anyone can view courses" ON public.courses;
-CREATE POLICY "Anyone can view courses" ON courses FOR SELECT USING (true);
-DROP POLICY IF EXISTS "Authenticated users can create courses" ON public.courses;
-CREATE POLICY "Authenticated users can create courses" ON courses FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-DROP POLICY IF EXISTS "Course creators can update their courses" ON public.courses;
-CREATE POLICY "Course creators can update their courses" ON courses FOR UPDATE USING (created_by = auth.jwt() ->> 'email');
-DROP POLICY IF EXISTS "Admins can delete courses" ON public.courses;
-CREATE POLICY "Admins can delete courses" ON courses FOR DELETE USING (has_roles(ARRAY['admin', 'super_admin']));
+-- Invitations
+drop policy if exists "Admins can view invitations" on public.user_invitations;
+create policy "Admins can view invitations"
+on public.user_invitations
+for select
+using (public.has_roles(array['admin','super_admin']));
 
--- Course tee boxes: Everyone can read, authenticated users can create/update
-DROP POLICY IF EXISTS "Anyone can view course tee boxes" ON public.course_tee_boxes;
-CREATE POLICY "Anyone can view course tee boxes" ON course_tee_boxes FOR SELECT USING (true);
-DROP POLICY IF EXISTS "Authenticated users can create tee box data" ON public.course_tee_boxes;
-CREATE POLICY "Authenticated users can create tee box data" ON course_tee_boxes FOR INSERT WITH CHECK (auth.role() = 'authenticated');
-DROP POLICY IF EXISTS "Users can update tee box data they created" ON public.course_tee_boxes;
-CREATE POLICY "Users can update tee box data they created" ON course_tee_boxes FOR UPDATE USING (auth.role() = 'authenticated');
+drop policy if exists "Admins can create invitations" on public.user_invitations;
+create policy "Admins can create invitations"
+on public.user_invitations
+for insert
+with check (public.has_roles(array['admin','super_admin']));
 
--- Change requests: Users can create and view their own requests, admins can view all
-CREATE POLICY "Users can view their change requests" ON course_change_requests FOR SELECT USING (requested_by = auth.jwt() ->> 'email');
-CREATE POLICY "Users can create change requests" ON course_change_requests FOR INSERT WITH CHECK (auth.role() = 'authenticated' AND requested_by = auth.jwt() ->> 'email');
-CREATE POLICY "Admins can view all change requests" ON course_change_requests FOR SELECT USING (has_roles(ARRAY['admin', 'super_admin']));
-CREATE POLICY "Admins can update change requests" ON course_change_requests FOR UPDATE USING (has_roles(ARRAY['admin', 'super_admin']));
+drop policy if exists "Admins can update invitations" on public.user_invitations;
+create policy "Admins can update invitations"
+on public.user_invitations
+for update
+using (public.has_roles(array['admin','super_admin']));
 
--- Coach-student mappings policies
-DROP POLICY IF EXISTS "Admins can manage coach-student mappings" ON public.coach_student_mappings;
-CREATE POLICY "Admins can manage coach-student mappings" ON public.coach_student_mappings FOR ALL USING (has_roles(ARRAY['admin', 'super_admin']));
-DROP POLICY IF EXISTS "Coaches can view their own student mappings" ON public.coach_student_mappings;
-CREATE POLICY "Coaches can view their own student mappings" ON public.coach_student_mappings FOR SELECT USING (
+-- Audit log
+drop policy if exists "Admins can view audit logs" on public.user_audit_log;
+create policy "Admins can view audit logs"
+on public.user_audit_log
+for select
+using (public.has_roles(array['admin','super_admin']));
+
+drop policy if exists "System can create audit logs" on public.user_audit_log;
+create policy "System can create audit logs"
+on public.user_audit_log
+for insert
+with check (true);
+
+-- Courses
+drop policy if exists "Anyone can view courses" on public.courses;
+create policy "Anyone can view courses"
+on public.courses
+for select
+using (true);
+
+drop policy if exists "Authenticated users can create courses" on public.courses;
+create policy "Authenticated users can create courses"
+on public.courses
+for insert
+with check (auth.role() = 'authenticated');
+
+drop policy if exists "Course creators can update their courses" on public.courses;
+create policy "Course creators can update their courses"
+on public.courses
+for update
+using (created_by = auth.jwt() ->> 'email');
+
+drop policy if exists "Admins can delete courses" on public.courses;
+create policy "Admins can delete courses"
+on public.courses
+for delete
+using (public.has_roles(array['admin','super_admin']));
+
+-- Course tee boxes
+drop policy if exists "Anyone can view course tee boxes" on public.course_tee_boxes;
+create policy "Anyone can view course tee boxes"
+on public.course_tee_boxes
+for select
+using (true);
+
+drop policy if exists "Authenticated users can create tee box data" on public.course_tee_boxes;
+create policy "Authenticated users can create tee box data"
+on public.course_tee_boxes
+for insert
+with check (auth.role() = 'authenticated');
+
+drop policy if exists "Users can update tee box data they created" on public.course_tee_boxes;
+create policy "Users can update tee box data they created"
+on public.course_tee_boxes
+for update
+using (auth.role() = 'authenticated');
+
+-- Change requests
+drop policy if exists "Users can view their change requests" on public.course_change_requests;
+create policy "Users can view their change requests"
+on public.course_change_requests
+for select
+using (requested_by = auth.jwt() ->> 'email');
+
+drop policy if exists "Users can create change requests" on public.course_change_requests;
+create policy "Users can create change requests"
+on public.course_change_requests
+for insert
+with check (auth.role() = 'authenticated' and requested_by = auth.jwt() ->> 'email');
+
+drop policy if exists "Admins can view all change requests" on public.course_change_requests;
+create policy "Admins can view all change requests"
+on public.course_change_requests
+for select
+using (public.has_roles(array['admin','super_admin']));
+
+drop policy if exists "Admins can update change requests" on public.course_change_requests;
+create policy "Admins can update change requests"
+on public.course_change_requests
+for update
+using (public.has_roles(array['admin','super_admin']));
+
+-- Coach-student mappings
+drop policy if exists "Admins can manage coach-student mappings" on public.coach_student_mappings;
+create policy "Admins can manage coach-student mappings"
+on public.coach_student_mappings
+for all
+using (public.has_roles(array['admin','super_admin']));
+
+drop policy if exists "Coaches can view their own student mappings" on public.coach_student_mappings;
+create policy "Coaches can view their own student mappings"
+on public.coach_student_mappings
+for select
+using (
   coach_user_id = (
-    SELECT user_id FROM public.user_profiles 
-    WHERE email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email')
-    LIMIT 1
+    select user_id
+      from public.user_profiles
+     where email = coalesce(
+       nullif(current_setting('app.impersonated_user_email', true), ''),
+       nullif((auth.jwt() -> 'user_metadata' ->> 'impersonatedUser'), ''),
+       nullif((auth.jwt() ->> 'impersonatedUser'), ''),
+       auth.jwt() ->> 'email'
+     )
+     limit 1
   )
 );
 
--- Coach notes policies
-DROP POLICY IF EXISTS "Users can view relevant notes" ON public.coach_notes;
-CREATE POLICY "Users can view relevant notes"
-ON public.coach_notes
-FOR SELECT
-USING (
-  -- Student can see their own notes
-  (student_id = get_current_user_id())
-  OR
-  -- Coach can see notes for assigned students
+-- Coach notes
+drop policy if exists "Users can view relevant notes" on public.coach_notes;
+create policy "Users can view relevant notes"
+on public.coach_notes
+for select
+using (
+  (student_id = public.get_current_user_id())
+  or
   (
-    has_roles(ARRAY['coach']) AND
-    EXISTS (
-      SELECT 1
-      FROM public.coach_student_mappings csm
-      WHERE csm.coach_user_id = get_current_user_id()
-        AND csm.student_user_id = public.coach_notes.student_id
+    public.has_roles(array['coach']) and
+    exists (
+      select 1
+        from public.coach_student_mappings csm
+       where csm.coach_user_id = public.get_current_user_id()
+         and csm.student_user_id = public.coach_notes.student_id
     )
   )
 );
 
-DROP POLICY IF EXISTS "Users can create lesson notes or personal notes" ON public.coach_notes;
-CREATE POLICY "Users can create lesson notes or personal notes"
-ON public.coach_notes
-FOR INSERT
-WITH CHECK (
-  author_id = get_current_user_id()
-  AND (
-    -- Personal note
-    student_id = get_current_user_id()
-    OR
-    -- Coach writing for their mapped student
-    (
-      (SELECT 'coach' = ANY(roles)
-       FROM public.user_profiles
-       WHERE user_id = get_current_user_id())
-      AND
-      EXISTS (
-        SELECT 1
-        FROM public.coach_student_mappings
-        WHERE coach_user_id = get_current_user_id()
-          AND student_user_id = student_id
+drop policy if exists "Users can create lesson notes or personal notes" on public.coach_notes;
+create policy "Users can create lesson notes or personal notes"
+on public.coach_notes
+for insert
+with check (
+  author_id = public.get_current_user_id()
+  and (
+    student_id = public.get_current_user_id()
+    or (
+      (select 'coach' = any(roles) from public.user_profiles where user_id = public.get_current_user_id())
+      and exists (
+        select 1
+          from public.coach_student_mappings
+         where coach_user_id = public.get_current_user_id()
+           and student_user_id = student_id
       )
     )
   )
 );
 
-DROP POLICY IF EXISTS "Users can update their own notes" ON public.coach_notes;
-CREATE POLICY "Users can update their own notes"
-ON public.coach_notes
-FOR UPDATE
-USING (
-  author_id = get_current_user_id()
+drop policy if exists "Users can update their own notes" on public.coach_notes;
+create policy "Users can update their own notes"
+on public.coach_notes
+for update
+using (author_id = public.get_current_user_id());
+
+drop policy if exists "Users can delete their own notes or replies" on public.coach_notes;
+create policy "Users can delete their own notes or replies"
+on public.coach_notes
+for delete
+using (author_id = public.get_current_user_id() or public.has_roles(array['coach']));
+
+-- Rounds
+drop policy if exists "Users can view their own rounds, super admins can view all" on public.rounds;
+create policy "Users can view their own rounds, super admins can view all"
+on public.rounds
+for select
+using (
+  user_email = coalesce(
+    nullif(current_setting('app.impersonated_user_email', true), ''),
+    nullif((auth.jwt() -> 'user_metadata' ->> 'impersonatedUser'), ''),
+    nullif((auth.jwt() ->> 'impersonatedUser'), ''),
+    auth.jwt() ->> 'email'
+  )
+  or public.is_my_student(user_email)
+  or public.has_roles(array['super_admin'])
 );
 
-DROP POLICY IF EXISTS "Users can delete their own notes or replies" ON public.coach_notes;
-CREATE POLICY "Users can delete their own notes or replies"
-ON public.coach_notes
-FOR DELETE
-USING (
-  author_id = get_current_user_id()
-  OR has_roles(ARRAY['coach'])
-);
-
--- Rounds: Users can only access their own rounds
-CREATE POLICY "Users can view their own rounds, super admins can view all" ON rounds FOR SELECT USING (user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR is_my_student(user_email) OR has_roles(ARRAY['super_admin']));
-CREATE POLICY "Users can create their own rounds, super admins can create for others" ON rounds FOR INSERT WITH CHECK (auth.role() = 'authenticated' AND (user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR has_roles(ARRAY['super_admin'])));
-CREATE POLICY "Users can update their own rounds, super admins can update all" ON rounds FOR UPDATE USING (user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR has_roles(ARRAY['super_admin']));
-CREATE POLICY "Users can delete their own rounds, super admins can delete all" ON rounds FOR DELETE USING (user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR has_roles(ARRAY['super_admin']));
-
--- Round holes: Users can only access holes from their own rounds
-CREATE POLICY "Users can view their own round holes" ON round_holes FOR SELECT USING (
-  EXISTS (
-    SELECT 1 FROM rounds 
-    WHERE rounds.id = round_holes.round_id 
-    AND (rounds.user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR is_my_student(rounds.user_email) OR has_roles(ARRAY['super_admin']))
-  )
-);
-CREATE POLICY "Users can create their own round holes" ON round_holes FOR INSERT WITH CHECK (
-  EXISTS (
-    SELECT 1 FROM rounds 
-    WHERE rounds.id = round_holes.round_id 
-    AND (rounds.user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR has_roles(ARRAY['super_admin']))
-  )
-);
-CREATE POLICY "Users can update their own round holes" ON round_holes FOR UPDATE USING (
-  EXISTS (
-    SELECT 1 FROM rounds 
-    WHERE rounds.id = round_holes.round_id 
-    AND (rounds.user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR has_roles(ARRAY['super_admin']))
-  )
-);
-CREATE POLICY "Users can delete their own round holes" ON round_holes FOR DELETE USING (
-  EXISTS (
-    SELECT 1 FROM rounds 
-    WHERE rounds.id = round_holes.round_id 
-    AND (rounds.user_email = COALESCE(current_setting('app.impersonated_user_email', true), auth.jwt() ->> 'email') OR has_roles(ARRAY['super_admin']))
+drop policy if exists "Users can create their own rounds, super admins can create for others" on public.rounds;
+create policy "Users can create their own rounds, super admins can create for others"
+on public.rounds
+for insert
+with check (
+  auth.role() = 'authenticated' and (
+    user_email = coalesce(
+      nullif(current_setting('app.impersonated_user_email', true), ''),
+      nullif((auth.jwt() -> 'user_metadata' ->> 'impersonatedUser'), ''),
+      nullif((auth.jwt() ->> 'impersonatedUser'), ''),
+      auth.jwt() ->> 'email'
+    )
+    or public.has_roles(array['super_admin'])
   )
 );
 
--- Create updated_at trigger function
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = NOW();
-    RETURN NEW;
-END;
-$$ language 'plpgsql' STABLE SET search_path = 'public';
-
--- Add triggers for updated_at
-CREATE TRIGGER update_courses_updated_at BEFORE UPDATE ON courses FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-CREATE TRIGGER update_rounds_updated_at BEFORE UPDATE ON rounds FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
-
--- Function to create a user profile when a new user signs up
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SET search_path = 'public'
-SECURITY DEFINER -- This is important for accessing the auth.users table
-AS $$
-BEGIN
-  INSERT INTO public.user_profiles (user_id, email, full_name, roles, status)
-  VALUES (
-    new.id,
-    new.email,
-    new.raw_user_meta_data ->> 'full_name', -- Extracts full_name from user metadata
-    ARRAY['user']::TEXT[], -- Default role as an array
-    'active'  -- Set status to active for new sign-ups
-  );
-  RETURN new;
-END;
-$$;
-
--- Trigger to call the function after a new user is created
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
-
--- 1. CLUBS TABLE
--- Stores user-defined shot types.
-CREATE TABLE public.user_shot_types (
-  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  name TEXT NOT NULL,
-  category_ids TEXT[] NOT NULL, -- e.g., {'cat_long', 'cat_approach'}
-  is_default BOOLEAN DEFAULT FALSE,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  CONSTRAINT unique_shot_type_name_for_user UNIQUE (user_id, name)
-);
-
--- Enable RLS
-ALTER TABLE public.user_shot_types ENABLE ROW LEVEL SECURITY;
-
--- Policy: Users can only see and manage their own shot types.
-DROP POLICY IF EXISTS "Allow users to manage their own shot types" ON public.user_shot_types;
-CREATE POLICY "Allow users to manage their own shot types"
-  ON public.user_shot_types
-  FOR ALL
-  USING (user_id = get_current_user_id())
-  WITH CHECK (user_id = get_current_user_id());
-
-
--- Update handle_new_user function to seed default shot types
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER
-LANGUAGE plpgsql
-SET search_path = 'public'
-SECURITY DEFINER
-AS $$
-BEGIN
-  INSERT INTO public.user_profiles (user_id, email, full_name, roles, status)
-  VALUES (new.id, new.email, new.raw_user_meta_data ->> 'full_name', ARRAY['user']::TEXT[], 'active');
-
-  -- Seed default shot types for the new user
-  INSERT INTO public.user_shot_types (user_id, name, category_ids, is_default)
-  VALUES
-    (new.id, 'Full', ARRAY['cat_long'], TRUE),
-    (new.id, '3/4 Swing', ARRAY['cat_long', 'cat_approach'], TRUE), 
-    (new.id, '1/2 Swing', ARRAY['cat_approach', 'cat_short'], TRUE),
-    (new.id, 'Pitch', ARRAY['cat_short'], TRUE),
-    (new.id, 'Chip', ARRAY['cat_short'], TRUE);
-
-  RETURN new;
-END;
-$$;
-
--- 1. CLUBS TABLE
--- Stores individual club details, linked to a user.
-CREATE TABLE public.clubs (
-  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  name TEXT NOT NULL,
-  type TEXT, -- e.g., Iron, Wedge
-  make TEXT, -- e.g., Titleist
-  model TEXT, -- e.g., T100
-  loft TEXT,
-  bounce TEXT,
-  shaft_make TEXT,
-  shaft_model TEXT,
-  shaft_flex TEXT,
-  shaft_weight TEXT,
-  shaft_length TEXT,
-  grip_make TEXT,
-  grip_model TEXT,
-  grip_size TEXT,
-  grip_weight TEXT,
-  swing_weight TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Enable Row Level Security (RLS)
-ALTER TABLE public.clubs ENABLE ROW LEVEL SECURITY;
-
--- Policy: Users can only see and manage their own clubs.
-DROP POLICY IF EXISTS "Allow users to manage their own clubs" ON public.clubs;
-CREATE POLICY "Allow users to manage their own clubs"
-  ON public.clubs
-  FOR ALL
-  USING (user_id = get_current_user_id())
-  WITH CHECK (user_id = get_current_user_id());
-
--- 2. SHOTS TABLE
--- Stores shot data for each club.
-CREATE TABLE public.shots (
-  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-  club_id BIGINT REFERENCES public.clubs(id) ON DELETE CASCADE NOT NULL,
-  shot_type TEXT NOT NULL,
-  carry_distance NUMERIC,
-  carry_variance NUMERIC,
-  total_distance NUMERIC,
-  total_variance NUMERIC,
-  launch TEXT,
-  roll TEXT,
-  unit TEXT NOT NULL DEFAULT 'yards', -- 'yards' or 'meters'
-  tendency TEXT,
-  swing_key TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Enable RLS
-ALTER TABLE public.shots ENABLE ROW LEVEL SECURITY;
-
--- Policy: Users can manage shots only for clubs they own.
-DROP POLICY IF EXISTS "Allow users to manage shots for their own clubs" ON public.shots;
-CREATE POLICY "Allow users to manage shots for their own clubs"
-  ON public.shots
-  FOR ALL
-  USING ((SELECT user_id FROM public.clubs WHERE id = club_id) = get_current_user_id())
-  WITH CHECK ((SELECT user_id FROM public.clubs WHERE id = club_id) = get_current_user_id());
-
--- 3. BAGS TABLE (PRESETS)
--- Stores user-created bag presets.
-CREATE TABLE public.bags (
-  id BIGINT GENERATED BY DEFAULT AS IDENTITY PRIMARY KEY,
-  user_id UUID REFERENCES auth.users(id) ON DELETE CASCADE NOT NULL,
-  name TEXT NOT NULL,
-  is_default BOOLEAN DEFAULT FALSE,
-  tags TEXT[], -- Array of text for tags
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- Enable RLS
-ALTER TABLE public.bags ENABLE ROW LEVEL SECURITY;
-
--- Policy: Users can only see and manage their own bags.
-DROP POLICY IF EXISTS "Allow users to manage their own bags" ON public.bags;
-CREATE POLICY "Allow users to manage their own bags"
-  ON public.bags
-  FOR ALL
-  USING (user_id = get_current_user_id())
-  WITH CHECK (user_id = get_current_user_id());
-
--- 4. BAG_CLUBS JOIN TABLE
--- Manages the many-to-many relationship between bags and clubs.
-CREATE TABLE public.bag_clubs (
-  bag_id BIGINT REFERENCES public.bags(id) ON DELETE CASCADE NOT NULL,
-  club_id BIGINT REFERENCES public.clubs(id) ON DELETE CASCADE NOT NULL,
-  PRIMARY KEY (bag_id, club_id)
-);
-
--- Enable RLS
-ALTER TABLE public.bag_clubs ENABLE ROW LEVEL SECURITY;
-
--- Policy: Users can only link clubs and bags that they own.
-DROP POLICY IF EXISTS "Allow users to manage their own bag_clubs links" ON public.bag_clubs;
-CREATE POLICY "Allow users to manage their own bag_clubs links"
-  ON public.bag_clubs
-  FOR ALL
-  USING (
-    (SELECT user_id FROM public.bags WHERE id = bag_id) = get_current_user_id() AND
-    (SELECT user_id FROM public.clubs WHERE id = club_id) = get_current_user_id()
+drop policy if exists "Users can update their own rounds, super admins can update all" on public.rounds;
+create policy "Users can update their own rounds, super admins can update all"
+on public.rounds
+for update
+using (
+  user_email = coalesce(
+    nullif(current_setting('app.impersonated_user_email', true), ''),
+    nullif((auth.jwt() -> 'user_metadata' ->> 'impersonatedUser'), ''),
+    nullif((auth.jwt() ->> 'impersonatedUser'), ''),
+    auth.jwt() ->> 'email'
   )
-  WITH CHECK (
-    (SELECT user_id FROM public.bags WHERE id = bag_id) = get_current_user_id() AND
-    (SELECT user_id FROM public.clubs WHERE id = club_id) = get_current_user_id()
-  );
+  or public.has_roles(array['super_admin'])
+);
+
+drop policy if exists "Users can delete their own rounds, super admins can delete all" on public.rounds;
+create policy "Users can delete their own rounds, super admins can delete all"
+on public.rounds
+for delete
+using (
+  user_email = coalesce(
+    nullif(current_setting('app.impersonated_user_email', true), ''),
+    nullif((auth.jwt() -> 'user_metadata' ->> 'impersonatedUser'), ''),
+    nullif((auth.jwt() ->> 'impersonatedUser'), ''),
+    auth.jwt() ->> 'email'
+  )
+  or public.has_roles(array['super_admin'])
+);
+
+-- Round holes
+drop policy if exists "Users can view their own round holes" on public.round_holes;
+create policy "Users can view their own round holes"
+on public.round_holes
+for select
+using (
+  exists (
+    select 1
+      from public.rounds
+     where public.rounds.id = public.round_holes.round_id
+       and (
+         public.rounds.user_email = coalesce(
+           nullif(current_setting('app.impersonated_user_email', true), ''),
+           nullif((auth.jwt() -> 'user_metadata' ->> 'impersonatedUser'), ''),
+           nullif((auth.jwt() ->> 'impersonatedUser'), ''),
+           auth.jwt() ->> 'email'
+         )
+         or public.is_my_student(public.rounds.user_email)
+         or public.has_roles(array['super_admin'])
+       )
+  )
+);
+
+drop policy if exists "Users can create their own round holes" on public.round_holes;
+create policy "Users can create their own round holes"
+on public.round_holes
+for insert
+with check (
+  exists (
+    select 1
+      from public.rounds
+     where public.rounds.id = public.round_holes.round_id
+       and (
+         public.rounds.user_email = coalesce(
+           nullif(current_setting('app.impersonated_user_email', true), ''),
+           nullif((auth.jwt() -> 'user_metadata' ->> 'impersonatedUser'), ''),
+           nullif((auth.jwt() ->> 'impersonatedUser'), ''),
+           auth.jwt() ->> 'email'
+         )
+         or public.has_roles(array['super_admin'])
+       )
+  )
+);
+
+drop policy if exists "Users can update their own round holes" on public.round_holes;
+create policy "Users can update their own round holes"
+on public.round_holes
+for update
+using (
+  exists (
+    select 1
+      from public.rounds
+     where public.rounds.id = public.round_holes.round_id
+       and (
+         public.rounds.user_email = coalesce(
+           nullif(current_setting('app.impersonated_user_email', true), ''),
+           nullif((auth.jwt() -> 'user_metadata' ->> 'impersonatedUser'), ''),
+           nullif((auth.jwt() ->> 'impersonatedUser'), ''),
+           auth.jwt() ->> 'email'
+         )
+         or public.has_roles(array['super_admin'])
+       )
+  )
+);
+
+drop policy if exists "Users can delete their own round holes" on public.round_holes;
+create policy "Users can delete their own round holes"
+on public.round_holes
+for delete
+using (
+  exists (
+    select 1
+      from public.rounds
+     where public.rounds.id = public.round_holes.round_id
+       and (
+         public.rounds.user_email = coalesce(
+           nullif(current_setting('app.impersonated_user_email', true), ''),
+           nullif((auth.jwt() -> 'user_metadata' ->> 'impersonatedUser'), ''),
+           nullif((auth.jwt() ->> 'impersonatedUser'), ''),
+           auth.jwt() ->> 'email'
+         )
+         or public.has_roles(array['super_admin'])
+       )
+  )
+);
+
+-- =========================================================
+-- MY BAG RLS POLICIES (impersonation-safe now via get_current_user_id)
+-- =========================================================
+
+drop policy if exists "Allow users to manage their own shot types" on public.user_shot_types;
+create policy "Allow users to manage their own shot types"
+on public.user_shot_types
+for all
+using (user_id = public.get_current_user_id())
+with check (user_id = public.get_current_user_id());
+
+drop policy if exists "Allow users to manage their own clubs" on public.clubs;
+create policy "Allow users to manage their own clubs"
+on public.clubs
+for all
+using (user_id = public.get_current_user_id())
+with check (user_id = public.get_current_user_id());
+
+drop policy if exists "Allow users to manage shots for their own clubs" on public.shots;
+create policy "Allow users to manage shots for their own clubs"
+on public.shots
+for all
+using ((select user_id from public.clubs where id = club_id) = public.get_current_user_id())
+with check ((select user_id from public.clubs where id = club_id) = public.get_current_user_id());
+
+drop policy if exists "Allow users to manage their own bags" on public.bags;
+create policy "Allow users to manage their own bags"
+on public.bags
+for all
+using (user_id = public.get_current_user_id())
+with check (user_id = public.get_current_user_id());
+
+drop policy if exists "Allow users to manage their own bag_clubs links" on public.bag_clubs;
+create policy "Allow users to manage their own bag_clubs links"
+on public.bag_clubs
+for all
+using (
+  (select user_id from public.bags where id = bag_id) = public.get_current_user_id()
+  and
+  (select user_id from public.clubs where id = club_id) = public.get_current_user_id()
+)
+with check (
+  (select user_id from public.bags where id = bag_id) = public.get_current_user_id()
+  and
+  (select user_id from public.clubs where id = club_id) = public.get_current_user_id()
+);
