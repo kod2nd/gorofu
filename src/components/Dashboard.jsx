@@ -32,6 +32,7 @@ const Dashboard = ({ user, onViewRound, isActive, userProfile, onReply, notesRef
   // ✅ Track the last fetched filter state to prevent refetching with same filters
   const lastFetchedFilters = useRef(null);
   const lastFetchedUser = useRef(null);
+  const lastAllTimeRefreshKey = useRef(null);
 
   useEffect(() => {
     if (user?.email !== lastFetchedUser.current) {
@@ -63,13 +64,15 @@ const Dashboard = ({ user, onViewRound, isActive, userProfile, onReply, notesRef
 
       // Fetch if the component is now active and wasn't before,
       // or if the user/impersonatedUser has changed.
+      const refreshChanged = lastAllTimeRefreshKey.current !== roundsRefreshKey;
       if (isActive && user && (isActive !== wasActive.current || !hasFetchedAllTime.current)) {
         await fetchAllTimeData();
+        lastAllTimeRefreshKey.current = roundsRefreshKey;
       }
     };
     fetchAllTimeDataIfNeeded();
     wasActive.current = isActive;
-  }, [user, isActive]);
+  }, [user, isActive, roundsRefreshKey]);
 
 useEffect(() => {
     const loadCoach = async () => {
@@ -92,44 +95,38 @@ useEffect(() => {
 
 
   useEffect(() => {
-    // Effect 2: Fetch filter-dependent data ONLY when filters actually change or first mount
     const fetchData = async () => {
-      // Only fetch if the user is available
       if (!user) return;
 
-      // ✅ Create a filter state key
-      const currentFiltersKey = `${roundLimit}-${showEligibleRoundsOnly}-${user.email}`;
-      
-      // ✅ Skip if we've already fetched with these exact filters (prevents refetch on tab switch)
-      if (lastFetchedFilters.current === currentFiltersKey && !isInitialMount.current) {
+      // Optional: only fetch when dashboard is visible (recommended)
+      if (!isActive) return;
+
+      // ✅ include roundsRefreshKey so a refresh forces refetch
+      const currentKey = `${roundLimit}-${showEligibleRoundsOnly}-${user.email}-${roundsRefreshKey}`;
+
+      // ✅ Skip only if we've already fetched this exact key
+      if (lastFetchedFilters.current === currentKey && !isInitialMount.current) {
         return;
       }
 
-      // ✅ Mark these filters as fetched
-      lastFetchedFilters.current = currentFiltersKey;
+      lastFetchedFilters.current = currentKey;
 
-      // Determine which loading state to set
       if (isInitialMount.current) {
         setInitialLoading(true);
       } else {
         setIsFiltering(true);
       }
+
       setError("");
 
       try {
         const limit = roundLimit === 0 ? 9999 : roundLimit;
+
         const [roundsForTable, recentStatsData] = await Promise.all([
-          roundService.getDashboardStats(
-            user.email,
-            limit,
-            showEligibleRoundsOnly
-          ),
-          roundService.getRecentRoundsStats(
-            user.email,
-            limit,
-            showEligibleRoundsOnly
-          ),
+          roundService.getDashboardStats(user.email, limit, showEligibleRoundsOnly),
+          roundService.getRecentRoundsStats(user.email, limit, showEligibleRoundsOnly),
         ]);
+
         setRecentRounds(roundsForTable);
         setRecentStats(recentStatsData);
       } catch (err) {
@@ -145,7 +142,8 @@ useEffect(() => {
     };
 
     fetchData();
-  }, [user, roundLimit, showEligibleRoundsOnly, roundsRefreshKey]); // ✅ Added roundsRefreshKey
+  }, [user, isActive, roundLimit, showEligibleRoundsOnly, roundsRefreshKey]);
+
 
   // ✅ Show centered flipping icon only on initial load
   if (initialLoading) {

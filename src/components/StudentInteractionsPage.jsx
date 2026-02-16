@@ -310,6 +310,7 @@ const StudentInteractionsPage = forwardRef(({ user, isActive, onNoteUpdate }, re
 
       handleCloseForm();
       loadNotesForStudent(studentIdForNote, 0, true);
+      if (onNoteUpdate) onNoteUpdate();
     } catch (err) {
       setError("Failed to save note: " + err.message);
     }
@@ -358,6 +359,7 @@ const StudentInteractionsPage = forwardRef(({ user, isActive, onNoteUpdate }, re
         const studentIdToLoad = activeTab === "personal" ? userId : selectedStudentId;
         if (studentIdToLoad) loadNotesForStudent(studentIdToLoad, 0, true);
       }
+      if (onNoteUpdate) onNoteUpdate();
     } catch (err) {
       console.error("[StudentInteractionsPage] Failed to delete note:", err);
       setError("Failed to delete note: " + err.message);
