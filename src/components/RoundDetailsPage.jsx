@@ -26,6 +26,7 @@ import RoundInsights from "./RoundInsights";
 import ScoringBiasSlider from "./ScoringBiasSlider";
 import { elevatedCardStyles, sectionHeaderStyles } from "../styles/commonStyles";
 import { alpha } from "@mui/material/styles";
+import PageHeader from "./PageHeader";
 
 const DetailItem = ({ label, value }) => (
   <Box>
@@ -213,65 +214,32 @@ const RoundDetailsPage = ({ roundId, user, userProfile, onEdit, onBack }) => {
   return (
     <Box sx={{ pb: 2 }}>
       {/* Header Section */}
-      <Paper
-        elevation={0}
-        sx={{
-          p: { xs: 3, sm: 4 },
-          mb: 3,
-          background: "linear-gradient(135deg, #007991 0%, #78ffd6 100%)",
-          color: "white",
-          borderRadius: 3,
-        }}
-      >
-        <Stack
-          direction={{ xs: "column", sm: "row" }}
-          spacing={3}
-          alignItems="center"
-        >
-          <Box
-            sx={{
-              width: { xs: 80, sm: 100 },
-              height: { xs: 80, sm: 100 },
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              bgcolor: "rgba(255, 255, 255, 0.2)",
-              borderRadius: "50%",
-              border: "4px solid rgba(255, 255, 255, 0.4)",
-            }}
-          >
-            <GolfCourseIcon sx={{ fontSize: { xs: 40, sm: 50 } }} />
-          </Box>
-          <Box sx={{ flex: 1, textAlign: { xs: "center", sm: "left" } }}>
-            <Typography
-              variant="h4"
-              fontWeight="bold"
-              gutterBottom
-              sx={{ fontSize: { xs: "1.75rem", sm: "2.25rem" } }}
-            >
-              {round.courses.name}
-            </Typography>
-            <Typography variant="body1" sx={{ opacity: 0.9, mb: 1 }}>
-              {new Date(round.round_date).toLocaleDateString("en-UK", {
-                year: "numeric",
-                month: "long",
-                day: "numeric",
-              })}
-            </Typography>
-          </Box>
+      <PageHeader
+        title={round.courses?.name}
+        subtitle={new Date(round.round_date).toLocaleDateString("en-UK", {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        })}
+        icon={<GolfCourseIcon />}
+        chips={[
+          { label: round.tee_box ? `Tee: ${round.tee_box}` : "Tee: –", color: "info" },
+          {
+            label: round.round_type ? round.round_type.replace("_", " ").toUpperCase() : "–",
+            color: "default",
+          },
+          {
+            label: round.is_eligible_round ? "Eligible ✓" : "Not eligible",
+            color: round.is_eligible_round ? "success" : "warning",
+          },
+        ]}
+        actions={
           <Stack direction="row" spacing={1}>
             <Button
               variant="outlined"
               startIcon={<ArrowBackIcon />}
               onClick={onBack}
-              sx={{
-                color: "white",
-                borderColor: "rgba(255,255,255,0.5)",
-                "&:hover": {
-                  borderColor: "white",
-                  bgcolor: "rgba(255,255,255,0.1)",
-                },
-              }}
+              sx={{ borderRadius: 3, textTransform: "none", fontWeight: 800 }}
             >
               Back
             </Button>
@@ -279,17 +247,13 @@ const RoundDetailsPage = ({ roundId, user, userProfile, onEdit, onBack }) => {
               variant="contained"
               startIcon={<EditIcon />}
               onClick={() => onEdit(round.id)}
-              sx={{
-                bgcolor: "white",
-                color: "primary.main",
-                "&:hover": { bgcolor: "rgba(255, 255, 255, 0.9)" },
-              }}
+              sx={{ borderRadius: 3, textTransform: "none", fontWeight: 800, px: 2.5 }}
             >
               Edit
             </Button>
           </Stack>
-        </Stack>
-      </Paper>
+        }
+      />
 
       <Divider sx={{ my: 2 }} />
 
