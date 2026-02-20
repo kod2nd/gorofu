@@ -25,6 +25,7 @@ import ScorecardTable from "./ScorecardTable";
 import RoundInsights from "./RoundInsights";
 import ScoringBiasSlider from "./ScoringBiasSlider";
 import { elevatedCardStyles, sectionHeaderStyles } from "../styles/commonStyles";
+import { alpha } from "@mui/material/styles";
 
 const DetailItem = ({ label, value }) => (
   <Box>
@@ -32,6 +33,80 @@ const DetailItem = ({ label, value }) => (
     <Typography variant="body1" fontWeight="medium">{value}</Typography>
   </Box>
 );
+
+const InfoTile = ({ label, value, icon: Icon, tone = "default" }) => (
+  <Paper
+    elevation={0}
+    sx={(theme) => {
+      const toneColor =
+        tone === "success"
+          ? theme.palette.success.main
+          : tone === "warning"
+          ? theme.palette.warning.main
+          : tone === "error"
+          ? theme.palette.error.main
+          : theme.palette.primary.main;
+
+      return {
+        p: 2,
+        borderRadius: 3,
+        border: "1px solid",
+        borderColor: alpha(theme.palette.text.primary, 0.10),
+        background: alpha(theme.palette.text.primary, 0.02),
+        transition: "transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease",
+        "&:hover": {
+          transform: "translateY(-2px)",
+          boxShadow: `0 10px 30px ${alpha(theme.palette.common.black, 0.10)}`,
+          borderColor: alpha(toneColor, 0.25),
+          background: alpha(toneColor, 0.04),
+        },
+        display: "flex",
+        gap: 1.5,
+        alignItems: "flex-start",
+      };
+    }}
+  >
+    <Box
+      sx={(theme) => ({
+        width: 40,
+        height: 40,
+        borderRadius: 2,
+        display: "grid",
+        placeItems: "center",
+        flexShrink: 0,
+        bgcolor: alpha(theme.palette.primary.main, 0.10),
+        border: `1px solid ${alpha(theme.palette.primary.main, 0.15)}`,
+      })}
+    >
+      {Icon ? <Icon sx={{ fontSize: 22 }} /> : null}
+    </Box>
+
+    <Box sx={{ minWidth: 0, flex: 1 }}>
+      <Typography
+        variant="caption"
+        sx={{
+          color: "text.secondary",
+          fontWeight: 800,
+          letterSpacing: "0.08em",
+          textTransform: "uppercase",
+          lineHeight: 1.2,
+        }}
+        noWrap
+      >
+        {label}
+      </Typography>
+
+      <Typography
+
+        sx={{ fontWeight: 800, mt: 0.75, lineHeight: 1.1, letterSpacing: "-0.02em" }}
+        noWrap
+      >
+        {value ?? "–"}
+      </Typography>
+    </Box>
+  </Paper>
+);
+
 
 const RoundDetailsPage = ({ roundId, user, userProfile, onEdit, onBack }) => {
   const theme = useTheme();
@@ -250,39 +325,29 @@ const RoundDetailsPage = ({ roundId, user, userProfile, onEdit, onBack }) => {
               <Box
                 sx={{
                   display: "grid",
-                  gridTemplateColumns: {
-                    xs: "1fr",
-                    sm: "repeat(2, 1fr)",
-                  },
+                  gridTemplateColumns: { xs: "1fr", sm: "repeat(2, 1fr)", md: "repeat(4, 1fr)" },
                   gap: 2,
                 }}
               >
-                <DetailItem
-                  label="Scoring Zone Level"
-                  value={round.scoring_zone_level}
-                />
-                <DetailItem
+                <InfoTile label="Round Score" value={round.total_score} icon={ScoreIcon} />
+                <InfoTile label="Putts" value={round.total_putts} icon={TrendingUpIcon} />
+                <InfoTile label="Penalties" value={round.total_penalties || 0} icon={TrendingUpIcon} />
+                <InfoTile label="Holes Played" value={round.total_holes_played} icon={GolfCourseIcon} />
+
+                <InfoTile label="Tee Box" value={round.tee_box} icon={GolfCourseIcon} />
+                <InfoTile
                   label="Round Type"
-                  value={
-                    round.round_type?.replace("_", " ").toUpperCase() ||
-                    "18 HOLES"
-                  }
+                  value={round.round_type?.replace("_", " ").toUpperCase() || "18 HOLES"}
+                  icon={GolfCourseIcon}
                 />
-                <DetailItem
-                  label="Total Penalties"
-                  value={round.total_penalties || 0}
-                />
-                <DetailItem
+                <InfoTile label="SZ Level" value={round.scoring_zone_level} icon={TrendingUpIcon} />
+
+                <InfoTile
                   label="Eligible"
-                  value={round.is_eligible_round ? "✓" : "✗"}
+                  value={round.is_eligible_round ? "Eligible ✓" : "Not eligible ✗"}
+                  icon={TrendingUpIcon}
+                  tone={round.is_eligible_round ? "success" : "warning"}
                 />
-                <DetailItem label="Tee Box" value={round.tee_box} />
-                <DetailItem
-                  label="Holes Played"
-                  value={round.total_holes_played}
-                />
-                <DetailItem label="Putts Taken" value={round.total_putts} />
-                <DetailItem label="Round Score" value={round.total_score} />
               </Box>
             </Box>
           </Paper>

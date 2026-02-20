@@ -1,26 +1,17 @@
 import React from "react";
-import { Box, Typography, Paper, Skeleton, Tooltip, Chip, alpha, useTheme } from "@mui/material";
-import { elevatedCardStyles } from "../styles/commonStyles";
+import { Box, Typography, Paper, Tooltip, Chip } from "@mui/material";
+import { alpha, useTheme } from "@mui/material/styles";
+
 import GolfCourseIcon from "@mui/icons-material/GolfCourse";
-import Looks3Icon from "@mui/icons-material/Looks3";
-import Looks4Icon from "@mui/icons-material/Looks4";
-import Looks5Icon from "@mui/icons-material/Looks5";
 import SportsGolfIcon from "@mui/icons-material/SportsGolf";
 import TrackChangesIcon from "@mui/icons-material/TrackChanges";
 import BoltIcon from "@mui/icons-material/Bolt";
-
-const iconMap = {
-  avg_par3_score: Looks3Icon,
-  avg_par4_score: Looks4Icon,
-  avg_par5_score: Looks5Icon,
-  avg_putts_per_hole: SportsGolfIcon,
-  szir_count: TrackChangesIcon,
-  holeout_within_3_shots_count: BoltIcon,
-};
+import FlagIcon from "@mui/icons-material/Flag";
+import CloseIcon from "@mui/icons-material/Close";
 
 const StatTile = ({ label, value, percentage, tooltip, icon: Icon }) => {
   const theme = useTheme();
-  const showPct = percentage != null && percentage > 0;
+  const showPct = percentage != null && Number.isFinite(percentage);
 
   return (
     <Tooltip title={tooltip || ""} arrow placement="top">
@@ -135,93 +126,101 @@ const StatTile = ({ label, value, percentage, tooltip, icon: Icon }) => {
   );
 };
 
-const RecentInsights = ({ recentStats, isFiltering }) => {
-  const theme = useTheme();
+const RoundInsights = ({ insightsData }) => {
+  const total = insightsData?.totalHolesPlayed || 0;
 
-  const statsConfig = [
-    { key: "avg_par3_score", label: "Avg Par 3", tooltip: "Average score on par 3 holes.", format: (v) => Number(v).toFixed(1) },
-    { key: "avg_par4_score", label: "Avg Par 4", tooltip: "Average score on par 4 holes.", format: (v) => Number(v).toFixed(1) },
-    { key: "avg_par5_score", label: "Avg Par 5", tooltip: "Average score on par 5 holes.", format: (v) => Number(v).toFixed(1) },
-    { key: "avg_putts_per_hole", label: "Avg Putts", tooltip: "Average number of putts per hole.", format: (v) => Number(v).toFixed(1) },
-    { key: "szir_count", label: "SZIR", tooltip: "Scoring Zone in Regulation.", format: (v, stats) => `${v} / ${stats.total_holes_played}`, percentageKey: "szir_percentage" },
-    { key: "holeout_within_3_shots_count", label: "SZ Par", tooltip: "SZ Par conversion.", format: (v, stats) => `${v} / ${stats.total_holes_played}`, percentageKey: "sz_par_percentage" },
+  const szirPct = total > 0 ? (insightsData.totalSZIR / total) * 100 : null;
+  const szParPct = total > 0 ? (insightsData.totalHoleoutWithin3Shots / total) * 100 : null;
+
+  if (!insightsData || total === 0) {
+    return (
+      <Typography color="text.secondary" sx={{ textAlign: "center", py: 2 }}>
+        No hole data available for insights.
+      </Typography>
+    );
+  }
+
+  const tiles = [
+    {
+      key: "score",
+      label: "Score",
+      value: insightsData.totalScore ?? "–",
+      tooltip: "Total score for this round.",
+      icon: GolfCourseIcon,
+    },
+    {
+      key: "putts",
+      label: "Total Putts",
+      value: insightsData.totalPutts ?? "–",
+      tooltip: "Total putts taken in this round.",
+      icon: SportsGolfIcon,
+    },
+    {
+      key: "penalties",
+      label: "Penalties",
+      value: insightsData.totalPenalties ?? 0,
+      tooltip: "Total penalty shots recorded.",
+      icon: FlagIcon,
+    },
+    {
+      key: "szir",
+      label: "SZIR",
+      value: `${insightsData.totalSZIR} / ${total}`,
+      percentage: szirPct,
+      tooltip: "Scoring Zone in Regulation count and percentage.",
+      icon: TrackChangesIcon,
+    },
+    {
+      key: "szpar",
+      label: "SZ Par",
+      value: `${insightsData.totalHoleoutWithin3Shots} / ${total}`,
+      percentage: szParPct,
+      tooltip: "Scoring Zone par conversion count and percentage.",
+      icon: BoltIcon,
+    },
+    {
+      key: "within4ft",
+      label: "Putts ≤ 4ft",
+      value: insightsData.totalPuttsWithin4ft ?? 0,
+      tooltip: "Total putts taken within 4 feet.",
+      icon: SportsGolfIcon,
+    },
+    {
+      key: "missed4ft",
+      label: "Missed ≤ 4ft",
+      value: insightsData.holesWithMoreThanOnePuttWithin4ft ?? 0,
+      tooltip: "Holes where you had more than one putt within 4 feet (missed short putt).",
+      icon: CloseIcon,
+    },
+    {
+      key: "holeouts",
+      label: "Holeouts > 4ft",
+      value: insightsData.totalHoleoutFromOutside4ft ?? 0,
+      tooltip: "Number of holes holed out from outside 4 feet.",
+      icon: BoltIcon,
+    },
   ];
 
-  // compute sz_par_percentage safely (avoid mutating prop object if you can)
-  const computed = React.useMemo(() => {
-    if (!recentStats) return null;
-    const total = recentStats.total_holes_played || 0;
-    const szParPct = total > 0 ? (recentStats.holeout_within_3_shots_count / total) * 100 : 0;
-    return { ...recentStats, sz_par_percentage: szParPct };
-  }, [recentStats]);
-
-  const hasData = computed && computed.total_holes_played > 0;
-
   return (
-    <Paper
-      {...elevatedCardStyles}
+    <Box
       sx={{
-        ...elevatedCardStyles.sx,
-        p: 2.5,
-        borderRadius: 4,
-        background: `linear-gradient(180deg, ${alpha(theme.palette.background.paper, 1)} 0%, ${alpha(
-          theme.palette.background.default,
-          0.6
-        )} 100%)`,
+        display: "grid",
+        gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", md: "repeat(3, minmax(0, 1fr))" },
+        gap: 2,
       }}
     >
-      {/* header */}
-      <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 2, mb: 2 }}>
-        <Box>
-          <Typography sx={{ fontWeight: 800, letterSpacing: "-0.01em" }}>Recent Insights</Typography>
-          <Typography variant="body2" color="text.secondary">
-            Based on your selected rounds
-          </Typography>
-        </Box>
-      </Box>
-
-      {/* tiles */}
-      {isFiltering ? (
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", md: "repeat(3, minmax(0, 1fr))" },
-            gap: 2,
-          }}
-        >
-          {Array.from({ length: 6 }).map((_, i) => (
-            <Skeleton key={i} variant="rounded" height={92} sx={{ borderRadius: 3 }} />
-          ))}
-        </Box>
-      ) : hasData ? (
-        <Box
-          sx={{
-            display: "grid",
-            gridTemplateColumns: { xs: "repeat(2, minmax(0, 1fr))", md: "repeat(3, minmax(0, 1fr))" },
-            gap: 2,
-          }}
-        >
-          {statsConfig.map((stat) => {
-            const Icon = iconMap[stat.key] || GolfCourseIcon;
-            return (
-              <StatTile
-                key={stat.key}
-                label={stat.label}
-                value={stat.format(computed[stat.key], computed)}
-                percentage={stat.percentageKey ? computed[stat.percentageKey] : null}
-                tooltip={stat.tooltip}
-                icon={Icon}
-              />
-            );
-          })}
-        </Box>
-      ) : (
-        <Typography color="text.secondary" sx={{ textAlign: "center", py: 3 }}>
-          No data for selected filters.
-        </Typography>
-      )}
-    </Paper>
+      {tiles.map((t) => (
+        <StatTile
+          key={t.key}
+          label={t.label}
+          value={t.value}
+          percentage={t.percentage}
+          tooltip={t.tooltip}
+          icon={t.icon}
+        />
+      ))}
+    </Box>
   );
 };
 
-export default RecentInsights;
+export default RoundInsights;
