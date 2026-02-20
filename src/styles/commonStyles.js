@@ -10,12 +10,26 @@ export const segmentedSx = (theme, options = {}) => {
     padding = 0.5,
     fontWeight = 700,
     selectedShadow = true,
+    fullWidth = true,
   } = options;
+
+  // normalize fullWidth to a responsive object
+    const fullWidthResponsive =
+      typeof fullWidth === "object"
+        ? fullWidth
+        : { xs: fullWidth, sm: fullWidth };
+
+    const width = Object.fromEntries(
+      Object.entries(fullWidthResponsive).map(([bp, v]) => [bp, v ? "100%" : "fit-content"])
+    );
+    const flex = Object.fromEntries(
+      Object.entries(fullWidthResponsive).map(([bp, v]) => [bp, v ? 1 : "0 0 auto"])
+    );
 
   return {
     borderRadius: radius,
     p: padding,
-    width: "100%",
+    width,
     backgroundColor: alpha(theme.palette.text.primary, 0.04),
     border: `1px solid ${alpha(theme.palette.text.primary, 0.10)}`,
     "& .MuiToggleButton-root": {
@@ -27,7 +41,7 @@ export const segmentedSx = (theme, options = {}) => {
       textTransform: "none",
       color: theme.palette.text.secondary,
       transition: "all 150ms ease",
-      flex: 1,
+      flex,
       minWidth: 0,
       whiteSpace: "nowrap",
     },
@@ -279,14 +293,14 @@ export const typographyStyles = {
   distanceLabel: {
     variant: 'caption',
     sx: {
-      color: 'rgba(255,255,255,0.7)',
+      color: 'rgba(0, 0, 0, 0.7)',
       fontSize: { xs: '0.65rem', sm: '0.75rem' },
       display: 'block',
     }
   },
   distanceValue: {
     fontWeight: 'bold',
-    color: 'white',
+    color: 'rgba(0, 0, 0, 0.7)',
     sx: {
       fontSize: { xs: '0.75rem', sm: '0.875rem' },
       whiteSpace: 'nowrap',

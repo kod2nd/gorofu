@@ -123,7 +123,7 @@ const DistanceLookup = ({ myBags, myClubs, displayUnit }) => {
           value={lookupSelectedBagId}
           exclusive
           onChange={(e, newId) => { if (newId) setLookupSelectedBagId(newId); }}
-          sx={segmentedSx(theme)}
+          sx={segmentedSx(theme, { fullWidth: { xs: true, sm: false } })}
         >
           <ToggleButton value="all">All Clubs</ToggleButton>
           {myBags.map((bag) => (

@@ -9,8 +9,10 @@ import {
   ToggleButton,  
   Paper,
   Tooltip,
+  useTheme
 } from "@mui/material";
 import { convertDistance } from "../utils/utils";
+import { segmentedSx } from "../../styles/commonStyles";
 
 // Helper functions moved here to make the component self-contained
   const getShotTypeDetails = (shotTypeValue, shotConfig) => {
@@ -30,6 +32,8 @@ const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
   }, [shotConfig]);
 
   const [selectedCategoryId, setSelectedCategoryId] = useState('cat_long');
+  const theme = useTheme();
+
 
   useEffect(() => {
     setSelectedCategoryId('cat_long');
@@ -120,15 +124,7 @@ const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
           onChange={(e, newMetric) => {
             if (newMetric) setDistanceMetric(newMetric);
           }}
-          sx={{
-            alignSelf: { xs: "center", sm: "flex-end" },
-            "& .MuiToggleButton-root": {
-              px: { xs: 1.5, sm: 2 },
-              py: { xs: 0.5, sm: 0.375 },
-              fontSize: { xs: "0.75rem", sm: "0.8125rem" },
-              whiteSpace: "nowrap",
-            },
-          }}
+          sx={segmentedSx(theme, { fullWidth: { xs: true, sm: false } })}
         >
           <ToggleButton value="total">
             <Box
@@ -170,6 +166,7 @@ const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
           onChange={(e, newId) => {
             if (newId) setSelectedCategoryId(newId);
           }}
+          sx={segmentedSx(theme, { fullWidth: { xs: true, sm: false } })}
         >
           <ToggleButton value="all">All Shots</ToggleButton>
          {(shotConfig?.categories || []).map((cat) => (

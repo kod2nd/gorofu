@@ -37,10 +37,12 @@ import {
   accordionStyles,
   toggleButtonGroupStyles,
   emptyStateStyles,
+  segmentedSx,
 } from "../../styles/commonStyles";
 
 import ShotCard from "./ShotCard";
 import { convertDistance } from "../utils/utils";
+import { alpha } from "@mui/material/styles";
 
 const getShotTypeDetails = (shotTypeName, shotConfig) => {
   try {
@@ -498,15 +500,32 @@ const ClubCard = ({
     <Accordion
       expanded={expanded}
       onChange={handleAccordionChange}
-      sx={{ ...elevatedCardStyles.sx, ...accordionStyles.clubCard.sx }}
+      elevation={0}
+      sx={(theme) => ({
+        borderRadius: 4,
+        border: `1px solid ${alpha(theme.palette.text.primary, 0.10)}`,
+        overflow: "hidden",
+        background: `linear-gradient(180deg,
+          ${alpha(theme.palette.primary.main, 0.5)} 0%,
+          ${alpha(theme.palette.background.default, 1)} 0.5%)`,
+        transition: "transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease",
+        "&:hover": {
+          transform: "translateY(-2px)",
+          boxShadow: `0 10px 30px ${alpha(theme.palette.common.black, 0.10)}`,
+          borderColor: alpha(theme.palette.primary.main, 0.22),
+        },
+        "&::before": { display: "none" }, // removes MUI accordion divider line
+      })}
     >
       <AccordionSummary
-        expandIcon={<ExpandMoreIcon sx={{ color: "white" }} />}
+        expandIcon={<ExpandMoreIcon />}
         aria-controls={`panel-${safeClub.id}-content`}
         id={`panel-${safeClub.id}-header`}
-        sx={{
-          ...accordionStyles.summary.sx
-        }}
+        sx={(theme) => ({
+          px: { xs: 2, sm: 3 },
+          py: { xs: 1.5, sm: 2 },
+          "& .MuiAccordionSummary-content": { my: 0 },
+        })}
       >
         <Stack
           direction="row"
@@ -755,10 +774,11 @@ const ClubCard = ({
                 }}
               >
                 <Typography
-                  variant="h6"
+                  variant="caption"
                   sx={{
                     fontSize: { xs: "1rem", sm: "1.25rem" },
                     fontWeight: 600,
+                    mr: 2
                   }}
                 >
                   Distance Ranges
@@ -781,20 +801,15 @@ const ClubCard = ({
                       if (newView) setDistanceView(newView);
                     }}
                     aria-label="distance view"
-                    sx={{
-                      "& .MuiToggleButton-root": {
-                        px: { xs: 1, sm: 1.5 },
-                        py: { xs: 0.25, sm: 0.5 },
-                        fontSize: { xs: "0.75rem", sm: "0.8125rem" },
-                        minWidth: { xs: 60, sm: 70 },
-                      },
-                    }}
+                    sx={segmentedSx(theme, { fullWidth: { xs: true, sm: false }, radius: 10 })}
                   >
                     <ToggleButton value="carry">Carry</ToggleButton>
                     <ToggleButton value="total">Total</ToggleButton>
                     <ToggleButton value="both">Both</ToggleButton>
                   </ToggleButtonGroup>
 
+                </Box>
+              </Box>
                   <ExpandMoreIcon
                     sx={{
                       transform: showRanges ? "rotate(180deg)" : "rotate(0deg)",
@@ -803,8 +818,6 @@ const ClubCard = ({
                       fontSize: { xs: 20, sm: 24 },
                     }}
                   />
-                </Box>
-              </Box>
             </Box>
             <Collapse in={showRanges}>
               <Stack spacing={2} sx={{ mt: 2 }}>
