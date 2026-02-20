@@ -32,6 +32,7 @@ import BagPresetModal from './myBag/BagPresetModal';
 import MyBagsSection from './myBag/MyBagsSection';
 import ConfirmationDialog from './myBag/ConfirmationDialog';
 import MyClubsSection from './myBag/MyClubsSection';
+import { segmentedSx } from '../styles/commonStyles';
 
 // Mock user-defined shot configuration. In a real app, this would be fetched from the database.
 const mockUserShotConfig = {
@@ -331,25 +332,23 @@ const MyBagPage = ({ user, isActive }) => {
     <Box sx={{ pb: 4 }}>
       <PageHeader
         title="My Bag"
-        subtitle="Manage your clubs and know your distances."
+        subtitle="Manage your clubs"
         icon={<StraightenIcon />}
         actions={
           <Stack direction="row" spacing={2} alignItems="center">
             <ToggleButtonGroup
-              color="primary"
               value={displayUnit}
               exclusive
-              onChange={(e, newUnit) => { if (newUnit) setDisplayUnit(newUnit); }}
-              aria-label="distance unit"
-              sx={{
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                '& .MuiToggleButton-root': { color: 'white', borderColor: 'rgba(255,255,255,0.3)' },
-                '& .Mui-selected': { backgroundColor: 'white !important', color: 'primary.main !important' }
+              onChange={(e, newUnit) => {
+                if (newUnit) setDisplayUnit(newUnit);
               }}
+              aria-label="distance unit"
+              sx={segmentedSx(theme, {radius: 10})}
             >
-              <ToggleButton value="meters">Meters</ToggleButton>
-              <ToggleButton value="yards">Yards</ToggleButton>
+              <ToggleButton value="meters">m</ToggleButton>
+              <ToggleButton value="yards">yd</ToggleButton>
             </ToggleButtonGroup>
+
           </Stack>
         }
       />

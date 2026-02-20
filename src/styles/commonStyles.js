@@ -1,6 +1,50 @@
 // src/styles/commonStyles.js
 // Centralized styling system for consistent UI across the golf app
 
+import { alpha } from "@mui/material/styles";
+
+// Toggle Button Group
+export const segmentedSx = (theme, options = {}) => {
+  const {
+    radius = 2,
+    padding = 0.5,
+    fontWeight = 700,
+    selectedShadow = true,
+  } = options;
+
+  return {
+    borderRadius: radius,
+    p: padding,
+    width: "100%",
+    backgroundColor: alpha(theme.palette.text.primary, 0.04),
+    border: `1px solid ${alpha(theme.palette.text.primary, 0.10)}`,
+    "& .MuiToggleButton-root": {
+      border: "none",
+      borderRadius: radius,
+      px: 2,
+      py: 0.85,
+      fontWeight,
+      textTransform: "none",
+      color: theme.palette.text.secondary,
+      transition: "all 150ms ease",
+      flex: 1,
+      minWidth: 0,
+      whiteSpace: "nowrap",
+    },
+    "& .MuiToggleButton-root:hover": {
+      backgroundColor: alpha(theme.palette.primary.main, 0.08),
+    },
+    "& .Mui-selected": {
+      backgroundColor: `${theme.palette.primary.main} !important`,
+      color: `${theme.palette.primary.contrastText} !important`,
+      ...(selectedShadow
+        ? { boxShadow: `0 6px 16px ${alpha(theme.palette.primary.main, 0.30)}` }
+        : {}),
+    },
+  };
+};
+
+
 // Common card/paper styles used across forms
 export const cardStyles = {
   elevation: 0,

@@ -15,13 +15,15 @@ import {
   ButtonBase,
   MenuItem,
   Slider,
+  useTheme
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteIcon from '@mui/icons-material/Delete'; 
 import { Download, UploadFile } from '@mui/icons-material';
-import { elevatedCardStyles, flexboxGridStyles } from '../styles/commonStyles';
+import { elevatedCardStyles, flexboxGridStyles, segmentedSx } from '../styles/commonStyles';
 import { countries } from './countries';
+import { alpha } from "@mui/material/styles";
 
 const createHolesArray = (numHoles) => Array.from({ length: numHoles }, (_, i) => ({
   hole_number: i + 1,
@@ -47,6 +49,8 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
     };
   });
   const [showParOverrides, setShowParOverrides] = useState({});
+  const theme = useTheme();
+
 
   const handleCourseChange = (e) => {
     setCourse({ ...course, [e.target.name]: e.target.value });
@@ -344,89 +348,166 @@ const CourseForm = ({ initialCourse, onSave, onCancel, onDelete }) => {
         </Box>
 
         {/* Tee Box Management */}
-        <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>
+        <Paper
+          elevation={0}
+          sx={(theme) => ({
+            borderRadius: 4,
+            border: `1px solid ${alpha(theme.palette.text.primary, 0.10)}`,
+            background: `linear-gradient(180deg,
+              ${alpha(theme.palette.background.paper, 1)} 0%,
+              ${alpha(theme.palette.background.default, 0.65)} 100%)`,
+            p: { xs: 2, sm: 3 },
+            mb: 3,
+          })}
+        >
+          {/* Header */}
           <Box
             sx={{
               display: "flex",
               justifyContent: "space-between",
               alignItems: "center",
+              gap: 2,
               mb: 2,
             }}
           >
-            <Typography variant="h6" sx={{ fontWeight: "bold" }}>
-              Tee Boxes
-            </Typography>
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  display: "block",
+                  color: "text.secondary",
+                  fontWeight: 900,
+                  letterSpacing: "0.10em",
+                  textTransform: "uppercase",
+                }}
+              >
+                Course Setup
+              </Typography>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 900, letterSpacing: "-0.02em", lineHeight: 1.1 }}
+                noWrap
+              >
+                Tee Boxes
+              </Typography>
+            </Box>
+
             <Button
               startIcon={<AddCircleOutlineIcon />}
               onClick={addTeeBox}
-              variant="outlined"
+              variant="contained"
+              sx={{
+                borderRadius: 3,
+                textTransform: "none",
+                fontWeight: 800,
+                px: 2.25,
+              }}
             >
               Add Tee Box
             </Button>
           </Box>
-          <Box sx={{ display: "flex", flexWrap: "wrap", gap: 2 }}>
-            {course.tee_boxes.map((teeBox, index) => (
-              <Box
-                key={index}
-                sx={flexboxGridStyles.threeColumn}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Box sx={{ flexGrow: 1 }}>
-                    <TextField
-                      label={`Tee ${index + 1} Name`}
-                      value={teeBox.name}
-                      onChange={(e) =>
-                        handleTeeBoxNameChange(index, e.target.value)
-                      }
-                      fullWidth
-                      error={course.tee_boxes.some(
-                        (tb, i) =>
-                          tb.name.trim() === teeBox.name.trim() && i !== index
-                      )}
-                      helperText={
-                        course.tee_boxes.some(
-                          (tb, i) =>
-                            tb.name.trim() === teeBox.name.trim() && i !== index
-                        )
-                          ? "Duplicate name"
-                          : ""
-                      }
-                    />
-                    <ToggleButtonGroup
-                      color="primary"
-                      value={teeBox.yards_or_meters_unit}
-                      exclusive
-                      onChange={(e, value) =>
-                        handleTeeBoxUnitChange(index, value)
-                      }
-                      size="small"
-                      sx={{
-                        mt: 1,
-                        width: "100%",
-                        "& .MuiToggleButton-root": {
-                          flexGrow: 1,
-                          "&.Mui-selected": {
-                            color: "white",
-                            backgroundColor: "primary.dark",
-                            "&:hover": {
-                              backgroundColor: "primary.dark",
+
+          {/* Cards */}
+          <Box
+            sx={{
+              display: "grid",
+              gridTemplateColumns: { xs: "1fr", md: "repeat(2, 1fr)" },
+              gap: 2,
+            }}
+          >
+            {course.tee_boxes.map((teeBox, index) => {
+              const isDup = course.tee_boxes.some(
+                (tb, i) => tb.name.trim() === teeBox.name.trim() && i !== index
+              );
+
+              return (
+                <Box
+                  key={index}
+                  sx={(theme) => ({
+                    borderRadius: 4,
+                    border: `1px solid ${alpha(theme.palette.text.primary, 0.10)}`,
+                    background: alpha(theme.palette.text.primary, 0.02),
+                    p: 2,
+                    transition: "transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease",
+                    "&:hover": {
+                      transform: "translateY(-2px)",
+                      boxShadow: `0 10px 30px ${alpha(theme.palette.common.black, 0.10)}`,
+                      borderColor: alpha(theme.palette.primary.main, 0.22),
+                      background: alpha(theme.palette.primary.main, 0.04),
+                    },
+                  })}
+                >
+                  <Box sx={{ display: "flex", alignItems: "flex-start", gap: 1.5 }}>
+                    <Box sx={{ flex: 1, minWidth: 0, display: "grid", gap: 1.25 }}>
+                      <Box sx={{ display: "grid", gap: 1 }}>
+                        <Typography
+                          variant="caption"
+                          sx={{
+                            fontWeight: 800,
+                            letterSpacing: "0.08em",
+                            textTransform: "uppercase",
+                            color: "text.secondary",
+                          }}
+                        >
+                          Tee {index + 1}
+                        </Typography>
+
+                        <TextField
+                          placeholder="Enter tee name"
+                          value={teeBox.name}
+                          onChange={(e) => handleTeeBoxNameChange(index, e.target.value)}
+                          fullWidth
+                          error={isDup}
+                          sx={(theme) => ({
+                            "& .MuiOutlinedInput-root": {
+                              borderRadius: 3,
+                              backgroundColor: alpha(theme.palette.background.paper, 0.8),
                             },
-                          },
-                        },
-                      }}
+                          })}
+                        />
+
+                        {isDup && (
+                          <Typography
+                            variant="caption"
+                            sx={{
+                              color: "error.main",
+                              fontWeight: 700,
+                            }}
+                          >
+                            Duplicate name
+                          </Typography>
+                        )}
+                      </Box>
+
+
+                      <ToggleButtonGroup
+                        value={teeBox.yards_or_meters_unit}
+                        exclusive
+                        onChange={(e, value) => handleTeeBoxUnitChange(index, value)}
+                        size="small"
+                        sx={segmentedSx(theme)}
+                      >
+                        <ToggleButton value="meters">m</ToggleButton>
+                        <ToggleButton value="yards">yd</ToggleButton>
+                      </ToggleButtonGroup>
+                    </Box>
+
+                    <IconButton
+                      onClick={() => removeTeeBox(index)}
+                      sx={(theme) => ({
+                        borderRadius: 2,
+                        border: `1px solid ${alpha(theme.palette.text.primary, 0.12)}`,
+                      })}
                     >
-                      <ToggleButton value="meters">Meters</ToggleButton>
-                      <ToggleButton value="yards">Yards</ToggleButton>
-                    </ToggleButtonGroup>
+                      <DeleteIcon />
+                    </IconButton>
                   </Box>
-                  <IconButton onClick={() => removeTeeBox(index)} color="error">
-                    <DeleteIcon />
-                  </IconButton>
                 </Box>
-              </Box>
-            ))}
+              );
+            })}
           </Box>
         </Paper>
+
 
         {/* CSV Import/Export */}
         <Paper variant="outlined" sx={{ p: 2, mb: 3 }}>

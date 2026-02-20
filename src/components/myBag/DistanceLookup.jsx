@@ -12,6 +12,7 @@ import {
   Divider,
   Chip,
   Avatar,
+  useTheme
 } from "@mui/material";
 import {
   Search,
@@ -25,7 +26,7 @@ import {
   Bolt,
   EmojiEvents,
 } from "@mui/icons-material";
-import { elevatedCardStyles } from "../../styles/commonStyles";
+import { elevatedCardStyles, segmentedSx } from "../../styles/commonStyles";
 import { convertDistance } from "../utils/utils";
 
 const DistanceLookup = ({ myBags, myClubs, displayUnit }) => {
@@ -34,6 +35,7 @@ const DistanceLookup = ({ myBags, myClubs, displayUnit }) => {
   const [suggestedShots, setSuggestedShots] = useState([]);
   const [lookupSelectedBagId, setLookupSelectedBagId] = useState("all");
   const [activeInput, setActiveInput] = useState(null);
+  const theme = useTheme();
 
   // Use useCallback to memoize the handleSearch function
   // This prevents it from being recreated on every render, which is important for the useEffect dependency array.
@@ -121,6 +123,7 @@ const DistanceLookup = ({ myBags, myClubs, displayUnit }) => {
           value={lookupSelectedBagId}
           exclusive
           onChange={(e, newId) => { if (newId) setLookupSelectedBagId(newId); }}
+          sx={segmentedSx(theme)}
         >
           <ToggleButton value="all">All Clubs</ToggleButton>
           {myBags.map((bag) => (
