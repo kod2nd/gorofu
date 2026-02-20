@@ -145,17 +145,19 @@ const RecentInsights = ({ recentStats, isFiltering }) => {
   );
 
   return (
-    <Paper
-      {...elevatedCardStyles}
-      sx={{
-        ...elevatedCardStyles.sx,
-        p: 2.25,
-        borderRadius: 4,
-        "&:hover": { transform: "none", boxShadow: elevatedCardStyles.elevation }, // avoid double “float”
-      }}
-    >
+    <Paper>
       <Box sx={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 2 }}>
-        <Typography sx={{ fontWeight: 900, letterSpacing: "-0.01em" }}>
+        <Typography
+          variant="caption"
+          sx={{
+            display: "block",
+            mb: 0.75,
+            color: "text.secondary",
+            fontWeight: 800,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+          }}
+        >
           Recent Insights
         </Typography>
 

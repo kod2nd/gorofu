@@ -321,7 +321,13 @@ const RoundDetailsPage = ({ roundId, user, userProfile, onEdit, onBack }) => {
         {(isMobile ? activeTab === 0 : true) && (
           <Paper {...elevatedCardStyles}>
             <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 2 }}>
-              <Typography {...sectionHeaderStyles}>
+              <Typography
+                variant="subtitle2"
+                fontWeight="bold"
+                color="text.secondary"
+                gutterBottom
+                sx={{ mb: 2 }}
+              >
                 Scorecard {isMobile && '(Scroll to view)'}
               </Typography>
             </Box>
@@ -336,7 +342,13 @@ const RoundDetailsPage = ({ roundId, user, userProfile, onEdit, onBack }) => {
         {/* Insights */}
         {(isMobile ? activeTab === 2 : true) && (
           <Paper {...elevatedCardStyles}>
-            <Typography {...sectionHeaderStyles} sx={{mb: 2}}>
+            <Typography
+                variant="subtitle2"
+                fontWeight="bold"
+                color="text.secondary"
+                gutterBottom
+                sx={{ mb: 2 }}
+              >
               Round Insights
             </Typography>
             <RoundInsights insightsData={insightsData} />

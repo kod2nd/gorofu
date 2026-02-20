@@ -40,12 +40,15 @@ import {
   Phone,
   Close,
   Add,
+  People,
+  PeopleAlt,
 } from '@mui/icons-material';
 import Autocomplete from '@mui/material/Autocomplete';
 import TextField from '@mui/material/TextField';
 import { userService } from '../services/userService';
 import { elevatedCardStyles } from '../styles/commonStyles';
 import FlippingGolfIcon from "./FlippingGolfIcon";
+import PageHeader from './PageHeader';
 
 const toProperCase = (str) => {
   if (!str) return '';
@@ -90,6 +93,10 @@ const CoachManagementPage = ({ currentUser, isActive }) => {
     }
   };
 
+  const buildSubtitle = (coaches = []) => {
+    return `${coaches.length} coach${coaches.length !== 1 ? "es" : ""} found`;
+  }
+
   const handleOpenEditDialog = async (coach) => {
     setSelectedCoach(coach);
     try {
@@ -113,6 +120,8 @@ const CoachManagementPage = ({ currentUser, isActive }) => {
       await userService.assignStudentsToCoach(selectedCoach.user_id, assignedStudentIds, currentUser.email);
       handleCloseEditDialog();
       // Show success message or refresh data if needed
+      setError("");
+      await loadData();
     } catch (err) {
       setError('Failed to save assignments: ' + err.message);
     }
@@ -162,36 +171,11 @@ const CoachManagementPage = ({ currentUser, isActive }) => {
   return (
     <Box sx={{ p: isMobile ? 1 : 3 }}>
       {/* Header */}
-      <Paper 
-        sx={{ 
-          p: isMobile ? 2 : 3, 
-          mb: 2,
-          background: `linear-gradient(135deg, ${theme.palette.primary.main}15 0%, ${theme.palette.background.paper} 100%)`,
-        }}
-      >
-        <Box sx={{ 
-          display: 'flex', 
-          flexDirection: isMobile ? 'column' : 'row',
-          alignItems: isMobile ? 'flex-start' : 'center',
-          justifyContent: 'space-between',
-          gap: 2
-        }}>
-          <Box>
-            <Typography 
-              variant={isMobile ? "h5" : "h4"} 
-              component="h1" 
-              fontWeight="bold"
-              sx={{ color: 'primary.main' }}
-            >
-              Coach Management
-            </Typography>
-            <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
-              {coaches.length} coach{coaches.length !== 1 ? 'es' : ''} found. Data is refreshed on page load.
-            </Typography>
-          </Box>
-        </Box>
-      </Paper>
-
+      <PageHeader
+        title="Coach Management"
+        subtitle={buildSubtitle(coaches)}
+        icon={<PeopleAlt />}
+      />
       {/* Coaches List */}
       {coaches.length === 0 ? (
         <Paper sx={{ p: 4, textAlign: 'center' }}>

@@ -47,6 +47,7 @@ import NoteThreadDetailView from "./studentInteraction/NoteThreadDetailView";
 import { toProperCase } from "./studentInteraction/utils";
 import ConfirmationDialog from "./myBag/ConfirmationDialog";
 import NoteFilters from "./studentInteraction/NoteFilters";
+import StudentPicker from "./studentInteraction/StudentPicker";
 
 const StudentInteractionsPage = forwardRef(({ user, isActive, onNoteUpdate }, ref) => {
   const [students, setStudents] = useState([]);
@@ -453,8 +454,8 @@ const StudentInteractionsPage = forwardRef(({ user, isActive, onNoteUpdate }, re
   return (
     <Box sx={{ pb: 4 }}>
       <PageHeader
-        title="Student Interactions"
-        subtitle="Manage lesson notes and takeaways for your students."
+        title="Notes and Memos"
+        subtitle="Manage lesson notes and takeaways"
         icon={<AddComment />}
       />
 
@@ -492,71 +493,13 @@ const StudentInteractionsPage = forwardRef(({ user, isActive, onNoteUpdate }, re
               Student
             </Typography>
 
-            <FormControl fullWidth>
-              <InputLabel>Student</InputLabel>
-              <Select
-                value={selectedStudentId}
-                label="Student"
-                onChange={(e) => setSelectedStudentId(e.target.value)}
-                renderValue={(selected) => {
-                  if (!selected) return <em>-- Select a Student --</em>;
-                  const student = students.find((s) => s.user_id === selected);
-                  if (!student) return null;
-
-                  const coaches = getAssignedCoaches(selected);
-
-                  return (
-                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", width: "100%" }}>
-                      <Box>
-                        <Typography fontWeight={500}>{toProperCase(student.full_name)}</Typography>
-                        <Typography variant="caption" color="text.secondary">{student.email}</Typography>
-
-                        {coaches.length > 0 && (
-                          <Box sx={{ mt: 1, display: "flex", alignItems: "center", gap: 1, flexWrap: "wrap" }}>
-                            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
-                              Coach{coaches.length > 1 ? "es" : ""}:
-                            </Typography>
-                            <Box sx={{ display: "flex", gap: 0.5, flexWrap: "wrap" }}>
-                              {coaches.map((coach) => (
-                                <Chip
-                                  key={coach.user_id}
-                                  label={toProperCase(coach.full_name)}
-                                  size="small"
-                                  variant="outlined"
-                                />
-                              ))}
-                            </Box>
-                          </Box>
-                        )}
-                      </Box>
-                    </Box>
-                  );
-                }}
-                sx={{
-                  borderRadius: 2,
-                  "& .MuiOutlinedInput-notchedOutline": { borderWidth: 2 },
-                }}
-              >
-                <MenuItem value="">
-                  <em>-- Select a Student --</em>
-                </MenuItem>
-                {students.map((student) => (
-                  <MenuItem
-                    key={student.user_id}
-                    value={student.user_id}
-                    sx={{
-                      py: 1.5,
-                      "&:hover": { backgroundColor: "rgba(0, 0, 0, 0.04)" },
-                    }}
-                  >
-                    <Box sx={{ display: "flex", justifyContent: "space-between", width: "100%", alignItems: "center" }}>
-                      <Typography fontWeight={500}>{toProperCase(student.full_name) || "Unnamed Student"}</Typography>
-                      <Typography variant="caption" color="text.secondary">{student.email}</Typography>
-                    </Box>
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <StudentPicker
+              students={students}
+              selectedStudentId={selectedStudentId}
+              setSelectedStudentId={setSelectedStudentId}
+              getAssignedCoaches={getAssignedCoaches}
+              toProperCase={toProperCase}
+            />
           </Box>
         )}
 

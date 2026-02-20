@@ -327,10 +327,22 @@ const Analytics = ({ recentRounds, recentStats, onRelativeDistanceThresholdChang
 
   return (
     <Box>
-      <Typography variant="h5" sx={{ fontWeight: "bold", mb: 3 }}>
-        Performance Analytics
-      </Typography>
-      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3 }}>
+      <Box>
+        <Typography
+          variant="caption"
+          sx={{
+            display: "block",
+            mb: 0.75,
+            color: "text.secondary",
+            fontWeight: 800,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+          }}
+        >
+          Performance Analytics
+        </Typography>
+      </Box>
+      <Box sx={{ display: "flex", flexWrap: "wrap", gap: 3, mt:2 }}>
         {/* Par 3 Performance */}
         {performanceData.some((d) => d["Par 3 Avg Score"] != null) && (
           <PerformanceLineChart

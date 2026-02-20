@@ -49,19 +49,7 @@ const DashboardFilters = ({
   };
 
   return (
-    <Paper
-      {...elevatedCardStyles}
-      sx={{
-        ...elevatedCardStyles.sx,
-        p: 2.25,
-        borderRadius: 4,
-        transition: "all 0.18s ease",
-        "&:hover": {
-          transform: "translateY(-2px)",
-          boxShadow: `0 10px 30px ${alpha(theme.palette.common.black, 0.10)}`,
-        },
-      }}
-    >
+    <Paper>
       {/* Controls */}
       <Box sx={{ display: "grid", gap: 1.5 }}>
         <Box>

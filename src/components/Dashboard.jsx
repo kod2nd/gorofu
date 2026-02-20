@@ -225,9 +225,15 @@ useEffect(() => {
           <Paper {...elevatedCardStyles}>
             <Box sx={{ p: 2 }}>
               <Typography
-                variant="h6"
-                component="h2"
-                sx={{ fontWeight: "bold" }}
+                variant="caption"
+                sx={{
+                  display: "block",
+                  mb: 0.75,
+                  color: "text.secondary",
+                  fontWeight: 800,
+                  letterSpacing: "0.06em",
+                  textTransform: "uppercase",
+                }}
               >
                 Recent Rounds
               </Typography>

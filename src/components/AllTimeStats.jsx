@@ -101,7 +101,17 @@ const AllTimeStats = ({ cumulativeStats, szirStreak, szParStreak }) => {
   return (
     <Box>
       <Box sx={{ display: "flex", alignItems: "center", mb: 2 }}>
-        <Typography variant="h6" sx={{ fontWeight: 750 }}>
+        <Typography
+          variant="caption"
+          sx={{
+            display: "block",
+            mb: 0.75,
+            color: "text.secondary",
+            fontWeight: 800,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+          }}
+        >
           All Time Stats
         </Typography>
       </Box>

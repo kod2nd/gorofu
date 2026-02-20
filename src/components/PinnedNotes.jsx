@@ -7,6 +7,7 @@ import {
   Dialog,
   DialogContent,
   IconButton,
+  Box,
 } from '@mui/material';
 import { Close as CloseIcon } from '@mui/icons-material';
 import { elevatedCardStyles } from '../styles/commonStyles';
@@ -91,54 +92,68 @@ const PinnedNotes = ({ studentId, userProfile, onReply, refreshKey, onNoteUpdate
   if (error) return <Alert severity="warning" sx={{ mt: 2 }}>{error}</Alert>;
 
   return (
-    <Paper {...elevatedCardStyles} sx={{ p: 2, mt: 3 }}>
-      <Typography variant="h6" component="h2" sx={{ fontWeight: 'bold', mb: 2 }}>
-        Pinned Notes
-      </Typography>
-      {notes.length === 0 ? (
-        <Typography color="text.secondary">No notes have been pinned to the dashboard yet.</Typography>
-      ) : (
-        <Stack spacing={1.5}>
-          {notes.map((note) => (
-            <NoteThreadRow
-              key={note.id}
-              note={note}
-              onClick={() => handleNoteClick(note)}
-              onFavorite={handleToggleFavorite}
-              onPin={handleTogglePin}
-              isViewingSelfAsCoach={false} // Student is never viewing self as coach on their dashboard
-              userProfile={userProfile}
-            />
-          ))}
-        </Stack>
-      )}
+    <Paper {...elevatedCardStyles}>
+      <Box>
+        <Typography
+          variant="caption"
+          sx={{
+            display: "block",
+            mb: 0.75,
+            color: "text.secondary",
+            fontWeight: 800,
+            letterSpacing: "0.06em",
+            textTransform: "uppercase",
+          }}
+        >
+          Pinned Notes
+        </Typography>
+      </Box>
+      <Box sx={{ mt: 2 }}>
+        {notes.length === 0 ? (
+          <Typography color="text.secondary">No notes have been pinned to the dashboard yet.</Typography>
+        ) : (
+          <Stack spacing={1.5}>
+            {notes.map((note) => (
+              <NoteThreadRow
+                key={note.id}
+                note={note}
+                onClick={() => handleNoteClick(note)}
+                onFavorite={handleToggleFavorite}
+                onPin={handleTogglePin}
+                isViewingSelfAsCoach={false} // Student is never viewing self as coach on their dashboard
+                userProfile={userProfile}
+              />
+            ))}
+          </Stack>
+        )}
 
-      <Dialog open={!!viewingThread} onClose={handleCloseDialog} fullWidth maxWidth="md">
-        <DialogContent sx={{ position: 'relative', p: { xs: 2, sm: 4 } }}>
-          <IconButton
-            aria-label="close"
-            onClick={handleCloseDialog}
-            sx={{
-              position: 'absolute',
-              right: 12,
-              top: 12,
-              color: (theme) => theme.palette.grey[500],
-            }}
-          >
-            <CloseIcon />
-          </IconButton>
-          {viewingThread && (
-            <NoteThreadDetailView
-              note={viewingThread}
-              onBack={handleCloseDialog}
-              userProfile={userProfile}
-              onFavorite={handleToggleFavorite}
-              onReply={onReply}
-              isViewingSelfAsCoach={false}
-            />
-          )}
-        </DialogContent>
-      </Dialog>
+        <Dialog open={!!viewingThread} onClose={handleCloseDialog} fullWidth maxWidth="md">
+          <DialogContent sx={{ position: 'relative', p: { xs: 2, sm: 4 } }}>
+            <IconButton
+              aria-label="close"
+              onClick={handleCloseDialog}
+              sx={{
+                position: 'absolute',
+                right: 12,
+                top: 12,
+                color: (theme) => theme.palette.grey[500],
+              }}
+            >
+              <CloseIcon />
+            </IconButton>
+            {viewingThread && (
+              <NoteThreadDetailView
+                note={viewingThread}
+                onBack={handleCloseDialog}
+                userProfile={userProfile}
+                onFavorite={handleToggleFavorite}
+                onReply={onReply}
+                isViewingSelfAsCoach={false}
+              />
+            )}
+          </DialogContent>
+        </Dialog>
+      </Box>
     </Paper>
   );
 };
