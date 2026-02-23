@@ -74,6 +74,7 @@ const RoundsHistoryPage = ({ user, onViewRound, onAddRound, isActive }) => {
     <Box sx={{ maxWidth: 1200, margin: "auto", px: { xs: 2, sm: 3 } }}>
       <PageHeader
         title="Rounds History"
+        subtitle="View your rounds"
         actions={
           <Button
             variant="contained"

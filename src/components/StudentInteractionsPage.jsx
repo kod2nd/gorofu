@@ -455,7 +455,7 @@ const StudentInteractionsPage = forwardRef(({ user, isActive, onNoteUpdate }, re
     <Box sx={{ pb: 4 }}>
       <PageHeader
         title="Notes and Memos"
-        subtitle="Manage lesson notes and takeaways"
+        subtitle="Lessons, notes and takeaways"
         icon={<AddComment />}
       />
 

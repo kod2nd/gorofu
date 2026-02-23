@@ -495,7 +495,7 @@ const RoundForm = ({
     <Container maxWidth="lg" sx={{ my: 4 }}>
       <PageHeader
         title={roundIdToEdit ? "Edit Round" : "Add a New Round"}
-        subtitle="Log your round, including course details and hole-by-hole stats."
+        subtitle="Log your round"
       />
       <Paper {...elevatedCardStyles}>
         <form>

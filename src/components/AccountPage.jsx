@@ -18,6 +18,7 @@ import { Edit as EditIcon, Save as SaveIcon, Close as CloseIcon } from "@mui/ico
 import { userProfileService } from "../services/userProfileService";
 import ProfileDisplay from "./ProfileDisplay";
 import ProfileEditForm from "./ProfileEditForm";
+import PageHeader from "./PageHeader";
 
 const AccountPage = ({ userProfile, onProfileUpdate, isImpersonating = false }) => {
   const theme = useTheme();
@@ -108,83 +109,31 @@ const AccountPage = ({ userProfile, onProfileUpdate, isImpersonating = false }) 
   return (
     <Box sx={{ maxWidth: 1100, mx: "auto", px: { xs: 2, sm: 3 }, pb: 4 }}>
       {/* Header */}
-      <Paper
-        elevation={0}
-        sx={{
-          borderRadius: 4,
-          border: `1px solid ${headerBorder}`,
-          p: { xs: 2, sm: 3 },
-          mb: 2,
-          background: `linear-gradient(180deg, ${alpha(theme.palette.background.paper, 1)} 0%, ${alpha(
-            theme.palette.background.default,
-            0.6
-          )} 100%)`,
-        }}
-      >
-        <Stack direction="row" alignItems="center" justifyContent="space-between" gap={2}>
-          <Stack direction="row" alignItems="center" gap={2} sx={{ minWidth: 0 }}>
-            <Avatar
-              sx={{
-                width: 52,
-                height: 52,
-                fontWeight: 800,
-                bgcolor: alpha(theme.palette.primary.main, 0.12),
-                color: theme.palette.primary.main,
-                border: `1px solid ${alpha(theme.palette.primary.main, 0.18)}`,
-              }}
-            >
-              {getInitials(full_name)}
-            </Avatar>
-
-            <Box sx={{ minWidth: 0 }}>
-              <Typography
-                variant="h6"
-                sx={{
-                  fontWeight: 900,
-                  letterSpacing: "-0.02em",
-                  lineHeight: 1.1,
-                }}
-                noWrap
-              >
-                {full_name || "User"}
-              </Typography>
-
-              <Typography variant="body2" color="text.secondary" noWrap>
-                {email}
-              </Typography>
-
-              <Stack direction="row" gap={1} sx={{ mt: 1, flexWrap: "wrap" }}>
-                {(roles || []).map((role) => (
-                  <Chip
-                    key={role}
-                    size="small"
-                    color={roleTone(role)}
-                    label={roleLabel(role)}
-                    sx={{
-                      fontWeight: 700,
-                      textTransform: "capitalize",
-                      borderRadius: 999,
-                    }}
-                  />
-                ))}
-                {isImpersonating && (
-                  <Chip
-                    size="small"
-                    label="Impersonating (read-only)"
-                    sx={{
-                      borderRadius: 999,
-                      fontWeight: 800,
-                      bgcolor: alpha(theme.palette.warning.main, 0.16),
-                      color: theme.palette.warning.dark,
-                    }}
-                  />
-                )}
-              </Stack>
-            </Box>
-          </Stack>
-
-          {/* Actions */}
-          {!isEditing ? (
+      <PageHeader
+        title={full_name || "User"}
+        subtitle={email}
+        avatarText={full_name || email}
+        chips={[
+          ...(roles || []).map((role) => ({
+            label: roleLabel(role),
+            color: roleTone(role),
+            sx: { fontWeight: 700, textTransform: "capitalize" },
+          })),
+          ...(isImpersonating
+            ? [
+                {
+                  label: "Impersonating (read-only)",
+                  sx: (theme) => ({
+                    fontWeight: 800,
+                    bgcolor: alpha(theme.palette.warning.main, 0.16),
+                    color: theme.palette.warning.dark,
+                  }),
+                },
+              ]
+            : []),
+        ]}
+        actions={
+          !isEditing ? (
             <Button
               variant="contained"
               startIcon={<EditIcon />}
@@ -214,9 +163,9 @@ const AccountPage = ({ userProfile, onProfileUpdate, isImpersonating = false }) 
                 Save
               </Button>
             </Stack>
-          )}
-        </Stack>
-      </Paper>
+          )
+        }
+      />
 
       {/* Body */}
       <Paper
