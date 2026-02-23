@@ -16,6 +16,7 @@ import {
 } from "@mui/material";
 import { Add, Download, UploadFile } from "@mui/icons-material";
 import ClubCard from "./ClubCard";
+import { segmentedSx } from "../../styles/commonStyles";
 
 const MyClubsSection = ({
   myBags,
@@ -205,6 +206,7 @@ const MyClubsSection = ({
             onChange={(e, newOrder) => {
               if (newOrder) setClubSortOrder(newOrder);
             }}
+            sx = {segmentedSx(theme, { fullWidth: { xs: true, sm: false }, radius: 10 })}
           >
             <ToggleButton value="loft">Sort by Loft</ToggleButton>
             <ToggleButton value="name">Sort by Name</ToggleButton>
