@@ -1,80 +1,29 @@
 import React, { useState, useMemo } from "react";
 import {
-  Box,
-  Button,
-  Typography,
   Stack,
-  Chip,
   Divider,
-  ToggleButtonGroup,
-  ToggleButton,
-  Paper,
-  Collapse,
   Accordion,
-  AccordionSummary,
   AccordionDetails,
   useTheme,
 } from "@mui/material";
 import {
-  Edit,
-  Delete,
-  GolfCourse,
-  Star,
-  Add as Plus,
-  Info,
-  ExpandMore as ExpandMoreIcon,
-  Settings,
-  ArrowUpward,
-  ArrowDownward,
-  Sort,
-  AutoAwesome as Sparkles,
-  TrackChanges as Target,
-} from "@mui/icons-material";
-import {
-  elevatedCardStyles,
-  typographyStyles,
-  buttonStyles,
-  accordionStyles,
-  toggleButtonGroupStyles,
-  emptyStateStyles,
   segmentedSx,
 } from "../../styles/commonStyles";
 
-import ShotCard from "./ShotCard";
-import RangeDisplay from "./ClubCard/RangeDisplay";
-import { convertDistance } from "../utils/utils";
 import { alpha } from "@mui/material/styles";
 import { 
-  getShotTypeDetails,
-  calculateAggregateRange
+  calculateAggregateRange,
+  groupShotsByCategoryId,
+  sortShots,
+  computeOverallChartRange,
+  buildClubSpecs,
+  getBagIdsContainingClub,
 } from "./ClubCard/clubCardLogic";
-
-const getClubTypeStyle = (type, theme) => {
-  const styles = {
-    Driver: {
-      gradient: `linear-gradient(135deg, ${theme.palette.error.light} 0%, ${theme.palette.error.dark} 100%)`,
-    },
-    Woods: {
-      gradient: `linear-gradient(135deg, ${theme.palette.warning.light} 0%, ${theme.palette.warning.dark} 100%)`,
-    },
-    Hybrid: {
-      gradient: `linear-gradient(135deg, ${theme.palette.success.light} 0%, ${theme.palette.success.dark} 100%)`,
-    },
-    Iron: {
-      gradient: `linear-gradient(135deg, ${theme.palette.info.light} 0%, ${theme.palette.info.dark} 100%)`,
-    },
-    Wedge: {
-      gradient: `linear-gradient(135deg, ${theme.palette.secondary.light} 0%, ${theme.palette.secondary.dark} 100%)`,
-    },
-    Putter: {
-      gradient: `linear-gradient(135deg, ${theme.palette.grey[400]} 0%, ${theme.palette.grey[600]} 100%)`,
-    },
-    Other: {
-      gradient: `linear-gradient(135deg, ${theme.palette.grey[500]} 0%, ${theme.palette.grey[700]} 100%)`,
-    },
-  };
-  return styles[type] || styles.Iron;
-};
+import ClubCardSummary from "./ClubCard/ClubCardSummary";
+import DistanceRangesSection from "./ClubCard/DistanceRangesSection";
+import BagChipsSection from "./ClubCard/BagChipsSection";
+import SpecsSection from "./ClubCard/SpecsSection";
+import ShotsSection from "./ClubCard/ShotsSection";
 
 const ClubCard = ({
   club,
@@ -102,158 +51,40 @@ const ClubCard = ({
   const safeShots = Array.isArray(safeClub.shots) ? safeClub.shots : [];
 
   // Calculate the overall min/max across ALL shots for this club to create a consistent scale
-  const { overallChartMin, overallChartMax } = useMemo(() => {
-    if (safeShots.length === 0) {
-      return { overallChartMin: 0, overallChartMax: 300 }; // Default scale
-    }
-
-    const allDistances = safeShots
-      .flatMap((shot) => {
-        const carryMedian = convertDistance(
-          shot.carry_distance,
-          shot.unit,
-          displayUnit
-        );
-        const carryVar = convertDistance(
-          shot.carry_variance,
-          shot.unit,
-          displayUnit
-        );
-        const totalMedian = convertDistance(
-          shot.total_distance,
-          shot.unit,
-          displayUnit
-        );
-        const totalVar = convertDistance(
-          shot.total_variance,
-          shot.unit,
-          displayUnit
-        );
-        return [
-          carryMedian - carryVar,
-          carryMedian + carryVar,
-          totalMedian - totalVar,
-          totalMedian + totalVar,
-        ];
-      })
-      .filter((d) => isFinite(d));
-
-    if (allDistances.length === 0)
-      return { overallChartMin: 0, overallChartMax: 300 };
-
-    const minDistance = Math.min(...allDistances);
-    const maxDistance = Math.max(...allDistances);
-    const range = maxDistance - minDistance;
-    const padding = Math.max(10, range * 0.1); // 10% padding, at least 10 units
-
-    return {
-      overallChartMin: Math.max(0, minDistance - padding),
-      overallChartMax: maxDistance + padding,
-    };
-  }, [safeShots, displayUnit]);
-
-  const sortedShots = useMemo(() => {
-    const shotsToSort = [...safeShots];
-    if (shotsToSort.length === 0) return [];
-
-    const directionMultiplier = shotSortDirection === "asc" ? 1 : -1;
-    shotsToSort.sort((a, b) => {
-      const getPrimaryCategory = (shot) => {
-        const shotDetails = getShotTypeDetails(shot.shot_type, safeShotConfig);
-        if (!shotDetails?.category_ids?.length) return "ZZZ"; // Push to end
-        const category = safeShotConfig.categories.find(
-          (c) => c.id === shotDetails.category_ids[0]
-        );
-        return category?.name || "ZZZ";
-      };
-
-      const distanceA = convertDistance(a.total_distance, a.unit, displayUnit);
-      const distanceB = convertDistance(b.total_distance, b.unit, displayUnit);
-
-      switch (shotSortOrder) {
-        case "distance":
-          return (distanceA - distanceB) * directionMultiplier;
-        case "category":
-          const catCompare = getPrimaryCategory(a).localeCompare(
-            getPrimaryCategory(b)
-          );
-          // For category, asc/desc is based on name, so multiplier is applied to the result
-          return catCompare * directionMultiplier;
-        case "category_distance":
-          const catDistCompare = getPrimaryCategory(a).localeCompare(
-            getPrimaryCategory(b)
-          );
-          if (catDistCompare !== 0) return catDistCompare;
-          return distanceB - distanceA; // Always sort distance descending within category
-        case "distance_category":
-          if (distanceA !== distanceB) return distanceB - distanceA; // Always sort distance descending first
-          return getPrimaryCategory(a).localeCompare(getPrimaryCategory(b)); // Then sort category ascending
-        default:
-          return 0;
-      }
-    });
-    return shotsToSort;
-  }, [
-    safeShots,
-    shotSortOrder,
-    shotSortDirection,
-    safeShotConfig,
-    displayUnit,
-  ]);
-
-  const typeStyle = getClubTypeStyle(safeClub.type, theme);
-
-  // Safe shots by category grouping
-  const shotsByCategoryId = safeShots.reduce((acc, shot) => {
-    try {
-      if (!shot || !shot.shot_type) return acc;
-
-      const shotTypeDetail = getShotTypeDetails(shot.shot_type, safeShotConfig);
-      if (shotTypeDetail && Array.isArray(shotTypeDetail.category_ids)) {
-        shotTypeDetail.category_ids.forEach((categoryId) => {
-          if (categoryId) {
-            if (!acc[categoryId]) {
-              acc[categoryId] = [];
-            }
-            acc[categoryId].push(shot);
-          }
-        });
-      }
-      return acc;
-    } catch (error) {
-      console.error("Error processing shot:", error);
-      return acc;
-    }
-  }, {});
-
-  // Safe club specs
-  const clubSpecs = [
-    { label: "Make", value: safeClub.make },
-    { label: "Model", value: safeClub.model },
-    { label: "Loft", value: safeClub.loft },
-    { label: "Bounce", value: safeClub.bounce },
-    {
-      label: "Shaft",
-      value: `${safeClub.shaft_make || ""} ${
-        safeClub.shaft_model || ""
-      }`.trim(),
-    },
-    { label: "Flex", value: safeClub.shaft_flex },
-    {
-      label: "Grip",
-      value: `${safeClub.grip_make || ""} ${safeClub.grip_model || ""}`.trim(),
-    },
-  ].filter((spec) => spec.value);
+  const { overallChartMin, overallChartMax } = useMemo(
+    () => computeOverallChartRange(safeShots, displayUnit),
+    [safeShots, displayUnit]
+  );
 
   const unitLabel = displayUnit === "meters" ? "m" : "yd";
 
+  const sortedShots = useMemo(
+    () =>
+      sortShots({
+        shots: safeShots,
+        shotConfig: safeShotConfig,
+        displayUnit,
+        shotSortOrder,
+        shotSortDirection,
+      }),
+    [safeShots, safeShotConfig, displayUnit, shotSortOrder, shotSortDirection]
+  );
+
+  // Safe shots by category grouping
+  const shotsByCategoryId = useMemo(
+    () => groupShotsByCategoryId(safeShots, safeShotConfig),
+    [safeShots, safeShotConfig]
+  );
+
+  // Safe club specs
+  const clubSpecs = useMemo(() => buildClubSpecs(safeClub), [safeClub]);
+
+
   // Safe bag filtering
-  const bagsContainingClubIds = safeBags
-    .filter(
-      (bag) =>
-        bag && Array.isArray(bag.clubIds) && bag.clubIds.includes(safeClub.id)
-    )
-    .map((b) => b.id);
+  const bagsContainingClubIds = useMemo(
+    () => getBagIdsContainingClub(safeBags, safeClub.id),
+    [safeBags, safeClub.id]
+  );
 
   const handleBagToggle = (bagId) => {
     try {
@@ -332,549 +163,70 @@ const ClubCard = ({
         background: `linear-gradient(180deg,
           ${alpha(theme.palette.primary.main, 0.5)} 0%,
           ${alpha(theme.palette.background.default, 1)} 0.5%)`,
-        transition: "transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease",
+        transition:
+          "transform 160ms ease, box-shadow 160ms ease, border-color 160ms ease",
         "&:hover": {
           transform: "translateY(-2px)",
           boxShadow: `0 10px 30px ${alpha(theme.palette.common.black, 0.10)}`,
           borderColor: alpha(theme.palette.primary.main, 0.22),
         },
-        "&::before": { display: "none" }, // removes MUI accordion divider line
+        "&::before": { display: "none" },
       })}
     >
-      <AccordionSummary
-        expandIcon={<ExpandMoreIcon />}
-        aria-controls={`panel-${safeClub.id}-content`}
-        id={`panel-${safeClub.id}-header`}
-        sx={(theme) => ({
-          px: { xs: 2, sm: 3 },
-          py: { xs: 1.5, sm: 2 },
-          "& .MuiAccordionSummary-content": { my: 0 },
-        })}
-      >
-        <Stack
-          direction="row"
-          alignItems="center"
-          spacing={{ xs: 1, sm: 2 }}
-          sx={{ width: "100%" }}
-        >
-          {/* Main clickable area */}
-          <Box sx={{ flexGrow: 1, minWidth: 0 }}>
-            <Stack direction={{ xs: "column", md: "row" }} alignItems={{ xs: "flex-start", md: "center" }} spacing={{ xs: 1, md: 4 }}>
-              <Box sx={{ minWidth: 0 }}>
-                <Typography {...typographyStyles.clubName}>
-                  {safeClub.name || "Unnamed Club"}
-                </Typography>
-                <Typography {...typographyStyles.clubSubtitle}>
-                  {[safeClub.type, safeClub.make, safeClub.model]
-                    .filter(Boolean)
-                    .join(" • ")}
-                  {safeClub.loft && ` • ${safeClub.loft}°`}
-                </Typography>
-              </Box>
+      <ClubCardSummary
+        safeClub={safeClub}
+        isPutter={isPutter}
+        hasSummaryData={hasSummaryData}
+        summaryCarryRange={summaryCarryRange}
+        summaryTotalRange={summaryTotalRange}
+        unitLabel={unitLabel}
+        onEdit={handleEditClub}
+        onDelete={handleDeleteClub}
+      />
 
-              {!isPutter && hasSummaryData && (
-                <Stack direction="row" sx={{ alignItems: "center", flexWrap: "wrap", gap: { xs: 2, sm: 3 } }}>
-                  {summaryCarryRange && (
-                    <Box sx={{ textAlign: { xs: "left", sm: "center" } }}>
-                      <Typography {...typographyStyles.distanceLabel}>
-                        Carry
-                      </Typography>
-                      <Typography {...typographyStyles.distanceValue}>
-                        {summaryCarryRange.lowerBound} -{" "}
-                        {summaryCarryRange.median}
-                        {" "}- {summaryCarryRange.upperBound} {unitLabel}
-                      </Typography>
-                    </Box>
-                  )}
-                  {summaryTotalRange && (
-                    <Box sx={{ textAlign: { xs: "left", sm: "center" } }}>
-                      <Typography {...typographyStyles.distanceLabel}>
-                        Total
-                      </Typography>
-                      <Typography {...typographyStyles.distanceValue}>
-                        {summaryTotalRange.lowerBound} -{" "}
-                        {summaryTotalRange.median} 
-                        {" "}- {summaryTotalRange.upperBound} {unitLabel}
-                      </Typography>
-                    </Box>
-                  )}
-                </Stack>
-              )}
-            </Stack>
-          </Box>
-
-          {/* Action Buttons - Sibling to the main content */}
-          <Box
-            sx={{
-              display: "flex",
-              alignItems: "center",
-              gap: { xs: 0, sm: 0.5 },
-              flexShrink: 0,
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Box
-              component="div"
-              onClick={handleEditClub}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 32,
-                height: 32,
-                color: "black",
-                cursor: "pointer",
-                borderRadius: "50%",
-                "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
-              }}
-              aria-label="edit club"
-            >
-              <Edit sx={{ fontSize: { xs: 18, sm: 20 } }} />
-            </Box>
-            <Box
-              component="div"
-              onClick={handleDeleteClub}
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                width: 32,
-                height: 32,
-                color: "red",
-                cursor: "pointer",
-                borderRadius: "50%",
-                "&:hover": { bgcolor: "rgba(255,255,255,0.1)" },
-              }}
-              aria-label="delete club"
-            >
-              <Delete sx={{ fontSize: { xs: 18, sm: 20 } }} />
-            </Box>
-          </Box>
-        </Stack>
-      </AccordionSummary>
       <AccordionDetails sx={{ p: { xs: 2, md: 3 } }}>
         <Stack spacing={3} sx={{ mb: 2 }}>
-          {safeBags.length > 0 && (
-            <Box>
-              <Typography variant="overline" color="text.secondary">
-                In Bags
-              </Typography>
-              <Stack
-                direction="row"
-                spacing={1}
-                sx={{ flexWrap: "wrap", gap: 1, mt: 1 }}
-              >
-                {safeBags.map((bag) => (
-                  <Chip
-                    key={bag?.id || "unknown"}
-                    icon={<GolfCourse />}
-                    label={
-                      <Box
-                        component="span"
-                        sx={{ display: "flex", alignItems: "center" }}
-                      >
-                        {bag?.name || "Unknown Bag"}
-                        {bag?.is_default && (
-                          <Star
-                            sx={{ fontSize: 16, ml: 0.5, color: "inherit" }}
-                          />
-                        )}
-                      </Box>
-                    }
-                    clickable
-                    color={
-                      bagsContainingClubIds.includes(bag?.id)
-                        ? "primary"
-                        : "default"
-                    }
-                    variant={
-                      bagsContainingClubIds.includes(bag?.id)
-                        ? "filled"
-                        : "outlined"
-                    }
-                    onClick={() => bag?.id && handleBagToggle(bag.id)}
-                  />
-                ))}
-              </Stack>
-            </Box>
-          )}
+          <BagChipsSection
+            safeBags={safeBags}
+            bagsContainingClubIds={bagsContainingClubIds}
+            onToggleBag={handleBagToggle}
+          />
 
-          {clubSpecs.length > 0 && (
-            <Box>
-              <Button
-                fullWidth
-                onClick={() => setShowSpecs(!showSpecs)}
-                endIcon={
-                  <ExpandMoreIcon
-                    sx={{
-                      transform: showSpecs ? "rotate(180deg)" : "rotate(0deg)",
-                      transition: "transform 0.3s",
-                    }}
-                  />
-                }
-                sx={{
-                  justifyContent: "space-between",
-                  color: "text.primary",
-                  p: 0,
-                  mb: 1,
-                }}
-              >
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Info color="action" />
-                  <Typography variant="h6">Specifications</Typography>
-                </Box>
-              </Button>
-              <Collapse in={showSpecs}>
-                <Box sx={{ mt: 1, position: "relative" }}>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      flexWrap: "nowrap",
-                      overflowX: "auto",
-                      gap: 0.75,
-                      py: 0.5,
-                      px: 0.5,
-                      scrollbarWidth: "thin",
-                      "&::-webkit-scrollbar": {
-                        height: 4,
-                      },
-                      "&::-webkit-scrollbar-thumb": {
-                        backgroundColor: "grey.400",
-                        borderRadius: 2,
-                      },
-                      "& .MuiChip-root": {
-                        flexShrink: 0,
-                        fontSize: { xs: "0.7rem", sm: "0.8125rem" },
-                        height: { xs: 26, sm: 32 },
-                        "& .MuiChip-label": {
-                          px: { xs: 1, sm: 1.5 },
-                          py: { xs: 0.25, sm: 0.5 },
-                          whiteSpace: "nowrap",
-                        },
-                      },
-                    }}
-                  >
-                    {clubSpecs.map((spec) => (
-                      <Chip
-                        key={spec.label}
-                        label={`${spec.label}: ${spec.value}`}
-                        size="small"
-                        variant="outlined"
-                      />
-                    ))}
-                  </Box>
-                </Box>
-              </Collapse>
-            </Box>
-          )}
+          <SpecsSection clubSpecs={clubSpecs} showSpecs={showSpecs} onToggle={() => setShowSpecs((v) => !v)} />
 
-          <Box>
-            <Box
-              onClick={() => setShowRanges(!showRanges)}
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                cursor: "pointer",
-                p: 1,
-                mb: 1,
-                borderRadius: 1,
-                "&:hover": { bgcolor: "action.hover" },
-              }}
-            >
-              <Box
-                onClick={() => setShowRanges(!showRanges)}
-                sx={{
-                  display: "flex",
-                  flexDirection: { xs: "column", sm: "row" },
-                  justifyContent: "space-between",
-                  alignItems: { xs: "flex-start", sm: "center" },
-                  cursor: "pointer",
-                  p: 1,
-                  mb: 1,
-                  borderRadius: 1,
-                  gap: { xs: 1, sm: 0 },
-                  "&:hover": { bgcolor: "action.hover" },
-                }}
-              >
-                <Typography
-                  variant="caption"
-                  sx={{
-                    fontSize: { xs: "1rem", sm: "1.25rem" },
-                    fontWeight: 600,
-                    mr: 2
-                  }}
-                >
-                  Distance Ranges
-                </Typography>
-
-                <Box
-                  onClick={(e) => e.stopPropagation()}
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    width: { xs: "100%", sm: "auto" },
-                    justifyContent: "space-between",
-                  }}
-                >
-                  <ToggleButtonGroup
-                    size="small"
-                    value={distanceView}
-                    exclusive
-                    onChange={(e, newView) => {
-                      if (newView) setDistanceView(newView);
-                    }}
-                    aria-label="distance view"
-                    sx={segmentedSx(theme, { fullWidth: { xs: true, sm: false }, radius: 10 })}
-                  >
-                    <ToggleButton value="carry">Carry</ToggleButton>
-                    <ToggleButton value="total">Total</ToggleButton>
-                    <ToggleButton value="both">Both</ToggleButton>
-                  </ToggleButtonGroup>
-
-                </Box>
-              </Box>
-                  <ExpandMoreIcon
-                    sx={{
-                      transform: showRanges ? "rotate(180deg)" : "rotate(0deg)",
-                      transition: "transform 0.3s",
-                      ml: 1,
-                      fontSize: { xs: 20, sm: 24 },
-                    }}
-                  />
-            </Box>
-            <Collapse in={showRanges}>
-              <Stack spacing={2} sx={{ mt: 2 }}>
-                {safeCategories.map((category) => {
-                  if (!category || !category.id) return null;
-                  const categoryShots = shotsByCategoryId[category.id] || [];
-                  if (categoryShots.length === 0) return null;
-
-                  return (
-                    <Paper
-                      key={category.id}
-                      variant="outlined"
-                      sx={{ p: 2, borderRadius: 2 }}
-                    >
-                      <Typography
-                        variant="overline"
-                        color="text.secondary"
-                        sx={{ px: 1, display: "block", mb: 1 }}
-                      >
-                        {category.name || "Unknown Category"}
-                      </Typography>
-                      <Stack spacing={2}>
-                        {(distanceView === "total" ||
-                          distanceView === "both") && (
-                          <RangeDisplay
-                            title="Total"
-                            shots={categoryShots}
-                            displayUnit={displayUnit}
-                            distanceMetric="total"
-                            shotConfig={safeShotConfig}
-                            overallChartMin={overallChartMin}
-                            overallChartMax={overallChartMax}
-                          />
-                        )}
-                        {(distanceView === "carry" ||
-                          distanceView === "both") && (
-                          <RangeDisplay
-                            title="Carry"
-                            shots={categoryShots}
-                            displayUnit={displayUnit}
-                            distanceMetric="carry"
-                            shotConfig={safeShotConfig}
-                            overallChartMin={overallChartMin}
-                            overallChartMax={overallChartMax}
-                          />
-                        )}
-                      </Stack>
-                    </Paper>
-                  );
-                })}
-              </Stack>
-            </Collapse>
-          </Box>
+          <DistanceRangesSection
+            showRanges={showRanges}
+            onToggleRanges={() => setShowRanges((v) => !v)}
+            distanceView={distanceView}
+            setDistanceView={setDistanceView}
+            theme={theme}
+            segmentedSx={segmentedSx}
+            safeCategories={safeCategories}
+            shotsByCategoryId={shotsByCategoryId}
+            safeShotConfig={safeShotConfig}
+            displayUnit={displayUnit}
+            overallChartMin={overallChartMin}
+            overallChartMax={overallChartMax}
+          />
         </Stack>
 
         <Divider sx={{ my: 2 }} />
 
-        <Box sx={{ mt: 4 }}>
-          <Box
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", sm: "row" },
-              alignItems: { xs: "stretch", sm: "center" },
-              justifyContent: "space-between",
-              mb: 4,
-              gap: 2,
-            }}
-          >
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Sparkles
-                sx={{ width: 20, height: 20, color: "text.secondary" }}
-              />
-              <Typography variant="h5" fontWeight="bold" color="text.primary">
-                Shots ({safeShots.length})
-              </Typography>
-            </Box>
-            <Stack
-              direction={{ xs: "column", sm: "row" }}
-              spacing={2}
-              sx={{ width: { xs: "100%", sm: "auto" } }}
-            >
-              <Button
-                variant="outlined"
-                startIcon={<Settings />}
-                onClick={onManageShotTypes}
-                sx={buttonStyles.secondary}
-              >
-                Manage Shot Types
-              </Button>
-              <Button
-                variant="contained"
-                startIcon={<Plus />}
-                onClick={() => onConfigureShots(club, true)}
-                sx={buttonStyles.primary}
-              >
-                Add Shot
-              </Button>
-            </Stack>
-          </Box>
-
-          {safeShots.length > 0 && (
-            <Paper
-              variant="outlined"
-              sx={{
-                p: 2,
-                display: "flex",
-                gap: 2,
-                alignItems: "center",
-                flexWrap: "wrap",
-                mb: 2,
-              }}
-            >
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Sort color="action" />
-                <Typography
-                  variant="body2"
-                  fontWeight="bold"
-                  color="text.secondary"
-                >
-                  Sort Shots By
-                </Typography>
-              </Box>
-              <Stack
-                direction={{ xs: "column", sm: "row" }}
-                spacing={1}
-                sx={{
-                  flexWrap: "wrap",
-                  gap: 1,
-                  alignItems: { xs: "stretch", sm: "center" },
-                }}
-              >
-                <ToggleButtonGroup
-                  size="small"
-                  value={shotSortOrder}
-                  exclusive
-                  onChange={(e, newOrder) => {
-                    if (newOrder) setShotSortOrder(newOrder);
-                  }}
-                  sx={toggleButtonGroupStyles.small}
-                >
-                  <ToggleButton value="distance">Distance</ToggleButton>
-                  <ToggleButton value="category">Category</ToggleButton>
-                  <ToggleButton value="category_distance">
-                    Cat & Dist
-                  </ToggleButton>
-                </ToggleButtonGroup>
-
-                <ToggleButtonGroup
-                  size="small"
-                  value={shotSortDirection}
-                  exclusive
-                  onChange={(e, newDir) => {
-                    if (newDir) setShotSortDirection(newDir);
-                  }}
-                  sx={toggleButtonGroupStyles.sortDirection}
-                >
-                  <ToggleButton value="desc">
-                    <ArrowDownward fontSize="small" />
-                    <Box
-                      component="span"
-                      sx={{
-                        display: { xs: "inline", sm: "none" },
-                        ml: 0.5,
-                        fontSize: "0.75rem",
-                      }}
-                    >
-                      Desc
-                    </Box>
-                  </ToggleButton>
-                  <ToggleButton value="asc">
-                    <ArrowUpward fontSize="small" />
-                    <Box
-                      component="span"
-                      sx={{
-                        display: { xs: "inline", sm: "none" },
-                        ml: 0.5,
-                        fontSize: "0.75rem",
-                      }}
-                    >
-                      Asc
-                    </Box>
-                  </ToggleButton>
-                </ToggleButtonGroup>
-              </Stack>
-            </Paper>
-          )}
-
-          {sortedShots.length > 0 ? (
-            <Stack spacing={2}>
-              {sortedShots.map((shot) => (
-                <ShotCard
-                  key={shot.id}
-                  shot={shot}
-                  displayUnit={displayUnit}
-                  shotConfig={shotConfig}
-                  onEdit={(s) => onConfigureShots(club, false, s)}
-                  onDelete={(id) => onDeleteRequest(id, "shot")}
-                />
-              ))}
-            </Stack>
-          ) : (
-            <Paper
-              variant="outlined"
-              {...emptyStateStyles.paper}
-            >
-              <Target
-                sx={{
-                  width: 48,
-                  height: 48,
-                  mx: "auto",
-                  mb: 2,
-                  color: "grey.400",
-                }}
-              />
-              <Typography
-                variant="h6"
-                color="text.secondary"
-                fontWeight="medium"
-                sx={{ mb: 2 }}
-              >
-                No shots logged yet
-              </Typography>
-              <Button
-                variant="contained"
-                startIcon={<Plus />}
-                onClick={() => onConfigureShots(club, true)}
-                sx={buttonStyles.primary}
-              >
-                Add First Shot
-              </Button>
-            </Paper>
-          )}
-        </Box>
+        <ShotsSection
+          shotsCount={safeShots.length}
+          sortedShots={sortedShots}
+          shotConfig={shotConfig}
+          displayUnit={displayUnit}
+          club={club}
+          onManageShotTypes={onManageShotTypes}
+          onAddShot={() => onConfigureShots(club, true)}
+          onEditShot={(s) => onConfigureShots(club, false, s)}
+          onDeleteShot={(id) => onDeleteRequest(id, "shot")}
+          shotSortOrder={shotSortOrder}
+          setShotSortOrder={setShotSortOrder}
+          shotSortDirection={shotSortDirection}
+          setShotSortDirection={setShotSortDirection}
+        />
       </AccordionDetails>
     </Accordion>
   );

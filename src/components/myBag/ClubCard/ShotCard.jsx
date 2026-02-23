@@ -18,7 +18,7 @@ import {
   Air as AirIcon,
   Bolt as BoltIcon,
 } from '@mui/icons-material';
-import { convertDistance } from '../utils/utils';
+import { convertDistance } from '../../utils/utils';
 
 const getShotTypeDetails = (shotTypeName, shotConfig) => {
   try {
