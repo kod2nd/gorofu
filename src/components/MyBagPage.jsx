@@ -37,9 +37,9 @@ import { segmentedSx } from '../styles/commonStyles';
 // Mock user-defined shot configuration. In a real app, this would be fetched from the database.
 const mockUserShotConfig = {
   categories: [
-    { id: 'cat_long', name: 'Long Game' },
-    { id: 'cat_approach', name: 'Approach' },
-    { id: 'cat_short', name: 'Short Game' },
+    { id: 'cat_long', name: 'Long' },
+    { id: 'cat_approach', name: 'Appr' },
+    { id: 'cat_short', name: 'Short' },
   ],
   shotTypes: [],
 };

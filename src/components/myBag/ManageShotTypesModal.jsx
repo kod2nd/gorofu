@@ -12,9 +12,9 @@ import { createShotType, updateShotType, deleteShotType } from '../../services/m
 import ConfirmationDialog from './ConfirmationDialog';
 
 const categories = [
-  { id: 'cat_long', name: 'Long Game', icon: <DriveEta />, color: '#3b82f6' },
-  { id: 'cat_approach', name: 'Approach', icon: <Flag />, color: '#10b981' },
-  { id: 'cat_short', name: 'Short Game', icon: <SportsGolf />, color: '#8b5cf6' },
+  { id: 'cat_long', name: 'Long', icon: <DriveEta />, color: '#3b82f6' },
+  { id: 'cat_approach', name: 'Appr', icon: <Flag />, color: '#10b981' },
+  { id: 'cat_short', name: 'Short', icon: <SportsGolf />, color: '#8b5cf6' },
 ];
 
 const getCategoryIcon = (catId) => {

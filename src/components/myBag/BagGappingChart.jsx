@@ -168,7 +168,7 @@ const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
           }}
           sx={segmentedSx(theme, { fullWidth: { xs: true, sm: false } })}
         >
-          <ToggleButton value="all">All Shots</ToggleButton>
+          <ToggleButton value="all">All</ToggleButton>
          {(shotConfig?.categories || []).map((cat) => (
             <ToggleButton key={cat.id} value={cat.id}>
               {cat.name}
