@@ -10,31 +10,33 @@ export const getShotTypeDetails = (shotTypeName, shotConfig) => {
   }
 };
 
-export const calculateAggregateRange = (shots, distanceMetric, displayUnit) => {
-  if (!shots || shots.length === 0) {
-    return null;
+export const calculateAggregateRange = (shots = [], distanceMetric, displayUnit) => {
+  if (!shots.length) return null;
+
+  const minKey = `${distanceMetric}_min`;
+  const typicalKey = `${distanceMetric}_typical`;
+  const maxKey = `${distanceMetric}_max`;
+
+  const mins = [];
+  const typicals = [];
+  const maxs = [];
+
+  for (const s of shots) {
+    const mn = convertDistance(s?.[minKey], s?.unit, displayUnit);
+    const tp = convertDistance(s?.[typicalKey], s?.unit, displayUnit);
+    const mx = convertDistance(s?.[maxKey], s?.unit, displayUnit);
+    if (Number.isFinite(mn)) mins.push(mn);
+    if (Number.isFinite(tp)) typicals.push(tp);
+    if (Number.isFinite(mx)) maxs.push(mx);
   }
 
-  const distanceKey = `${distanceMetric}_distance`;
-  const varianceKey = `${distanceMetric}_variance`;
+  if (!mins.length || !typicals.length || !maxs.length) return null;
 
-  const ranges = shots.map((s) => {
-    const median = convertDistance(s[distanceKey], s.unit, displayUnit);
-    const variance = convertDistance(s[varianceKey], s.unit, displayUnit);
-    return { min: median - variance, max: median + variance };
-  });
+  const lowerBound = Math.round(Math.min(...mins));
+  const upperBound = Math.round(Math.max(...maxs));
+  const typical = Math.round(typicals.reduce((a, b) => a + b, 0) / typicals.length);
 
-  const lowerBound = Math.round(Math.min(...ranges.map((r) => r.min)));
-  const upperBound = Math.round(Math.max(...ranges.map((r) => r.max)));
-
-  const medianDistances = shots.map((s) =>
-    convertDistance(s[distanceKey], s.unit, displayUnit)
-  );
-  const median = Math.round(
-    medianDistances.reduce((a, b) => a + b, 0) / medianDistances.length
-  );
-
-  return { lowerBound, median, upperBound };
+  return { lowerBound, typical, upperBound };
 };
 
 export const groupShotsByCategoryId = (shots = [], shotConfig) => {
@@ -86,8 +88,8 @@ export const sortShots = ({
   const shotsToSort = [...shots];
 
   shotsToSort.sort((a, b) => {
-    const distanceA = convertDistance(a.total_distance, a.unit, displayUnit);
-    const distanceB = convertDistance(b.total_distance, b.unit, displayUnit);
+    const distanceA = convertDistance(a.total_typical, a.unit, displayUnit);
+    const distanceB = convertDistance(b.total_typical, b.unit, displayUnit);
 
     switch (shotSortOrder) {
       case "distance":
@@ -118,35 +120,23 @@ export const sortShots = ({
 };
 
 export const computeOverallChartRange = (shots = [], displayUnit) => {
-  if (!shots.length) {
-    return { overallChartMin: 0, overallChartMax: 300 };
-  }
+  if (!shots.length) return { overallChartMin: 0, overallChartMax: 300 };
 
-  const allDistances = shots
-    .flatMap((shot) => {
-      const carryMedian = convertDistance(shot.carry_distance, shot.unit, displayUnit);
-      const carryVar = convertDistance(shot.carry_variance, shot.unit, displayUnit);
+  const allDistances = shots.flatMap((shot) => {
+    const carryMin = convertDistance(shot.carry_min, shot.unit, displayUnit);
+    const carryMax = convertDistance(shot.carry_max, shot.unit, displayUnit);
+    const totalMin = convertDistance(shot.total_min, shot.unit, displayUnit);
+    const totalMax = convertDistance(shot.total_max, shot.unit, displayUnit);
 
-      const totalMedian = convertDistance(shot.total_distance, shot.unit, displayUnit);
-      const totalVar = convertDistance(shot.total_variance, shot.unit, displayUnit);
+    return [carryMin, carryMax, totalMin, totalMax];
+  }).filter(Number.isFinite);
 
-      return [
-        carryMedian - carryVar,
-        carryMedian + carryVar,
-        totalMedian - totalVar,
-        totalMedian + totalVar,
-      ];
-    })
-    .filter((d) => Number.isFinite(d));
-
-  if (!allDistances.length) {
-    return { overallChartMin: 0, overallChartMax: 300 };
-  }
+  if (!allDistances.length) return { overallChartMin: 0, overallChartMax: 300 };
 
   const minDistance = Math.min(...allDistances);
   const maxDistance = Math.max(...allDistances);
   const range = maxDistance - minDistance;
-  const padding = Math.max(10, range * 0.1); // 10% padding, at least 10 units
+  const padding = Math.max(10, range * 0.1);
 
   return {
     overallChartMin: Math.max(0, minDistance - padding),

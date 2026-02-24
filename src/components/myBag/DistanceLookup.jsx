@@ -28,6 +28,7 @@ import {
 } from "@mui/icons-material";
 import { elevatedCardStyles, segmentedSx } from "../../styles/commonStyles";
 import { convertDistance } from "../utils/utils";
+import { SuggestedShotCard } from "./ClubCard/SuggestedShotCard";
 
 const DistanceLookup = ({ myBags, myClubs, displayUnit }) => {
   const [carryQuery, setCarryQuery] = useState("");
@@ -61,21 +62,24 @@ const DistanceLookup = ({ myBags, myClubs, displayUnit }) => {
 
     clubsToSearch.forEach(club => {
       club.shots.forEach(shot => {
-        const carry = convertDistance(shot.carry_distance, shot.unit, displayUnit);
+        const carry = convertDistance(shot.carry_typical, shot.unit, displayUnit);
         const bagsContainingClub = myBags.filter(bag =>
           bag.clubIds.includes(club.id)
         );
-        const carryVariance = convertDistance(shot.carry_variance, shot.unit, displayUnit);
-        const total = convertDistance(shot.total_distance, shot.unit, displayUnit);
-        const totalVariance = convertDistance(shot.total_variance, shot.unit, displayUnit);
+
+        const carryMin = convertDistance(shot.carry_min, shot.unit, displayUnit);
+        const carryMax = convertDistance(shot.carry_max, shot.unit, displayUnit);
+        const total = convertDistance(shot.total_typical, shot.unit, displayUnit);
+        const totalMin = convertDistance(shot.total_min, shot.unit, displayUnit);
+        const totalMax = convertDistance(shot.total_max, shot.unit, displayUnit);
 
         const medianToCompare = hasCarryQuery ? carry : total;
 
         let isExactMatch = false;
         if (hasCarryQuery) {
-          isExactMatch = (carryDist >= carry - carryVariance && carryDist <= carry + carryVariance);
+          isExactMatch = (carryDist >= carryMin && carryDist <= carryMax);
         } else if (hasTotalQuery) {
-          isExactMatch = (totalDist >= total - totalVariance && totalDist <= total + totalVariance);
+          isExactMatch = (totalDist >= totalMin && totalDist <= totalMax);
         }
 
         const suggestion = { clubName: club.name, clubLoft: club.loft, bags: bagsContainingClub, ...shot, displayUnit, medianToCompare };
@@ -218,7 +222,7 @@ const DistanceLookup = ({ myBags, myClubs, displayUnit }) => {
           <Stack direction="row" alignItems="center" spacing={1.5} sx={{ mb: 2 }}>
             <EmojiEvents color="primary" sx={{ fontSize: 32 }} />
             <Typography variant="h5" fontWeight="bold">
-              {suggestedShots[0]?.isExact ? "Perfect Matches Found!" : "Nearby Options"}
+              {suggestedShots[0]?.isExact ? "Matches Found" : "Nearby Options"}
             </Typography>
           </Stack>
 
@@ -229,48 +233,13 @@ const DistanceLookup = ({ myBags, myClubs, displayUnit }) => {
           )}
 
           <Stack spacing={2}>
-            {suggestedShots.map((shot) => {
-              const unitLabel = shot.displayUnit === "meters" ? "m" : "yd";
-              const medianCarry = convertDistance(shot.carry_distance, shot.unit, shot.displayUnit);
-              const carryVariance = convertDistance(shot.carry_variance, shot.unit, shot.displayUnit);
-              const lowerBoundCarry = Math.round(medianCarry - carryVariance);
-              const upperBoundCarry = Math.round(medianCarry + carryVariance);
-              const medianTotal = convertDistance(shot.total_distance, shot.unit, shot.displayUnit);
-              const totalVariance = convertDistance(shot.total_variance, shot.unit, shot.displayUnit);
-              const lowerBoundTotal = Math.round(medianTotal - totalVariance);
-              const upperBoundTotal = Math.round(medianTotal + totalVariance);
-
-              return (
-                <Paper key={`${shot.clubName}-${shot.id}`} variant="outlined" sx={{ p: 2, borderRadius: 2 }}>
-                  <Stack spacing={1.5}>
-                    {shot.label && <Chip label={shot.label} icon={shot.label === "Nearest Longer" ? <TrendingUp /> : <TrendingDown />} color={shot.label === "Nearest Longer" ? "success" : "warning"} size="small" sx={{ mb: 1, fontWeight: "bold", alignSelf: 'flex-start' }} />}
-                    {shot.isExact && <Chip label="Perfect Match" icon={<Adjust />} color="secondary" size="small" sx={{ mb: 1, fontWeight: "bold", alignSelf: 'flex-start' }} />}
-                    
-                    <Typography variant="h6" fontWeight="bold">{shot.clubName} ({shot.clubLoft}) - {shot.shot_type}</Typography>
-                    
-                    <Stack direction="row" spacing={2} sx={{ flexWrap: "wrap", gap: 0.5 }}>
-                      <Typography variant="body2" color="text.secondary">Carry: <b>{lowerBoundCarry} - {Math.round(medianCarry)} - {upperBoundCarry}</b> {unitLabel}</Typography>
-                      <Typography variant="body2" color="text.secondary">Total: <b>{lowerBoundTotal} - {Math.round(medianTotal)} - {upperBoundTotal}</b> {unitLabel}</Typography>
-                    </Stack>
-                    
-                    <Divider />
-                    
-                    <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 0.5 }}>
-                      {shot.launch && <Chip icon={<TrendingUp />} label={`Launch: ${shot.launch}`} size="small" />}
-                      {shot.roll && <Chip icon={<Explore />} label={`Roll: ${shot.roll}`} size="small" color="success" />}
-                      {shot.tendency && <Chip icon={<Air />} label={`Tendency: ${shot.tendency}`} size="small" color="warning" />}
-                      {shot.swing_key && <Chip icon={<Bolt />} label={`Key: ${shot.swing_key}`} size="small" color="info" />}
-                    </Stack>
-                    
-                    {shot.bags && shot.bags.length > 0 && (
-                      <Stack direction="row" spacing={1} sx={{ flexWrap: "wrap", gap: 0.5, pt: 1, borderTop: '1px solid', borderColor: 'divider' }}>
-                        {shot.bags.map((bag) => (<Chip key={bag.id} icon={<GolfCourse />} label={bag.name} size="small" variant="outlined" />))}
-                      </Stack>
-                    )}
-                  </Stack>
-                </Paper>
-              );
-            })}
+            {suggestedShots.map((shot) => (
+              <SuggestedShotCard
+                key={`${shot.clubName}-${shot.id}`}
+                shot={shot}
+                displayUnit={displayUnit}
+              />
+            ))}
           </Stack>
         </Box>
       )}

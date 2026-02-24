@@ -16,9 +16,6 @@ const getEffectiveUserId = async () => {
 };
 
 export const getMyBagData = async () => {
-  // 1) Ask DB who the active user is (respects impersonation session var)
-  const { data: whoami, error: whoErr } = await supabase.rpc('get_current_user_id');
-
   const [clubsResponse, bagsResponse, shotTypesResponse] = await Promise.all([
     supabase.from("clubs").select("*, shots(*)").order("name", { ascending: true }),
     supabase.from("bags").select("*, bag_clubs(club_id)").order("created_at", { ascending: true }),

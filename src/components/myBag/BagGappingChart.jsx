@@ -13,6 +13,7 @@ import {
 } from "@mui/material";
 import { convertDistance } from "../utils/utils";
 import { segmentedSx } from "../../styles/commonStyles";
+import { alpha } from "@mui/material/styles";
 
 // Helper functions moved here to make the component self-contained
   const getShotTypeDetails = (shotTypeValue, shotConfig) => {
@@ -33,6 +34,7 @@ const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
 
   const [selectedCategoryId, setSelectedCategoryId] = useState('cat_long');
   const theme = useTheme();
+  const BAR_PAD = 10;
 
 
   useEffect(() => {
@@ -42,8 +44,9 @@ const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
   const clubRanges = useMemo(() => {
     if (!clubs) return [];
 
-    const distanceKey = `${distanceMetric}_distance`;
-    const varianceKey = `${distanceMetric}_variance`;
+    const minKey = `${distanceMetric}_min`;
+    const maxKey = `${distanceMetric}_max`;
+
 
     return clubs.map(club => {
       if (!club.shots || club.shots.length === 0) {
@@ -64,9 +67,7 @@ const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
       }
 
       const ranges = filteredShots.map(shot => {
-        const median = convertDistance(shot[distanceKey], shot.unit, displayUnit);
-        const variance = convertDistance(shot[varianceKey], shot.unit, displayUnit);
-        return { min: median - variance, max: median + variance };
+        return { min: convertDistance(shot[minKey], shot.unit, displayUnit), max: convertDistance(shot[maxKey], shot.unit, displayUnit) };
       });
 
       const min = Math.min(...ranges.map(r => r.min));
@@ -215,168 +216,97 @@ const BagGappingChart = ({ clubs, displayUnit, shotConfig }) => {
                 }
               >
                 <Box>
-                  <Box
-                    sx={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      mb: 0.5,
-                    }}
-                  >
-                    <Box>
-                      <Typography variant="body2" fontWeight="bold">
-                        {club.name}
-                      </Typography>
-                      <Typography variant="caption" color="text.secondary">
-                        {club.type}{" "}
-                        {club.make && ` • ${club.make} ${club.model}`}{" "}
-                        {club.loft && ` • ${club.loft}°`}{" "}
-                        {club.bounce && ` • ${club.bounce}° Bounce`}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Box sx={{ position: "relative", height: 40, mt: 3 }}>
-                    {/* Distance Labels */}
-                    <Typography
-                      variant="body2"
-                      sx={{
-                        position: "absolute",
-                        left: `calc(${leftPercent}% + (${widthPercent}% / 2))`,
-                        bottom: "100%",
-                        transform: "translateX(-50%)",
-                        mb: 0.5,
-                        whiteSpace: "nowrap",
-                      }}
-                    >
-                      <Typography
-                        component="span"
-                        variant="caption"
-                        color="text.secondary"
-                      >
-                        {Math.round(club.min)}
-                      </Typography>
-                      <Typography
-                        component="span"
-                        variant="body2"
-                        color="primary.main"
-                        fontWeight="bold"
-                      >
-                        {" "}
-                        / {Math.round(club.avg)} /{" "}
-                      </Typography>
-                      <Typography
-                        component="span"
-                        variant="caption"
-                        color="text.secondary"
-                      >
-                        {Math.round(club.max)} {unitLabel}
-                      </Typography>
-                    </Typography>
 
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        left: 0,
-                        right: 0,
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        height: 8,
-                        bgcolor: "grey.300",
-                        borderRadius: 1,
-                      }}
-                    />
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        left: `${leftPercent}%`,
-                        width: `${widthPercent}%`,
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        height: 16,
-                        bgcolor: "primary.main",
-                        borderRadius: 1,
-                        boxShadow: 3,
-                        transition: "all 0.3s ease",
-                        "&:hover": {
-                          transform: "translateY(-50%) scale(1.05)",
-                          boxShadow: 6,
-                        },
-                      }}
+                  <Box sx={{ mb: gap ? 2.25 : 0 }}>
+                    {/* Top row: name + chips (responsive) */}
+                    <Stack
+                      direction={{ xs: "column", sm: "row" }}
+                      alignItems={{ xs: "flex-start", sm: "center" }}
+                      justifyContent="space-between"
+                      spacing={0.75}
+                      sx={{ mb: 0.75 }}
                     >
-                      {/* Average Marker */}
+                      <Box sx={{ minWidth: 0 }}>
+                        <Typography variant="body2" fontWeight={800} noWrap>
+                          {club.name}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary" noWrap>
+                          {[club.type, club.make && `${club.make} ${club.model}`, club.loft && `${club.loft}°`]
+                            .filter(Boolean)
+                            .join(" • ")}
+                        </Typography>
+                      </Box>
+
+                      <Stack
+                        direction="row"
+                        spacing={0.75}
+                        sx={{
+                          flexShrink: 0,
+                          flexWrap: "wrap",
+                          justifyContent: { xs: "flex-start", sm: "flex-end" },
+                        }}
+                      >
+                        <Chip size="small" variant="outlined" label={`${Math.round(club.min)}${unitLabel}`} />
+                        <Chip size="small" color="primary" label={`${Math.round(club.avg)}${unitLabel}`} sx={{ fontWeight: 900 }} />
+                        <Chip size="small" variant="outlined" label={`${Math.round(club.max)}${unitLabel}`} />
+                      </Stack>
+                    </Stack>
+
+                    {/* Inner track wrapper: % math is now correct */}
+                    <Box sx={{ position: "relative", px: `${BAR_PAD}px`, height: 18 }}>
+                      {/* Track */}
                       <Box
                         sx={{
                           position: "absolute",
-                          left: `${
-                            ((club.avg - club.min) / (club.max - club.min)) *
-                            100
-                          }%`,
+                          left: 0,
+                          right: 0,
                           top: "50%",
-                          transform: "translate(-50%, -50%)",
-                          width: 4,
-                          height: "120%",
-                          bgcolor: "black",
-                          borderRadius: "2px",
-                          boxShadow: 1,
+                          transform: "translateY(-50%)",
+                          height: 8,
+                          bgcolor: "grey.300",
+                          borderRadius: 999,
                         }}
                       />
-                    </Box>
-                    {/* Gap/Overlap Indicator */}
-                    {gap > 0 && (
+
+                      {/* Range fill (now correctly aligned) */}
                       <Box
                         sx={{
                           position: "absolute",
-                          left: `calc(${
-                            ((clubRanges[index + 1].max - chartMin) /
-                              chartRange) *
-                            100
-                          }% + 8px)`,
-                          width: `calc(${(gap / chartRange) * 100}%)`,
-                          top: "100%",
-                          mt: 0.5,
-                          height: 8,
-                          bgcolor: "warning.main",
-                          borderRadius: 1,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
+                          left: `${leftPercent}%`,
+                          width: `${widthPercent}%`,
+                          top: "50%",
+                          transform: "translateY(-50%)",
+                          height: 12,
+                          borderRadius: 999,
+                          bgcolor: alpha(theme.palette.primary.main, 0.7),
+                          boxShadow: `0 8px 18px ${alpha(theme.palette.primary.main, 0.18)}`,
                         }}
                       >
-                        <Chip
-                          label={`${Math.round(gap)} ${unitLabel}`}
-                          size="small"
-                          color="warning"
-                          variant="solid"
-                          sx={{ height: 16, fontSize: "0.65rem" }}
+                        {/* Typical marker */}
+                        <Box
+                          sx={{
+                            position: "absolute",
+                            left: `${((club.avg - club.min) / Math.max(1, (club.max - club.min))) * 100}%`,
+                            top: "50%",
+                            transform: "translate(-50%, -50%)",
+                            width: 3,
+                            height: 16,
+                            borderRadius: 2,
+                            bgcolor: theme.palette.text.primary,
+                          }}
                         />
                       </Box>
-                    )}
-                    {gap < 0 && (
-                      <Box
-                        sx={{
-                          position: "absolute",
-                          left: `calc(${leftPercent}% + 8px)`,
-                          width: `calc(${(Math.abs(gap) / chartRange) * 100}%)`,
-                          top: "100%",
-                          mt: 0.5,
-                          height: 8,
-                          bgcolor: "success.light",
-                          borderRadius: 1,
-                          display: "flex",
-                          alignItems: "center",
-                          justifyContent: "center",
-                        }}
-                      >
+                    </Box>
+
+                    {/* Gap/overlap chip: keep it simple + centered under the bar */}
+                    {gap !== 0 && (
+                      <Box sx={{ mt: 0.75, display: "flex", justifyContent: "center" }}>
                         <Chip
-                          label={`${Math.abs(Math.round(gap))} ${unitLabel}`}
                           size="small"
-                          color="success"
-                          variant="outlined"
-                          sx={{
-                            height: 16,
-                            fontSize: "0.65rem",
-                            bgcolor: "white",
-                          }}
+                          label={`${Math.abs(Math.round(gap))}${unitLabel} ${gap > 0 ? "gap" : "overlap"}`}
+                          color={gap > 0 ? "warning" : "success"}
+                          variant={gap > 0 ? "filled" : "outlined"}
+                          sx={{ fontWeight: 800 }}
                         />
                       </Box>
                     )}

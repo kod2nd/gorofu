@@ -35,15 +35,13 @@ const getShotTypeDetails = (shotTypeName, shotConfig) => {
 const ShotCard = ({ shot, displayUnit, shotConfig, onEdit, onDelete }) => {
   const unitLabel = displayUnit === 'meters' ? 'm' : 'yd';
 
-  const medianCarry = convertDistance(shot.carry_distance, shot.unit, displayUnit);
-  const carryVariance = convertDistance(shot.carry_variance, shot.unit, displayUnit);
-  const lowerBoundCarry = Math.round(medianCarry - carryVariance);
-  const upperBoundCarry = Math.round(medianCarry + carryVariance);
+  const medianCarry = convertDistance(shot.carry_typical, shot.unit, displayUnit);
+  const lowerBoundCarry = convertDistance(shot.carry_min, shot.unit, displayUnit);
+  const upperBoundCarry = convertDistance(shot.carry_max, shot.unit, displayUnit);
 
-  const medianTotal = convertDistance(shot.total_distance, shot.unit, displayUnit);
-  const totalVariance = convertDistance(shot.total_variance, shot.unit, displayUnit);
-  const lowerBoundTotal = Math.round(medianTotal - totalVariance);
-  const upperBoundTotal = Math.round(medianTotal + totalVariance);
+  const medianTotal = convertDistance(shot.total_typical, shot.unit, displayUnit);
+  const lowerBoundTotal = convertDistance(shot.total_min, shot.unit, displayUnit);
+  const upperBoundTotal = convertDistance(shot.total_max, shot.unit, displayUnit);
   const theme = useTheme();
 
   const shotTypeDetail = getShotTypeDetails(shot.shot_type, shotConfig);

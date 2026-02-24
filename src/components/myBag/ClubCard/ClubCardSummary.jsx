@@ -60,7 +60,7 @@ const ClubCardSummary = ({
                         CARRY
                       </Typography>
                       <Typography sx={{ fontWeight: 700 }}>
-                        {summaryCarryRange.lowerBound} - {summaryCarryRange.median} - {summaryCarryRange.upperBound}{" "}
+                        {summaryCarryRange.lowerBound} - {summaryCarryRange.typical} - {summaryCarryRange.upperBound}{" "}
                         <Typography component="span" color="text.secondary" sx={{ fontWeight: 500 }}>
                           {unitLabel}
                         </Typography>
@@ -74,7 +74,7 @@ const ClubCardSummary = ({
                         TOTAL
                       </Typography>
                       <Typography sx={{ fontWeight: 700 }}>
-                        {summaryTotalRange.lowerBound} - {summaryTotalRange.median} - {summaryTotalRange.upperBound}{" "}
+                        {summaryTotalRange.lowerBound} - {summaryTotalRange.typical} - {summaryTotalRange.upperBound}{" "}
                         <Typography component="span" color="text.secondary" sx={{ fontWeight: 500 }}>
                           {unitLabel}
                         </Typography>

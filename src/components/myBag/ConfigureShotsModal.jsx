@@ -2,20 +2,23 @@ import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, Button, Stack, Box, Typography,
   IconButton, Paper, TextField, Select, MenuItem, FormControl, InputLabel, Chip,
-  Tooltip, Slider, Autocomplete, ToggleButtonGroup, ToggleButton,
+  Tooltip, Slider, Autocomplete, ToggleButtonGroup, ToggleButton, useTheme
 } from "@mui/material";
 import { Save, Tune } from "@mui/icons-material";
 import { createShot, updateShot, deleteShot } from '../../services/myBagService';
+import { segmentedSx } from '../../styles/commonStyles';
 
 const initialShotState = {
-  shot_type: '',
-  carry_distance: 140,
-  carry_variance: 10,
-  total_distance: 150,
-  total_variance: 10,
-  unit: 'meters',
-  launch: '',
-  roll: '',
+  shot_type: "",
+  carry_min: 130,
+  carry_typical: 140,
+  carry_max: 150,
+  total_min: 140,
+  total_typical: 150,
+  total_max: 160,
+  unit: "meters",
+  launch: "",
+  roll: "",
   tendency: [],
   swing_key: [],
 };
@@ -37,63 +40,51 @@ const COMMON_SWING_KEYS = [
   'High hands', 'Compact swing', 'Wide arc'
 ];
 
-const DistanceSlider = ({ label, distance, variance, onChange, unit, max = 500 }) => {
-  const numDistance = Number(distance) || 0;
-  const numVariance = Number(variance) || 0;
+const DistanceRangeSlider = ({
+  label,
+  minValue,
+  typicalValue,
+  maxValue,
+  onChange, // (field, value) => void
+  unit,
+  max = 300,
+}) => {
+  const clamp = (v) => Math.max(0, Math.min(max, Number(v) || 0));
 
-  const minValue = Math.max(0, numDistance - numVariance);
-  const maxValue = Math.min(max, numDistance + numVariance);
+  const value = [
+    clamp(minValue),
+    clamp(typicalValue),
+    clamp(maxValue),
+  ].sort((a, b) => a - b);
 
-  const handleSliderChange = (event, newValue) => {
-    // newValue will be [min, median, max]
-    const [newMin, newMedian, newMax] = newValue;
-    
-    // Calculate new distance and variance
-    const newDistance = Math.round(newMedian);
-    const newVariance = Math.round((newMax - newMin) / 2);
-    
-    onChange('distance', newDistance);
-    onChange('variance', newVariance);
+  const handleSliderChange = (_, newValue) => {
+    // newValue: [min, typical, max]
+    const [newMin, newTypical, newMax] = newValue;
+
+    onChange("min", Math.round(newMin));
+    onChange("typical", Math.round(newTypical));
+    onChange("max", Math.round(newMax));
   };
 
   return (
     <Box sx={{ mb: 3 }}>
       <Typography variant="subtitle2" gutterBottom>
-        {label} ({minValue} - {numDistance} - {maxValue} {unit})
+        {label} ({value[0]} / {value[1]} / {value[2]} {unit})
       </Typography>
-      <Slider 
-        value={[minValue, numDistance, maxValue]} 
-        onChange={handleSliderChange} 
-        min={0} 
-        max={max} 
+
+      <Slider
+        value={value}
+        onChange={handleSliderChange}
+        min={0}
+        max={max}
         step={1}
         disableSwap
-        sx={{
-          '& .MuiSlider-thumb': {
-            '&:nth-of-type(2)': { // Middle thumb (median)
-              backgroundColor: 'primary.main',
-              border: '2px solid white',
-              boxShadow: '0 0 4px 2px rgba(0,0,0,0.2)',
-            },
-          },
-          '& .MuiSlider-track': {
-            background: 'transparent',
-          },
-          '& .MuiSlider-rail': {
-            opacity: 0.3,
-          },
-        }}
       />
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1 }}>
-        <Typography variant="caption" color="text.secondary">
-          Min: {minValue} {unit}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Median: {numDistance} {unit}
-        </Typography>
-        <Typography variant="caption" color="text.secondary">
-          Max: {maxValue} {unit}
-        </Typography>
+
+      <Box sx={{ display: "flex", justifyContent: "space-between", mt: 1 }}>
+        <Typography variant="caption" color="text.secondary">Min: {value[0]} {unit}</Typography>
+        <Typography variant="caption" color="text.secondary">Typical: {value[1]} {unit}</Typography>
+        <Typography variant="caption" color="text.secondary">Max: {value[2]} {unit}</Typography>
       </Box>
     </Box>
   );
@@ -165,6 +156,8 @@ const TagInput = ({ label, value, onChange, options, placeholder }) => {
 const ShotForm = ({ shot, onSave, onCancel, clubId, availableShotTypes, onManageShotTypes }) => {
   const [formData, setFormData] = useState(initialShotState);
 
+  const theme = useTheme();
+
   useEffect(() => {
     if (shot) {
       // Ensure arrays for tags
@@ -187,10 +180,10 @@ const ShotForm = ({ shot, onSave, onCancel, clubId, availableShotTypes, onManage
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleDistanceChange = (field, type, newValue) => {
-    setFormData(prev => ({
+  const handleDistanceChange = (field, part, newValue) => {
+    setFormData((prev) => ({
       ...prev,
-      [`${field}_${type}`]: newValue
+      [`${field}_${part}`]: newValue,
     }));
   };
 
@@ -200,8 +193,16 @@ const ShotForm = ({ shot, onSave, onCancel, clubId, availableShotTypes, onManage
 
   const handleSave = async () => {
     // Basic validation
-    if (!formData.shot_type || !formData.total_distance) {
-      alert('Shot Type and Total Distance are required.');
+    if (!formData.shot_type) {
+      alert("Shot Type is required.");
+      return;
+    }
+    if (formData.total_typical == null) {
+      alert("Total Typical distance is required.");
+      return;
+    }
+    if (formData.carry_typical == null) {
+      alert("Carry Typical distance is required.");
       return;
     }
     await onSave(formData);
@@ -243,6 +244,7 @@ const ShotForm = ({ shot, onSave, onCancel, clubId, availableShotTypes, onManage
               if (newUnit) handleChange({ target: { name: 'unit', value: newUnit } });
             }}
             size="small"
+            sx={segmentedSx(theme, { fullWidth: { xs: true, sm: false }, radius: 10 })}
           >
             <ToggleButton value="yards">Yards</ToggleButton>
             <ToggleButton value="meters">Meters</ToggleButton>
@@ -250,23 +252,25 @@ const ShotForm = ({ shot, onSave, onCancel, clubId, availableShotTypes, onManage
         </Box>
 
         {/* Total Distance Slider */}
-        <DistanceSlider
+        <DistanceRangeSlider
           label="Total Distance"
-          distance={formData.total_distance}
-          variance={formData.total_variance}
-          onChange={(type, newValue) => handleDistanceChange('total', type, newValue)}
+          minValue={formData.total_min}
+          typicalValue={formData.total_typical}
+          maxValue={formData.total_max}
+          onChange={(part, v) => handleDistanceChange("total", part, v)}
           unit={formData.unit}
-          max={formData.unit === 'meters' ? 274 : 300}
+          max={formData.unit === "meters" ? 274 : 300}
         />
 
         {/* Carry Distance Slider */}
-        <DistanceSlider
+        <DistanceRangeSlider
           label="Carry Distance"
-          distance={formData.carry_distance}
-          variance={formData.carry_variance}
-          onChange={(type, newValue) => handleDistanceChange('carry', type, newValue)}
+          minValue={formData.carry_min}
+          typicalValue={formData.carry_typical}
+          maxValue={formData.carry_max}
+          onChange={(part, v) => handleDistanceChange("carry", part, v)}
           unit={formData.unit}
-          max={formData.unit === 'meters' ? 274 : 300}
+          max={formData.unit === "meters" ? 274 : 300}
         />
 
         <Stack direction="row" spacing={2}>
