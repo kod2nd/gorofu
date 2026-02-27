@@ -7,6 +7,7 @@ import {
   ToggleButtonGroup,
   ToggleButton,
   Paper,
+  useTheme
 } from "@mui/material";
 import {
   Add as Plus,
@@ -19,6 +20,8 @@ import {
 } from "@mui/icons-material";
 
 import ShotCard from "./ShotCard";
+import { segmentedSx } from "../../../styles/commonStyles";
+
 
 
 const ShotsSection = ({
@@ -36,6 +39,7 @@ const ShotsSection = ({
     shotSortDirection,
     setShotSortDirection,
 }) => {
+    const theme = useTheme();
     return (
         <Box sx={{ mt: 4 }}>
         <Box
@@ -91,11 +95,11 @@ const ShotsSection = ({
                 value={shotSortOrder}
                 exclusive
                 onChange={(e, v) => v && setShotSortOrder(v)}
-                sx={{ borderRadius: 2 }}
+                sx={segmentedSx(theme, { fullWidth: { xs: true, sm: false }, radius: 999 })}
                 >
-                <ToggleButton value="distance">Distance</ToggleButton>
-                <ToggleButton value="category">Category</ToggleButton>
-                <ToggleButton value="category_distance">Cat & Dist</ToggleButton>
+                <ToggleButton value="distance">Dist</ToggleButton>
+                <ToggleButton value="category">Type</ToggleButton>
+                <ToggleButton value="category_distance">Type & Dist</ToggleButton>
                 </ToggleButtonGroup>
 
                 <ToggleButtonGroup
